@@ -11,7 +11,7 @@ last_updated: 2026-04-03
 SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
-**Phase 3：已完成（MVP 发布就绪）**
+**Phase 4：已完成（三栏布局 + 桌面化 + 创建向导）**
 
 ## 已完成
 
@@ -35,6 +35,16 @@ SkillForge — OpenClaw Skill 可视化配置工具
 - 3.3 Error boundary + Empty state
 - 3.4 README + 生产构建验证
 
+### Phase 4（布局重构 + 桌面化 + 创建向导）
+- 4.1 三栏布局基础（react-resizable-panels）
+- 4.2 两级导航树（Skill 列表 + 文件树 + 节点描述）
+- 4.3 上下文编辑器（根据选中节点动态切换）
+- 4.4 检查器面板（验证/预览/关联/导出）
+- 4.5 统一编辑状态（WorkspaceContext + useReducer）
+- 4.6 Tauri v2 桌面封装（fs/dialog 插件）
+- 4.7 本地 Skill 加载（读取 ~/.openclaw/ + 保存编辑）
+- 4.8 Skill 创建向导（5 步 + 4 模板 + 导出/本地创建）
+
 ## 技术栈
 | 类别 | 选择 | 版本 |
 |------|------|------|
@@ -42,40 +52,59 @@ SkillForge — OpenClaw Skill 可视化配置工具
 | UI 组件 | shadcn/ui | v4 |
 | CSS | Tailwind CSS | v4 |
 | 构建 | Vite | v8 |
-| 路由 | React Router | v7 |
-| 后端 | 无（纯前端） | — |
+| 分栏布局 | react-resizable-panels | v4.9 |
+| 桌面封装 | Tauri | v2.10 |
+| 状态管理 | React Context + useReducer | — |
+| 后端 | 无（Tauri fs 插件直接读写文件）| — |
 
 ## 项目结构
 ```
 src/
 ├── components/
-│   ├── ui/                    # shadcn/ui 组件
-│   ├── layout/                # 布局（Sidebar, Header）
-│   ├── config-editor/         # 配置编辑器（sources, topics, schema, export）
-│   └── skill-editor/          # Skill 编辑器（frontmatter, validation）
-├── pages/
-│   ├── skill-list.tsx         # Skill 列表页（含搜索）
-│   └── skill-detail.tsx       # Skill 详情页（Tab: 概览/编辑/配置）
+│   ├── ui/                     # shadcn/ui 组件
+│   ├── layout/                 # 布局（Header）
+│   ├── workspace/              # 三栏布局面板
+│   │   ├── navigator-panel.tsx # 左栏：两级导航树
+│   │   ├── editor-panel.tsx    # 中栏：上下文编辑器
+│   │   └── inspector-panel.tsx # 右栏：检查器/预览
+│   ├── config-editor/          # 配置编辑器（sources, topics, schema, export）
+│   ├── skill-editor/           # Skill 编辑器（frontmatter, validation）
+│   └── skill-wizard/           # 创建向导（5 步表单）
 ├── lib/
-│   ├── skill-parser.ts        # SKILL.md 解析器
-│   ├── skill-serializer.ts    # SKILL.md 序列化器
-│   ├── skill-validator.ts     # Skill 验证器
-│   ├── download.ts            # 文件下载工具
-│   └── utils.ts               # shadcn/ui 工具
-├── types/skill.ts             # TypeScript 类型
+│   ├── skill-parser.ts         # SKILL.md 解析器
+│   ├── skill-serializer.ts     # SKILL.md 序列化器
+│   ├── skill-validator.ts      # Skill 验证器
+│   ├── tauri-fs.ts             # Tauri 文件系统操作
+│   ├── download.ts             # 文件下载工具
+│   └── utils.ts                # shadcn/ui 工具
 ├── hooks/
-│   ├── use-theme.ts           # 暗色模式
-│   └── use-mobile.ts          # 移动端检测
+│   ├── use-workspace.ts        # 统一状态管理（Context + Reducer）
+│   ├── use-theme.ts            # 暗色模式
+│   └── use-mobile.ts           # 移动端检测
+├── types/
+│   ├── skill.ts                # Skill 类型定义
+│   └── workspace.ts            # 工作区状态类型
 ├── data/
-│   ├── skill-loader.ts        # 测试数据加载器
-│   └── test-skills/           # 8 个真实 Skill 测试数据
-├── App.tsx
+│   ├── skill-loader.ts         # 测试数据加载器
+│   └── test-skills/            # 8 个真实 Skill 测试数据
+├── App.tsx                     # 根组件（三栏布局 + Context）
 ├── main.tsx
 └── index.css
+
+src-tauri/                      # Tauri 桌面端配置
+├── src/lib.rs                  # Rust 入口（fs/dialog/log 插件）
+├── Cargo.toml                  # Rust 依赖
+├── tauri.conf.json             # 窗口/权限配置
+└── capabilities/default.json   # 文件系统权限（~/.openclaw/）
 ```
 
 ## Git 历史
 ```
+82ccf67 feat: Skill 创建向导 + Dialog 集成
+d41533b feat: 本地 Skill 加载 + Tauri 文件系统集成
+aecd989 feat: Tauri v2 桌面封装初始化
+3b48931 feat: 三栏布局重构 — 借鉴 DaVinci Resolve 面板设计
+86d3e58 feat: Phase 3 完成 — README + 生产构建
 1892c40 feat: Phase 3.1-3.3 — 更多 Skill + Schema 查看器 + 错误处理
 fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 4a0797e feat: 配置编辑器 MVP (Phase 1.5)
@@ -86,26 +115,17 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 
 ## 当前环境状态
 - 本地开发：`npm run dev` → http://localhost:5173/
-- 生产构建：`npm run build` → dist/（737KB JS + 79KB CSS）
-- Node.js v22.22.1, npm 10.9.4
+- 生产构建：`npm run build` → dist/（670KB JS + 83KB CSS）
+- Tauri 开发：`npm run tauri:dev`（需 Rust 工具链）
+- Tauri 构建：`npm run tauri:build`
+- Node.js v22.22.1, npm 10.9.4, Rust 1.94.1
 - OpenClaw 服务器：`ssh openclaw` 可访问
 
-## MVP 验收状态
-| 功能 | 状态 |
-|------|------|
-| Skill 解析与展示 | ✅ 8 个 Skill 正确解析显示 |
-| 可视化配置编辑 | ✅ frontmatter + sources + topics |
-| 实时预览 | ✅ SKILL.md + JSON |
-| Skill 验证 | ✅ 命名/字段/环境变量检测 |
-| 导出下载 | ✅ JSON + SKILL.md |
-| 暗色模式 | ✅ 切换 + 系统偏好 |
-| 搜索过滤 | ✅ 按名称/描述 |
-| 错误处理 | ✅ Error boundary |
-
-## 下一步建议（Phase 4+）
-1. **远程 Skill 加载**：通过 API 或 SSH 连接 OpenClaw 实例，实时读取/写回 Skill
-2. **JSON Schema 驱动表单**：根据 schema.json 自动生成编辑表单
-3. **Skill 创建向导**：从模板创建新 Skill
-4. **配置 diff 功能**：对比编辑前后的变更
-5. **代码分割**：解决构建包体积警告
-6. **Electron/Tauri 封装**：桌面应用，直接访问本地文件系统
+## 下一步建议（Phase 5+）
+1. **代码分割**：解决 670KB JS 包体积警告（React.lazy + 动态 import）
+2. **远程 SSH Skill 加载**：直接连接 OpenClaw 服务器读取/写回 Skill
+3. **配置 Diff**：对比编辑前后的变更
+4. **拖拽排序**：sources/topics 列表项拖拽重排
+5. **批量操作**：多 Skill 批量导出/验证
+6. **JSON Schema 驱动表单**：根据 schema.json 自动生成编辑表单（待讨论方案后实现）
+7. **Tauri 自动更新**：桌面应用自动检查和安装更新
