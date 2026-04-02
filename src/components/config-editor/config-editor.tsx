@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SourcesEditor } from "./sources-editor"
+import { TopicsEditor, type TopicsConfig } from "./topics-editor"
 import { JsonPreview } from "./json-preview"
 
 interface ConfigEditorProps {
@@ -74,6 +75,10 @@ function ConfigFormRouter({
     return <SourcesEditor data={data} onChange={onChange} />
   }
 
+  if (filename === "topics.json" && isTopicsConfig(data)) {
+    return <TopicsEditor data={data} onChange={onChange} />
+  }
+
   return (
     <div className="text-sm text-muted-foreground p-4 border rounded-md">
       <p>此配置文件暂不支持表单编辑。</p>
@@ -101,5 +106,14 @@ function isSourcesConfig(data: unknown): data is SourcesConfig {
     data !== null &&
     "sources" in data &&
     Array.isArray((data as SourcesConfig).sources)
+  )
+}
+
+function isTopicsConfig(data: unknown): data is TopicsConfig {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "topics" in data &&
+    Array.isArray((data as TopicsConfig).topics)
   )
 }

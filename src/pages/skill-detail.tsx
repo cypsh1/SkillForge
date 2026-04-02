@@ -1,12 +1,21 @@
+import { useState, useMemo } from "react"
 import { useParams, useNavigate } from "react-router"
-import { ArrowLeft, Terminal, KeyRound, FileJson, Layers, ExternalLink, Pencil } from "lucide-react"
+import { ArrowLeft, Terminal, KeyRound, Pencil, Layers, ExternalLink, FileText, Download, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { getSkillById } from "@/data/skill-loader"
 import { ConfigEditor } from "@/components/config-editor/config-editor"
-import type { ParsedSkill, SkillTool, EnvVarDefinition } from "@/types/skill"
+import { ExportButton } from "@/components/config-editor/export-button"
+import { FrontmatterEditor } from "@/components/skill-editor/frontmatter-editor"
+import { ValidationPanel } from "@/components/skill-editor/validation-panel"
+import { serializeSkillMd } from "@/lib/skill-serializer"
+import { validateSkill } from "@/lib/skill-validator"
+import { downloadFile } from "@/lib/download"
+import type { ParsedSkill, SkillFrontmatter, SkillTool, EnvVarDefinition } from "@/types/skill"
 
 export default function SkillDetailPage() {
   const { skillId } = useParams()
@@ -25,40 +34,127 @@ export default function SkillDetailPage() {
     )
   }
 
+  return <SkillDetailContent skill={skill} onBack={() => navigate("/skills")} />
+}
+
+function SkillDetailContent({ skill, onBack }: { skill: ParsedSkill; onBack: () => void }) {
+  const [editedFrontmatter, setEditedFrontmatter] = useState<SkillFrontmatter>(
+    () => structuredClone(skill.frontmatter),
+  )
+
+  const markdownBody = useMemo(() => {
+    const bodyStart = skill.rawContent.indexOf("---", 3)
+    if (bodyStart === -1) return skill.rawContent
+    return skill.rawContent.slice(bodyStart + 3).trimStart()
+  }, [skill.rawContent])
+
+  const skillMdPreview = useMemo(
+    () => serializeSkillMd(editedFrontmatter, markdownBody),
+    [editedFrontmatter, markdownBody],
+  )
+
+  const validationResult = useMemo(() => validateSkill(skill), [skill])
+
+  const handleExportSkillMd = () => {
+    downloadFile("SKILL.md", skillMdPreview, "text/markdown;charset=utf-8")
+  }
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/skills")}>
+        <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           返回
         </Button>
       </div>
 
       <SkillOverview skill={skill} />
-      <Separator />
 
-      {skill.tools.length > 0 && (
-        <>
-          <ToolsSection tools={skill.tools} />
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">概览</TabsTrigger>
+          <TabsTrigger value="edit-frontmatter">
+            <FileText className="mr-1 h-3.5 w-3.5" />
+            编辑 SKILL.md
+          </TabsTrigger>
+          {skill.hasConfig && (
+            <TabsTrigger value="config">
+              <Pencil className="mr-1 h-3.5 w-3.5" />
+              配置编辑
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-4">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Skill 验证
+            </h3>
+            <ValidationPanel result={validationResult} />
+          </div>
           <Separator />
-        </>
-      )}
+          {skill.tools.length > 0 && (
+            <>
+              <ToolsSection tools={skill.tools} />
+              <Separator />
+            </>
+          )}
+          {skill.envVars.length > 0 && (
+            <>
+              <EnvVarsSection envVars={skill.envVars} />
+              <Separator />
+            </>
+          )}
+          <SectionsOverview skill={skill} />
+        </TabsContent>
 
-      {skill.envVars.length > 0 && (
-        <>
-          <EnvVarsSection envVars={skill.envVars} />
-          <Separator />
-        </>
-      )}
+        <TabsContent value="edit-frontmatter" className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">编辑 Frontmatter</h3>
+            <Button variant="outline" size="sm" onClick={handleExportSkillMd}>
+              <Download className="mr-2 h-4 w-4" />
+              导出 SKILL.md
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">表单编辑</h4>
+              <FrontmatterEditor
+                frontmatter={editedFrontmatter}
+                onChange={setEditedFrontmatter}
+              />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">SKILL.md 预览</h4>
+              <ScrollArea className="h-[600px] rounded-md border">
+                <pre className="p-4 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+                  {skillMdPreview}
+                </pre>
+              </ScrollArea>
+            </div>
+          </div>
+        </TabsContent>
 
-      {skill.hasConfig && (
-        <>
-          <ConfigFilesSection skill={skill} />
-          <Separator />
-        </>
-      )}
-
-      <SectionsOverview skill={skill} />
+        {skill.hasConfig && (
+          <TabsContent value="config" className="mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">配置编辑器</h3>
+              <div className="flex gap-2">
+                {Object.entries(skill.configFiles).map(([path, data]) => (
+                  <ExportButton
+                    key={path}
+                    filename={path.split("/").pop() ?? "config.json"}
+                    data={data}
+                    label={`导出 ${path.split("/").pop()}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <ConfigEditor configFiles={skill.configFiles} />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }
@@ -116,7 +212,7 @@ function SkillOverview({ skill }: { skill: ParsedSkill }) {
         )}
         {skill.hasConfig && (
           <Badge variant="outline">
-            <FileJson className="mr-1 h-3 w-3" />
+            <Pencil className="mr-1 h-3 w-3" />
             {Object.keys(skill.configFiles).length} 个配置文件
           </Badge>
         )}
@@ -201,18 +297,6 @@ function EnvVarsSection({ envVars }: { envVars: EnvVarDefinition[] }) {
           </tbody>
         </table>
       </div>
-    </div>
-  )
-}
-
-function ConfigFilesSection({ skill }: { skill: ParsedSkill }) {
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <Pencil className="h-5 w-5" />
-        配置编辑器
-      </h3>
-      <ConfigEditor configFiles={skill.configFiles} />
     </div>
   )
 }
