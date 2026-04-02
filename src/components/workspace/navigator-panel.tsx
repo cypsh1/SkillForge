@@ -7,11 +7,19 @@ import {
   Settings,
   ShieldCheck,
   FolderOpen,
+  Plus,
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { SkillWizard } from "@/components/skill-wizard/skill-wizard"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { cn } from "@/lib/utils"
 import type { NavigatorSelection } from "@/types/workspace"
@@ -81,19 +89,43 @@ export function NavigatorPanel() {
     })
   }
 
+  const [wizardOpen, setWizardOpen] = useState(false)
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative shrink-0 border-b border-border px-2 py-2">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2" />
-        <Input
-          type="search"
-          placeholder="搜索 Skill…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-8 pl-9"
-          aria-label="搜索 Skill"
-        />
+      <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
+        <div className="relative flex-1">
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2" />
+          <Input
+            type="search"
+            placeholder="搜索 Skill…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="h-8 pl-8"
+            aria-label="搜索 Skill"
+          />
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="创建新技能"
+          onClick={() => setWizardOpen(true)}
+        >
+          <Plus className="size-4" />
+        </Button>
       </div>
+
+      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+          <DialogTitle className="sr-only">创建新技能</DialogTitle>
+          <SkillWizard
+            onClose={() => setWizardOpen(false)}
+            onCreated={() => setWizardOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-0.5 p-2 pr-3">
           {filteredSkills.map((skill) => (

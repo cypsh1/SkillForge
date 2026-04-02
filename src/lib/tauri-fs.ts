@@ -108,6 +108,23 @@ export async function saveSkillConfig(
   await saveSkillFile(skillPath, configRelativePath, content)
 }
 
+export async function createLocalSkillBundle(
+  skillName: string,
+  skillMd: string,
+  options?: { configurable?: boolean },
+): Promise<string> {
+  const fs = await getTauriFsModule()
+  const root = `${await getHomeDir()}/${SKILLS_DIR}`
+  await fs.mkdir(root, { recursive: true })
+  const skillPath = `${root}/${skillName}`
+  await fs.mkdir(skillPath, { recursive: true })
+  if (options?.configurable) {
+    await fs.mkdir(`${skillPath}/config/defaults`, { recursive: true })
+  }
+  await saveSkillFile(skillPath, "SKILL.md", skillMd)
+  return skillPath
+}
+
 async function getHomeDir(): Promise<string> {
   const { homeDir } = await import("@tauri-apps/api/path")
   const home = await homeDir()
