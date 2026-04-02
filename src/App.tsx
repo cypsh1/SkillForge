@@ -12,9 +12,9 @@ export default function App() {
       <TooltipProvider>
         <SidebarProvider>
           <AppSidebar />
-          <main className="flex flex-1 flex-col min-h-svh">
+          <main className="flex flex-1 flex-col h-svh">
             <AppHeader />
-            <div className="flex-1 p-6">
+            <div className="flex-1 overflow-y-auto p-6">
               <Routes>
                 <Route path="/" element={<Navigate to="/skills" replace />} />
                 <Route path="/skills" element={<SkillListPage />} />

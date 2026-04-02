@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from "react-router"
-import { ArrowLeft, Terminal, KeyRound, FileJson, Layers, ExternalLink } from "lucide-react"
+import { ArrowLeft, Terminal, KeyRound, FileJson, Layers, ExternalLink, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { getSkillById } from "@/data/skill-loader"
+import { ConfigEditor } from "@/components/config-editor/config-editor"
 import type { ParsedSkill, SkillTool, EnvVarDefinition } from "@/types/skill"
 
 export default function SkillDetailPage() {
@@ -205,38 +206,13 @@ function EnvVarsSection({ envVars }: { envVars: EnvVarDefinition[] }) {
 }
 
 function ConfigFilesSection({ skill }: { skill: ParsedSkill }) {
-  const configEntries = Object.entries(skill.configFiles)
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
-        <FileJson className="h-5 w-5" />
-        配置文件
+        <Pencil className="h-5 w-5" />
+        配置编辑器
       </h3>
-      <div className="grid gap-3">
-        {configEntries.map(([path, content]) => {
-          const preview = JSON.stringify(content, null, 2)
-          const lines = preview.split("\n")
-          const truncated = lines.length > 15
-
-          return (
-            <Card key={path}>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm font-mono">{path}</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2 px-4">
-                <pre className="text-xs bg-muted/50 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto">
-                  <code>
-                    {truncated
-                      ? lines.slice(0, 15).join("\n") + "\n... (" + lines.length + " 行)"
-                      : preview}
-                  </code>
-                </pre>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      <ConfigEditor configFiles={skill.configFiles} />
     </div>
   )
 }
