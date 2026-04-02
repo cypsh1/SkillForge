@@ -11,37 +11,85 @@ last_updated: 2026-04-03
 SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
-**Phase 0：项目初始化（进行中）**
+**Phase 1：已完成**
 
 ## 最近已完成
-- **项目 harness 搭建**（2026-04-03）：
-  - 在 Youqu_V0.2 对话中完成了 OpenClaw 服务器调研
-  - 分析了 OpenClaw 的 4 月 1 日对话记录和代码产出
-  - 创建了项目目录结构和上下文文件
-  - 本文件由 Youqu_V0.2 对话中的 Cursor 创建，用于新对话的上下文传递
+- **Phase 1 全部 5 个批次**（2026-04-03）：
+  - **1.1 技术选型 + 项目初始化**：React + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui
+  - **1.2 SKILL.md 解析器**：frontmatter + sections + tools + env vars + config files
+  - **1.3 基础 UI 框架**：侧边栏 + 内容区布局，React Router 路由
+  - **1.4 Skill 详情页**：完整展示解析后的 Skill 信息
+  - **1.5 配置编辑器 MVP**：sources.json 可视化编辑 + JSON 实时预览
 
-## 当前待执行
-**Phase 1：技术选型 + 项目骨架**
-- 确认技术栈（React vs Vue、是否需要后端等）
-- 初始化项目（包管理、构建工具、代码规范）
-- 搭建基础 UI 框架（布局、路由、主题）
-- 实现 SKILL.md 解析器（核心能力）
-- 实现第一个可用功能：Skill 列表 + 详情查看
+## 技术栈（已确认）
+| 类别 | 选择 | 版本 |
+|------|------|------|
+| 前端框架 | React + TypeScript | React 19, TS 5.9 |
+| UI 组件 | shadcn/ui | v4 |
+| CSS | Tailwind CSS | v4 |
+| 构建 | Vite | v8 |
+| 路由 | React Router | v7 |
+| 后端 | 无（纯前端） | — |
+
+## 项目结构
+```
+src/
+├── components/
+│   ├── ui/                    # shadcn/ui 组件
+│   ├── layout/                # 布局组件（Sidebar, Header）
+│   └── config-editor/         # 配置编辑器组件
+├── pages/
+│   ├── skill-list.tsx         # Skill 列表页
+│   └── skill-detail.tsx       # Skill 详情页
+├── lib/
+│   ├── utils.ts               # shadcn/ui 工具函数
+│   └── skill-parser.ts        # SKILL.md 解析器（核心）
+├── types/
+│   └── skill.ts               # TypeScript 类型定义
+├── data/
+│   ├── skill-loader.ts        # 测试数据加载器
+│   └── test-skills/           # 3 个真实 Skill 测试数据
+│       ├── image-ocr/         # 简单
+│       ├── url-reader/        # 中等
+│       └── tech-news-digest/  # 复杂（含 config）
+├── hooks/
+│   └── use-mobile.ts
+├── App.tsx
+├── main.tsx
+└── index.css
+```
+
+## Git 历史
+```
+4a0797e feat: 配置编辑器 MVP (Phase 1.5)
+766a701 feat: SKILL.md 解析器 + Skill 详情页 (Phase 1.2 + 1.4)
+19a3926 feat: 搭建项目骨架 + 基础 UI 框架 (Phase 1.1)
+73ee389 feat: initial commit
+```
 
 ## 当前环境状态
+- 本地开发：`npm run dev` → http://localhost:5173/
+- Node.js v22.22.1, npm 10.9.4
+- Git: 4 次提交，main 分支
 - OpenClaw 服务器：`ssh openclaw` 可访问
-  - Skill 目录：`/root/.openclaw/workspace/skills/`（18 个 Skill）
-  - 有一个旧的 Express 服务在端口 3001 运行（可忽略或关停）
-- 本地开发环境：macOS，Node.js/npm 可用（需确认版本）
-- Git：待初始化
 
-## 当前已知风险
-1. SKILL.md 格式没有严格的 Schema，不同 Skill 的写法可能差异大
-2. 某些 Skill 有复杂的嵌套配置（如 tech-news-digest 有 100+ 个数据源）
-3. OpenClaw API/CLI 可能在不同版本间有 breaking change
-4. 需要决定是做纯本地工具还是 Web 应用
+## 验收状态
+| 验收标准 | 状态 |
+|---------|------|
+| `npm run dev` 启动 | ✅ 通过 |
+| 浏览器能看到 Skill 列表 | ✅ 3 个 Skill 正确显示 |
+| 点击 Skill 能看到详细信息 | ✅ 名称、描述、工具、环境变量、配置文件 |
+| 能编辑配置项并看到预览 | ✅ sources.json 表单编辑 + JSON 预览 |
 
-## 下一步建议
-1. 在新的 Cursor 对话中打开 SkillForge 项目
-2. 读取 `project-harness/context/project-brief.md` 了解项目背景
-3. 执行 `project-harness/workflow/active-task.md` 中的第一个任务
+## 已知限制
+1. 配置编辑器只支持 sources.json 的表单编辑，topics.json 和 schema.json 暂不支持
+2. 编辑后的数据仅存在内存中，没有持久化能力
+3. 解析器对代码块内 `#` 标题的过滤已修复，但嵌套代码块未处理
+4. 页面滚动在嵌套容器场景下有时需要使用 scrollIntoView
+
+## 下一步建议（Phase 2）
+1. **更多配置文件编辑支持**：topics.json 表单编辑、JSON Schema 驱动表单生成
+2. **配置持久化**：导出/下载编辑后的配置文件
+3. **SKILL.md 编辑器**：frontmatter 编辑 + Markdown 预览
+4. **远程 Skill 加载**：通过 API 或 SSH 连接 OpenClaw 实例读取 Skill
+5. **Skill 验证**：检测配置问题、依赖冲突、安全风险
