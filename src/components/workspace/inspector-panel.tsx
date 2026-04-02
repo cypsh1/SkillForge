@@ -1,10 +1,11 @@
-import { useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   Download,
   ExternalLink,
   FileText,
   Info,
   Link2,
+  Save,
 } from "lucide-react"
 
 import { ExportButton } from "@/components/config-editor/export-button"
@@ -16,6 +17,7 @@ import { Separator } from "@/components/ui/separator"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { downloadFile } from "@/lib/download"
 import { serializeSkillMd } from "@/lib/skill-serializer"
+import { isTauri, saveSkillFile, saveSkillConfig } from "@/lib/tauri-fs"
 import { validateSkill } from "@/lib/skill-validator"
 import type { EnvVarDefinition, ParsedSkill } from "@/types/skill"
 import type { SkillEditState } from "@/types/workspace"
@@ -83,9 +85,30 @@ export function InspectorPanel() {
     return editState.configFiles[selection.filePath]
   }, [selection, editState])
 
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+
   const exportSkillMd = () => {
     downloadFile("SKILL.md", skillMdPreview, "text/markdown;charset=utf-8")
   }
+
+  const handleSaveAll = useCallback(async () => {
+    if (!selectedSkill || !editState?.dirty) return
+    setSaving(true)
+    setSaveMsg(null)
+    try {
+      await saveSkillFile(selectedSkill.path, "SKILL.md", skillMdPreview)
+      for (const [path, data] of Object.entries(editState.configFiles)) {
+        await saveSkillConfig(selectedSkill.path, path, data)
+      }
+      setSaveMsg("已保存")
+      setTimeout(() => setSaveMsg(null), 2000)
+    } catch (err) {
+      setSaveMsg(`保存失败: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedSkill, editState, skillMdPreview])
 
   const skillId = selectedSkill?.id ?? selection?.skillId
 
@@ -104,6 +127,22 @@ export function InspectorPanel() {
             </Badge>
           )}
         </div>
+        {isTauri() && editState?.dirty && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            disabled={saving}
+            onClick={handleSaveAll}
+          >
+            <Save className="size-3.5" />
+            {saving ? "保存中…" : "保存"}
+          </Button>
+        )}
+        {saveMsg && (
+          <span className="text-xs text-muted-foreground">{saveMsg}</span>
+        )}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
