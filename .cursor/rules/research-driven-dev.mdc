@@ -1,0 +1,117 @@
+---
+description: 关键环节主动调研规则——在核心设计环节自动搜索最佳实践
+globs:
+alwaysApply: true
+---
+# Research-Driven Development — SkillForge
+
+在以下四个核心环节中，必须先搜索行业最佳实践和参考方案，再开始设计或编码。
+搜索结果必须落地为具体的设计决策或代码方案，禁止停留在"调研报告"层面。
+
+## 触发时机
+
+当任务涉及以下环节时自动触发调研：
+
+### 1. 产品方案设计
+**触发**：新功能规划、产品定位调整、用户场景定义
+**搜索方向**：
+- 同类产品怎么做的（n8n、Zapier、Make.com、Retool 等配置类工具）
+- 目标用户的真实痛点讨论（Reddit、Discord、GitHub Issues、知乎、掘金）
+- OpenClaw 社区的最新动态和用户反馈
+
+**搜索示例**：
+```
+"OpenClaw skill configuration pain points 2026"
+"n8n node configuration UX design"
+"developer tool configuration interface best practices"
+```
+
+**产出要求**：总结为 ≤5 条关键发现，每条附带对 SkillForge 的具体启示
+
+### 2. 功能梳理
+**触发**：确定某个功能模块的具体行为、边界、交互流程
+**搜索方向**：
+- 同类功能在成熟产品中的实现方式
+- 该功能的常见设计模式和反模式
+- 用户对该类功能最常见的抱怨和期望
+
+**搜索示例**：
+```
+"JSON schema form generator best practices"
+"YAML editor web UI comparison 2026"
+"config file visual editor open source"
+```
+
+**产出要求**：列出 2-3 个参考实现，说明借鉴什么、不借鉴什么、为什么
+
+### 3. 交互设计
+**触发**：设计页面布局、组件交互、用户操作流程
+**搜索方向**：
+- 优秀的 UI/UX 参考（Dribbble、成熟开源项目的截图/Demo）
+- 交互设计模式（表单设计、树形导航、面板布局、拖拽配置）
+- 可用的组件库和设计系统
+
+**搜索示例**：
+```
+"developer tool dashboard UI design patterns"
+"sidebar detail panel layout react component"
+"shadcn/ui form builder example"
+"tree view + editor panel UI pattern"
+```
+
+**产出要求**：选定 1-2 个参考方案，说明布局结构和交互流程，然后直接开始编码
+
+### 4. 技术方案设计
+**触发**：选择框架/库、设计数据结构、确定架构模式
+**搜索方向**：
+- 技术选型对比（最新版本、社区活跃度、维护状态）
+- 架构模式的适用场景和 trade-off
+- 具体库的最佳实践和常见坑
+
+**搜索示例**：
+```
+"markdown parser JavaScript library comparison 2026"
+"react json schema form libraries 2026"
+"vite react typescript project structure best practices"
+"monaco editor vs codemirror 2026 comparison"
+```
+
+**产出要求**：给出选型结论和理由（≤3 句），附上关键依据链接，然后直接开始实现
+
+## 调研纪律
+
+### 必须遵守
+- 每次调研控制在 **3-5 次搜索**以内，聚焦具体问题
+- 搜索结果必须转化为**可执行的决策**（选 A 不选 B，因为...）
+- 发现重要的参考项目或库时，记录到 `project-harness/context/references.md`
+- 搜索时优先搜 2026 年的内容，确保信息时效性
+
+### 严格禁止
+- 花超过 10 分钟做纯调研而不产出代码
+- 写"市场分析报告"或"商业可行性分析"
+- 搜索泛泛的概念（"什么是可视化"、"低代码市场规模"）
+- 因为调研发现了新方向就擅自改变任务范围（应报告给用户决定）
+
+### 遇到问题时的搜索
+除了四个核心环节外，以下情况也应主动搜索：
+- 遇到不熟悉的 API 或库 → 搜索官方文档和示例
+- 构建/运行报错且不确定原因 → 搜索错误信息
+- 需要实现的功能没写过 → 搜索 tutorial 或 example
+- 性能问题 → 搜索优化方案和 benchmark
+
+## 参考资料管理
+
+调研过程中发现的有价值的参考，记录到 `project-harness/context/references.md`：
+
+```markdown
+## 参考资料
+
+### 产品参考
+- [名称](URL) — 借鉴点：xxx
+
+### 技术参考
+- [库名](URL) — 用途：xxx，选择理由：xxx
+
+### 设计参考
+- [名称](URL) — 参考了什么：xxx
+```
