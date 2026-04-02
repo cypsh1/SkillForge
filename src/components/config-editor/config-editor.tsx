@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SourcesEditor } from "./sources-editor"
 import { TopicsEditor, type TopicsConfig } from "./topics-editor"
 import { JsonPreview } from "./json-preview"
+import { SchemaViewer } from "./schema-viewer"
 
 interface ConfigEditorProps {
   configFiles: Record<string, unknown>
@@ -77,6 +78,15 @@ function ConfigFormRouter({
 
   if (filename === "topics.json" && isTopicsConfig(data)) {
     return <TopicsEditor data={data} onChange={onChange} />
+  }
+
+  if (
+    filename === "schema.json" &&
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data)
+  ) {
+    return <SchemaViewer schema={data as Record<string, unknown>} />
   }
 
   return (
