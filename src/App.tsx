@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { AppHeader } from "@/components/layout/app-header"
 import SkillListPage from "@/pages/skill-list"
+import SkillDetailPage from "@/pages/skill-detail"
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Navigate to="/skills" replace />} />
                 <Route path="/skills" element={<SkillListPage />} />
+                <Route path="/skills/:skillId" element={<SkillDetailPage />} />
               </Routes>
             </div>
           </main>
