@@ -1,32 +1,40 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router"
-import { ErrorBoundary } from "@/components/error-boundary"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { Group, Panel, Separator as PanelSeparator } from "react-resizable-panels"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { AppSidebar } from "@/components/layout/app-sidebar"
+import { ErrorBoundary } from "@/components/error-boundary"
 import { AppHeader } from "@/components/layout/app-header"
-import SkillListPage from "@/pages/skill-list"
-import SkillDetailPage from "@/pages/skill-detail"
+import { NavigatorPanel } from "@/components/workspace/navigator-panel"
+import { EditorPanel } from "@/components/workspace/editor-panel"
+import { InspectorPanel } from "@/components/workspace/inspector-panel"
+import { WorkspaceContext, useWorkspaceReducer } from "@/hooks/use-workspace"
+import { loadTestSkills } from "@/data/skill-loader"
+
+const skills = loadTestSkills()
 
 export default function App() {
+  const workspace = useWorkspaceReducer(skills)
+
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <TooltipProvider>
-          <SidebarProvider>
-            <AppSidebar />
-            <main className="flex flex-1 flex-col h-svh">
-              <AppHeader />
-              <div className="flex-1 overflow-y-auto p-6">
-                <Routes>
-                  <Route path="/" element={<Navigate to="/skills" replace />} />
-                  <Route path="/skills" element={<SkillListPage />} />
-                  <Route path="/skills/:skillId" element={<SkillDetailPage />} />
-                </Routes>
-              </div>
-            </main>
-          </SidebarProvider>
-        </TooltipProvider>
-      </ErrorBoundary>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <TooltipProvider>
+        <WorkspaceContext.Provider value={workspace}>
+          <div className="flex flex-col h-svh">
+            <AppHeader />
+            <Group orientation="horizontal" className="flex-1" id="skillforge-layout">
+              <Panel defaultSize={22} minSize={15} maxSize={35}>
+                <NavigatorPanel />
+              </Panel>
+              <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors" />
+              <Panel defaultSize={50} minSize={30}>
+                <EditorPanel />
+              </Panel>
+              <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors" />
+              <Panel defaultSize={28} minSize={15} maxSize={40}>
+                <InspectorPanel />
+              </Panel>
+            </Group>
+          </div>
+        </WorkspaceContext.Provider>
+      </TooltipProvider>
+    </ErrorBoundary>
   )
 }
