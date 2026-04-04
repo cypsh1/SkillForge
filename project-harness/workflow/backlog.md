@@ -12,16 +12,18 @@ last_updated: 2026-04-05
 
 ## 当前任务
 
-| ID  | 名称 | 状态 | 备注 |
-| --- | --- | --- | --- |
-| D1 | Demo 交互方案验证 | 进行中 | 04-panel-alignment 已完成，待决定是否继续迭代或开始落地到主应用 |
+
+| ID  | 名称          | 状态  | 备注                                        |
+| --- | ----------- | --- | ----------------------------------------- |
+| D1  | Demo 交互方案验证 | 进行中 | 04-panel-alignment 已完成，待决定是否继续迭代或开始落地到主应用 |
+
 
 ## 待办
 
 
 | ID  | 优先级 | 名称               | 备注                                                    |
 | --- | --- | ---------------- | ----------------------------------------------------- |
-| D2  | P0  | Demo 方案落地到主应用    | 将 demo 中验证的设计（桥线、滚动同步、关系可视化）实装到 inspector-panel 等组件 |
+| D2  | P0  | Demo 方案落地到主应用    | 将 demo 中验证的设计（桥线、滚动同步、关系可视化）实装到 inspector-panel 等组件   |
 | T1  | P0  | JSON Schema 驱动表单 | 核心能力：根据 schema.json 自动生成编辑表单，替代硬编码的 sources/topics 表单 |
 | T2  | P1  | 代码分割             | 670KB JS 包体积，React.lazy + 动态 import                   |
 | T3  | P1  | 远程 SSH Skill 加载  | 直接连接 OpenClaw 服务器读取/写回 Skill                          |
@@ -40,3 +42,5 @@ last_updated: 2026-04-05
 | Phase 2 | Frontmatter 编辑器、Topics 编辑器、导出、验证器、暗色模式 | 2026-04-03 | `evidence/task-logs/2026-04-03-phase2-3.md` |
 | Phase 3 | 扩展 8 个 Skill、Schema 查看器、错误边界、README    | 2026-04-03 | `evidence/task-logs/2026-04-03-phase2-3.md` |
 | Phase 4 | 三栏布局、Tauri 桌面封装、本地 Skill 加载、创建向导       | 2026-04-03 | `evidence/task-logs/2026-04-03-phase4.md`   |
+
+

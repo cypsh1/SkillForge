@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillForge — 完整方案 Demo（关系可视化 + 面板对齐）</title>
+<style>
+  :root {
+    --bg:#09090b; --surface:#18181b; --border:#27272a;
+    --text:#e4e4e7; --muted:#71717a; --dim:#52525b;
+    --blue:#3b82f6; --amber:#f59e0b; --emerald:#10b981;
+    --teal:#14b8a6; --violet:#8b5cf6; --rose:#f43f5e; --slate:#64748b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+  /* ===== Architecture bar ===== */
+  .arch-bar{display:flex;align-items:center;gap:2px;padding:7px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .arch-bar .lbl{font-size:11px;color:var(--dim);margin-right:8px;white-space:nowrap;}
+  .arch-chip{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:14px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid transparent;white-space:nowrap;}
+  .arch-chip:hover{filter:brightness(1.3);}
+  .arch-chip.on{transform:translateY(-1px);}
+  .arch-chip[data-l=identity]{background:rgba(59,130,246,.1);color:#93c5fd;}
+  .arch-chip[data-l=identity].on{border-color:var(--blue);box-shadow:0 2px 8px rgba(59,130,246,.25);}
+  .arch-chip[data-l=deps]{background:rgba(245,158,11,.1);color:#fcd34d;}
+  .arch-chip[data-l=deps].on{border-color:var(--amber);box-shadow:0 2px 8px rgba(245,158,11,.25);}
+  .arch-chip[data-l=caps]{background:rgba(16,185,129,.1);color:#6ee7b7;}
+  .arch-chip[data-l=caps].on{border-color:var(--emerald);box-shadow:0 2px 8px rgba(16,185,129,.25);}
+  .arch-chip[data-l=config]{background:rgba(139,92,246,.1);color:#c4b5fd;}
+  .arch-chip[data-l=config].on{border-color:var(--violet);}
+  .arch-chip[data-l=exec]{background:rgba(20,184,166,.1);color:#5eead4;}
+  .arch-chip[data-l=exec].on{border-color:var(--teal);box-shadow:0 2px 8px rgba(20,184,166,.25);}
+  .arch-chip[data-l=ops]{background:rgba(244,63,94,.1);color:#fda4af;}
+  .arch-chip[data-l=ops].on{border-color:var(--rose);}
+  .arch-arrow{color:var(--dim);font-size:10px;padding:0 1px;}
+
+  /* ===== 三栏布局：左面板 | 桥线列 | 右面板 ===== */
+  .layout{display:grid;grid-template-columns:1fr 32px 1fr;flex:1;overflow:hidden;position:relative;}
+
+  /* ===== 面板通用 ===== */
+  .panel{display:flex;flex-direction:column;overflow:hidden;}
+  .ph{padding:7px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);background:var(--surface);display:flex;align-items:center;gap:6px;flex-shrink:0;min-height:34px;}
+  .ph strong{color:var(--text);}
+  .pb{flex:1;overflow-y:auto;padding:12px;scroll-behavior:smooth;}
+  .panel:first-child .pb{padding-right:6px;}
+  .panel:last-child .pb{padding-left:6px;}
+
+  /* ===== 桥线列 ===== */
+  .bridge-col{background:var(--bg);flex-shrink:0;display:flex;flex-direction:column;}
+  .bridge-col-ph{height:34px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+  .bridge-col-body{flex:1;}
+
+  /* SVG 作为 layout 绝对定位叠加层，排在所有面板 DOM 之后 → 绘制在最上层 */
+  #bridgeSvg{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:20;
+    overflow:visible;
+  }
+  .bridge-shape{pointer-events:all;cursor:pointer;}
+
+  /* ===== 桥区列头控制入口 ===== */
+  .bridge-col-ph{display:flex;align-items:center;justify-content:center;position:relative;z-index:30;cursor:pointer;}
+  .bridge-col-ph:hover .bridge-ctrl{opacity:.85;color:var(--muted);}
+  .bridge-ctrl{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .2s;color:var(--dim);opacity:.3;pointer-events:none;}
+  .bridge-ctrl svg{width:16px;height:16px;}
+  .bridge-ctrl.pop-open{opacity:1;color:var(--teal);background:rgba(20,184,166,.08);}
+
+  /* 设置浮窗 */
+  .bridge-pop{position:absolute;top:32px;left:50%;transform:translateX(-50%);z-index:400;background:#1c1c20;border:1px solid #333;border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.55);min-width:170px;display:none;}
+  .bridge-pop.vis{display:block;}
+  .bridge-pop::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;background:#1c1c20;border-left:1px solid #333;border-top:1px solid #333;}
+  .pop-title{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .pop-row{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:4px;cursor:pointer;font-size:11px;color:var(--muted);transition:background .1s;}
+  .pop-row:hover{background:rgba(255,255,255,.04);}
+  .pop-toggle{width:28px;height:15px;border-radius:8px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0;}
+  .pop-toggle::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--dim);transition:all .2s;}
+  .pop-toggle.on{background:rgba(20,184,166,.35);}
+  .pop-toggle.on::after{left:15px;background:var(--teal);}
+  .pop-sep{height:1px;background:var(--border);margin:6px 0;}
+  .pop-hint{font-size:9px;color:var(--dim);line-height:1.5;}
+  .pop-hint kbd{display:inline-block;padding:0 4px;border:1px solid var(--border);border-radius:3px;font-family:inherit;font-size:9px;background:rgba(255,255,255,.03);color:var(--muted);}
+
+  /* ===== 区块 ===== */
+  .sec{border-left:3px solid transparent;border-radius:6px;padding:9px 11px;margin-bottom:8px;transition:background .2s,box-shadow .2s,opacity .3s;}
+  .sec.sh{box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);}
+  .sec.sd{opacity:.1;pointer-events:none;}
+  .sec[data-s=basic]{border-left-color:var(--blue);}         .sec[data-s=basic].sh{background:rgba(59,130,246,.07);}
+  .sec[data-s=meta]{border-left-color:var(--slate);}          .sec[data-s=meta].sh{background:rgba(100,116,139,.07);}
+  .sec[data-s=env]{border-left-color:var(--amber);}           .sec[data-s=env].sh{background:rgba(245,158,11,.07);}
+  .sec[data-s=tools]{border-left-color:var(--emerald);}       .sec[data-s=tools].sh{background:rgba(16,185,129,.07);}
+  .sec[data-s=files]{border-left-color:var(--violet);}        .sec[data-s=files].sh{background:rgba(139,92,246,.07);}
+  .sec[data-s=exec]{border-left-color:var(--teal);}           .sec[data-s=exec].sh{background:rgba(20,184,166,.07);}
+  .sec[data-s=doc]{border-left-color:var(--teal);}            .sec[data-s=doc].sh{background:rgba(20,184,166,.07);}
+
+  /* 区块标题行 */
+  .sl{display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer;user-select:none;}
+  .dt{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  [data-s=basic] .dt{background:var(--blue);}   [data-s=meta] .dt{background:var(--slate);}
+  [data-s=env] .dt{background:var(--amber);}    [data-s=tools] .dt{background:var(--emerald);}
+  [data-s=files] .dt{background:var(--violet);} [data-s=exec] .dt{background:var(--teal);}
+  [data-s=doc] .dt{background:var(--teal);}
+  .sl .tt{font-size:12px;font-weight:600;}
+  .bg{font-size:10px;padding:1px 5px;border-radius:10px;background:rgba(255,255,255,.07);color:var(--muted);}
+  .ca{font-size:8px;color:var(--dim);transition:transform .15s;flex-shrink:0;}
+  .sec.col .ca{transform:rotate(-90deg);}
+  .clp{transition:max-height .25s ease,opacity .2s;overflow:hidden;}
+  .sec.col .clp{max-height:0!important;opacity:0;}
+  .sh-txt{font-size:9px;color:var(--dim);font-family:'SF Mono',Monaco,monospace;margin-bottom:6px;padding-left:13px;}
+
+  /* 只读区块 */
+  .sec-ro .ecard{background:rgba(255,255,255,.015);border-style:dashed;}
+  .sec-ro{opacity:.72;}
+  .ro-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--dim);display:inline-flex;align-items:center;gap:3px;}
+
+  /* ===== 编辑器组件 ===== */
+  .ecard{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;}
+  .fr{display:flex;gap:8px;padding:4px;font-size:12px;cursor:pointer;border-radius:3px;transition:background .15s;}
+  .fr:hover{background:rgba(255,255,255,.03);}
+  .fl{width:38px;flex-shrink:0;color:var(--muted);text-align:right;font-size:11px;}
+  .fv{font-family:'SF Mono',Monaco,monospace;font-size:11px;word-break:break-all;}
+  .et{width:100%;font-size:12px;border-collapse:collapse;}
+  .et th{text-align:left;padding:4px 6px;background:rgba(255,255,255,.03);color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;}
+  .et td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.04);}
+  .et tbody tr{cursor:pointer;transition:background .15s;}
+  .et tbody tr:hover{background:rgba(255,255,255,.025);}
+  .en{font-family:'SF Mono',Monaco,monospace;font-size:10px;font-weight:600;}
+  .ed{color:var(--muted);}
+  .ri{display:inline-flex;flex-direction:column;align-items:flex-end;}
+  .rp{font-size:9px;color:rgba(255,255,255,.15);font-family:monospace;line-height:1.3;}
+  .ri:hover .rp{color:rgba(255,255,255,.45);}
+  .rc{width:24px;text-align:right;vertical-align:top;padding-top:5px!important;}
+  .tc{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:6px 10px;margin-bottom:4px;cursor:pointer;transition:background .15s;}
+  .tc:hover{background:rgba(255,255,255,.03);}
+  .tn{font-family:monospace;font-size:12px;font-weight:600;}
+  .td{font-size:10px;color:var(--muted);}
+  .pi{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:3px;cursor:pointer;font-size:11px;transition:background .15s;}
+  .pi:hover{background:rgba(255,255,255,.03);}
+  .pi-indent{padding-left:14px;color:var(--dim);}
+  .di{display:flex;align-items:center;gap:4px;font-size:11px;padding:2px 0;}
+  .dh{color:var(--dim);font-family:monospace;font-size:9px;min-width:16px;}
+
+  /* ===== 预览代码 ===== */
+  .pc{font-family:'SF Mono',Monaco,'Cascadia Code',monospace;font-size:10px;line-height:1.65;white-space:pre-wrap;word-break:break-all;color:#a1a1aa;}
+  .pc .k{color:#7dd3fc;} .pc .s{color:#86efac;} .pc .b{color:#fbbf24;}
+  .pc .h{color:var(--text);font-weight:600;} .pc .dm{color:var(--dim);}
+  .pf{display:block;padding:1px 3px;border-radius:2px;transition:background .15s;cursor:pointer;}
+  .pf:hover{background:rgba(255,255,255,.025);}
+
+  /* ===== 字段级高亮 ===== */
+  [data-field]{transition:background .15s;border-radius:3px;}
+  [data-field].fa{background:rgba(59,130,246,.13)!important;}
+  [data-field].fm{background:rgba(59,130,246,.07)!important;outline:1px dashed rgba(59,130,246,.35);}
+
+  /* ===== 元素关系高亮 ===== */
+  .en{transition:background .2s,opacity .2s;border-radius:2px;padding:0 1px;}
+  .en.has-rel{cursor:pointer;}
+  .en.has-rel:hover{background:rgba(59,130,246,.1);box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+  .en.es{background:rgba(59,130,246,.25);color:#fff;}
+  .en.er{background:rgba(245,158,11,.18);}
+  .en.edm{opacity:.2;}
+  @keyframes elFlash{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5);}50%{box-shadow:0 0 0 6px rgba(59,130,246,.2);}100%{box-shadow:0 0 0 0 rgba(59,130,246,0);}}
+  .en.flash{animation:elFlash .6s ease 2;border-radius:2px;}
+
+  /* ===== 关系指示器（弱化）===== */
+  .ri{display:inline-flex;flex-direction:column;align-items:flex-end;gap:0;cursor:default;user-select:none;flex-shrink:0;}
+  .rp{display:flex;align-items:center;gap:1px;font-size:9px;color:rgba(255,255,255,.15);line-height:1.3;font-family:monospace;transition:color .15s;}
+  .ri:hover .rp{color:rgba(255,255,255,.45);}
+  .rc{width:28px;text-align:right;vertical-align:top;padding-top:5px!important;}
+
+  /* ===== 气泡浮窗 ===== */
+  .bub{position:fixed;z-index:200;background:#1c1c20;border:1px solid #333;border-radius:8px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.5);max-width:240px;min-width:160px;display:none;cursor:pointer;transition:border-color .15s;}
+  .bub:hover{border-color:#555;}
+  .bub.vis{display:block;}
+  .bub-t{font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:monospace;}
+  .bub-g{margin-bottom:6px;} .bub-g:last-of-type{margin-bottom:0;}
+  .bub-gl{font-size:10px;color:var(--dim);margin-bottom:3px;display:flex;align-items:center;gap:4px;}
+  .bub-gl .ti{font-family:monospace;font-size:11px;}
+  .bub-i{padding:2px 6px;font-size:11px;cursor:pointer;border-radius:3px;transition:background .1s;color:var(--muted);}
+  .bub-i:hover{background:rgba(59,130,246,.12);color:var(--text);}
+
+  /* ===== Hover tooltip ===== */
+  .htip{position:fixed;z-index:300;background:#1c1c20;border:1px solid #444;border-radius:5px;padding:3px 8px;font-size:9px;color:var(--muted);white-space:nowrap;pointer-events:none;display:none;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,.4);}
+  .htip.vis{display:block;}
+
+  /* ===== 关系路径栏 ===== */
+  .rel-bar{display:none;border-top:1px solid var(--border);padding:6px 16px;background:rgba(24,24,27,.9);max-height:140px;overflow-y:auto;}
+  .rel-bar.vis{display:block;}
+  .rel-hd{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+  .rel-nm{font-size:12px;font-weight:700;font-family:monospace;color:var(--text);}
+  .rel-x{font-size:10px;color:var(--dim);cursor:pointer;margin-left:auto;padding:2px 6px;border-radius:3px;}
+  .rel-x:hover{background:rgba(255,255,255,.06);color:var(--text);}
+  .pr{display:flex;align-items:baseline;gap:6px;padding:2px 0;font-size:11px;}
+  .pr-t{font-family:monospace;font-size:11px;color:var(--dim);width:14px;flex-shrink:0;text-align:center;}
+  .pr-tg{font-family:monospace;font-weight:600;cursor:pointer;color:var(--blue);min-width:110px;}
+  .pr-tg:hover{text-decoration:underline;}
+  .pr-d{color:var(--muted);font-size:10px;font-style:italic;}
+
+  /* ===== 底部上下文栏 ===== */
+  .pbar{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:5px 16px;font-size:10px;color:var(--dim);display:flex;align-items:center;gap:0;min-height:28px;}
+  .pbar-sec{display:flex;align-items:center;gap:4px;}
+  .pbar-sec .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+  .pbar-sec .name{color:var(--muted);font-weight:600;font-size:10px;}
+  .pbar-sec .pos{font-family:monospace;font-size:9px;}
+  .pbar-sep{color:var(--border);margin:0 8px;}
+  .pbar-pct{font-family:monospace;font-size:9px;display:flex;align-items:center;gap:4px;}
+  .pbar-pct .bar{width:40px;height:3px;border-radius:2px;background:var(--border);overflow:hidden;position:relative;}
+  .pbar-pct .fill{height:100%;border-radius:2px;transition:width 80ms;}
+  .pbar-hint{margin-left:auto;font-size:9px;color:var(--dim);}
+  .pbar-hint kbd{display:inline-block;padding:0 3px;border:1px solid var(--border);border-radius:3px;font-family:inherit;font-size:9px;background:rgba(255,255,255,.03);color:var(--muted);margin:0 1px;}
+  /* Alt 独立滚动指示 */
+  .pbar-alt{color:var(--amber);font-weight:600;display:none;}
+  .pbar-alt.vis{display:flex;align-items:center;gap:4px;}
+
+  /* ===== 桥线 tooltip ===== */
+  .bridge-tip{position:fixed;z-index:300;background:#1c1c20;border:1px solid #333;border-radius:5px;padding:4px 9px;font-size:10px;color:var(--muted);pointer-events:none;display:none;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.5);}
+  .bridge-tip.vis{display:block;}
+</style>
+</head>
+<body>
+
+<!-- Architecture bar -->
+<div class="arch-bar">
+  <span class="lbl">逻辑层:</span>
+  <div class="arch-chip" data-l="identity" onclick="focusL('identity')"><span>🪪</span> 身份</div>
+  <span class="arch-arrow">→</span>
+  <div class="arch-chip" data-l="deps" onclick="focusL('deps')"><span>📦</span> 依赖</div>
+  <span class="arch-arrow">→</span>
+  <div class="arch-chip" data-l="caps" onclick="focusL('caps')"><span>⚡</span> 能力</div>
+  <span class="arch-arrow">→</span>
+  <div class="arch-chip" data-l="config" onclick="focusL('config')"><span>⚙️</span> 配置</div>
+  <span class="arch-arrow">→</span>
+  <div class="arch-chip" data-l="exec" onclick="focusL('exec')"><span>▶️</span> 执行</div>
+  <span class="arch-arrow">→</span>
+  <div class="arch-chip" data-l="ops" onclick="focusL('ops')"><span>🔧</span> 运维</div>
+</div>
+
+<div class="layout">
+
+<!-- ==================== 左：可视化编辑 ==================== -->
+<div class="panel">
+  <div class="ph">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg>
+    <strong>可视化编辑</strong>
+    <span style="font-size:10px;color:var(--dim)">tech-news-digest-cn / SKILL.md</span>
+  </div>
+  <div class="pb" id="eScr">
+
+    <!-- 基本信息 -->
+    <div class="sec" data-s="basic" data-side="e" data-ly="identity">
+      <div class="sl" onclick="navTo('basic','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">基本信息</span></div>
+      <div class="clp">
+        <div class="sh-txt">frontmatter → name, description, version, homepage</div>
+        <div class="ecard">
+          <div class="fr" data-field="f-name"><span class="fl">名称</span><span class="fv">tech-news-digest-cn</span></div>
+          <div class="fr" data-field="f-desc"><span class="fl">描述</span><span class="fv">生成科技新闻摘要，具有统一数据源模型、质量评分和多格式输出。</span></div>
+          <div class="fr" data-field="f-ver"><span class="fl">版本</span><span class="fv">3.16.0</span></div>
+          <div class="fr" data-field="f-home"><span class="fl">主页</span><span class="fv" style="color:var(--blue)">https://github.com/draco-agent/tech-news-digest</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 元数据（只读）-->
+    <div class="sec sec-ro" data-s="meta" data-side="e" data-ly="deps">
+      <div class="sl"><span class="ca">▼</span><span class="dt"></span><span class="tt">元数据</span><span class="ro-badge">🔒 只读</span></div>
+      <div class="clp">
+        <div class="sh-txt">frontmatter → metadata.openclaw</div>
+        <div class="ecard">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">必需依赖</div>
+          <div style="font-size:10px;font-family:monospace;padding-left:6px;line-height:1.8;"><span class="en" data-eid="python3">python3</span></div>
+          <div style="font-size:10px;color:var(--muted);margin:6px 0 4px;">可选依赖</div>
+          <div style="font-size:10px;font-family:monospace;padding-left:6px;line-height:1.8;color:var(--dim);"><span class="en" data-eid="mail">mail</span> · msmtp · <span class="en" data-eid="gog">gog</span> · <span class="en" data-eid="gh">gh</span> · openssl · <span class="en" data-eid="weasyprint">weasyprint</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 环境变量 -->
+    <div class="sec" data-s="env" data-side="e" data-ly="deps">
+      <div class="sl" onclick="navTo('env','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">环境变量</span><span class="bg">11</span></div>
+      <div class="clp">
+        <div class="sh-txt">frontmatter → env[]</div>
+        <table class="et"><thead><tr><th>变量名</th><th>必需</th><th>描述</th><th></th></tr></thead><tbody>
+          <tr data-field="f-e-tab"><td><span class="en" data-eid="TWITTER_API_BACKEND">TWITTER_API_BACKEND</span></td><td>可选</td><td class="ed">Twitter API 后端选择</td><td class="rc"><div class="ri" data-ri="TWITTER_API_BACKEND"><span class="rp">→1</span></div></td></tr>
+          <tr data-field="f-e-xbt"><td><span class="en" data-eid="X_BEARER_TOKEN">X_BEARER_TOKEN</span></td><td>可选</td><td class="ed">Twitter/X 访问令牌</td><td class="rc"><div class="ri" data-ri="X_BEARER_TOKEN"><span class="rp">→1</span></div></td></tr>
+          <tr data-field="f-e-ght"><td><span class="en" data-eid="GITHUB_TOKEN">GITHUB_TOKEN</span></td><td>可选</td><td class="ed">GitHub 令牌，提高 API 速率限制</td><td class="rc"><div class="ri" data-ri="GITHUB_TOKEN"><span class="rp">→1</span><span class="rp">↔1</span></div></td></tr>
+          <tr data-field="f-e-bak"><td><span class="en" data-eid="BRAVE_API_KEYS">BRAVE_API_KEYS</span></td><td>可选</td><td class="ed">Brave 搜索 API 密钥</td><td class="rc"><div class="ri" data-ri="BRAVE_API_KEYS"><span class="rp">→1</span><span class="rp">↔1</span></div></td></tr>
+          <tr data-field="f-e-tak"><td><span class="en" data-eid="TAVILY_API_KEY">TAVILY_API_KEY</span></td><td>可选</td><td class="ed">Tavily 搜索 API 密钥</td><td class="rc"><div class="ri" data-ri="TAVILY_API_KEY"><span class="rp">→1</span><span class="rp">↔1</span></div></td></tr>
+          <tr><td colspan="4" style="color:var(--dim);text-align:center;padding:4px;font-size:10px;">… 共 11 项 …</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <!-- 工具 -->
+    <div class="sec" data-s="tools" data-side="e" data-ly="caps">
+      <div class="sl" onclick="navTo('tools','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">工具</span><span class="bg">3</span></div>
+      <div class="clp">
+        <div class="sh-txt">frontmatter → tools[]</div>
+        <div class="tc" data-field="f-t-py"><div style="display:flex;align-items:flex-start;justify-content:space-between;"><div><span class="tn"><span class="en" data-eid="python3">python3</span></span> <span class="td">— 必需。运行数据收集和合并脚本。</span></div><div class="ri" data-ri="python3"><span class="rp">→1</span></div></div></div>
+        <div class="tc" data-field="f-t-mail"><div style="display:flex;align-items:flex-start;justify-content:space-between;"><div><span class="tn"><span class="en" data-eid="mail">mail</span></span> <span class="td">— 可选。基于 msmtp 的邮件命令。</span></div><div class="ri" data-ri="mail"><span class="rp">↔1</span></div></div></div>
+        <div class="tc" data-field="f-t-gog"><div style="display:flex;align-items:flex-start;justify-content:space-between;"><div><span class="tn"><span class="en" data-eid="gog">gog</span></span> <span class="td">— 可选。Gmail CLI 备用。</span></div><div class="ri" data-ri="gog"><span class="rp">↔1</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- 文件权限 -->
+    <div class="sec" data-s="files" data-side="e" data-ly="caps">
+      <div class="sl" onclick="navTo('files','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">文件权限</span></div>
+      <div class="clp">
+        <div class="sh-txt">frontmatter → files { read[], write[] }</div>
+        <div class="ecard">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">📖 读取</div>
+          <div style="font-size:10px;font-family:monospace;line-height:1.8;padding-left:6px;" data-field="f-fr">
+            <span class="en" data-eid="config-defaults">config/defaults/</span><br><span class="en" data-eid="references-dir">references/</span><br><span class="en" data-eid="scripts-dir">scripts/</span><br>&lt;workspace&gt;/archive/tech-news-digest/
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin:7px 0 2px;">✏️ 写入</div>
+          <div style="font-size:10px;font-family:monospace;line-height:1.8;padding-left:6px;" data-field="f-fw">
+            /tmp/td-*.json<br>/tmp/td-email.html<br>/tmp/td-digest.pdf
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 脚本管道 -->
+    <div class="sec" data-s="exec" data-side="e" data-ly="exec">
+      <div class="sl" onclick="navTo('exec','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">脚本管道</span><span class="bg">执行层</span></div>
+      <div class="clp">
+        <div class="sh-txt">markdown body → ## 脚本管道</div>
+        <div class="ecard" style="padding:6px 8px;">
+          <div class="pi" data-field="f-x-pipe" style="margin-bottom:3px;"><span class="en" data-eid="run-pipeline" style="font-size:12px;font-weight:600;">run-pipeline.py</span><div class="ri" data-ri="run-pipeline" style="margin-left:auto;"><span class="rp">→6</span></div></div>
+          <div class="pi-indent">
+            <div class="pi" data-field="f-x-rss">→ <span class="en" data-eid="fetch-rss">fetch-rss.py</span></div>
+            <div class="pi" data-field="f-x-tw">→ <span class="en" data-eid="fetch-twitter">fetch-twitter.py</span></div>
+            <div class="pi" data-field="f-x-web">→ <span class="en" data-eid="fetch-web">fetch-web.py</span></div>
+            <div class="pi" data-field="f-x-gh">→ <span class="en" data-eid="fetch-github">fetch-github.py</span></div>
+            <div class="pi" data-field="f-x-rd">→ <span class="en" data-eid="fetch-reddit">fetch-reddit.py</span></div>
+            <div class="pi" data-field="f-x-merge" style="margin-top:3px;">→ <span class="en" data-eid="merge-sources">merge-sources.py</span><div class="ri" data-ri="merge-sources" style="margin-left:auto;"><span class="rp">→2</span></div></div>
+            <div class="pi" data-field="f-x-pdf">→ <span class="en" data-eid="generate-pdf">generate-pdf.py</span><div class="ri" data-ri="generate-pdf" style="margin-left:auto;"><span class="rp">→2</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文档结构 -->
+    <div class="sec" data-s="doc" data-side="e" data-ly="ops">
+      <div class="sl" onclick="navTo('doc','p')"><span class="ca">▼</span><span class="dt"></span><span class="tt">文档结构</span><span class="bg">6 节</span></div>
+      <div class="clp">
+        <div class="sh-txt">markdown body → headings</div>
+        <div class="di" data-field="f-d-h1"><span class="dh">#</span> 科技新闻摘要</div>
+        <div class="di" data-field="f-d-qs" style="padding-left:12px"><span class="dh">##</span> 快速开始</div>
+        <div class="di" data-field="f-d-ds" style="padding-left:12px"><span class="dh">##</span> 数据源架构</div>
+        <div class="di" data-field="f-d-pp" style="padding-left:12px"><span class="dh">##</span> 脚本管道</div>
+        <div class="di" data-field="f-d-out" style="padding-left:12px"><span class="dh">##</span> 输出格式</div>
+        <div class="di" data-field="f-d-cfg" style="padding-left:12px"><span class="dh">##</span> 配置说明</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== 桥线列（仅提供间距，SVG 单独叠加）==================== -->
+<div class="bridge-col" id="bridgeCol">
+  <div class="bridge-col-ph" id="bridgePhZone">
+    <div class="bridge-ctrl" id="bridgeCtrl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H7A5 5 0 0 1 7 7h2"/>
+        <path d="M15 7h2a5 5 0 1 1 0 10h-2"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+    </div>
+    <div class="bridge-pop" id="bridgePop">
+      <div class="pop-title">面板联动</div>
+      <div class="pop-row" onclick="toggleSync()">
+        <div class="pop-toggle on" id="syncToggle"></div>
+        <span>滚动同步</span>
+      </div>
+      <div class="pop-row" onclick="toggleBridge()">
+        <div class="pop-toggle on" id="bridgeToggle"></div>
+        <span>桥线连接</span>
+      </div>
+      <div class="pop-sep"></div>
+      <div class="pop-hint">
+        <kbd>Alt</kbd> + 滚动 = 临时独立滚动
+      </div>
+    </div>
+  </div>
+  <div class="bridge-col-body" id="bridgeBody"></div>
+</div>
+
+<!-- ==================== 右：源码预览 ==================== -->
+<div class="panel">
+  <div class="ph">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <strong>源码预览</strong>
+    <span style="margin-left:auto;font-size:10px;color:var(--dim)">SKILL.md</span>
+  </div>
+  <div class="pb" id="pScr">
+
+    <div class="sec" data-s="basic" data-side="p" data-ly="identity">
+      <div class="sl" onclick="navTo('basic','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">基本信息</span></div>
+      <div class="clp"><div class="pc"><span class="dm">---</span>
+<div class="pf" data-field="f-name"><span class="k">"name"</span>: <span class="s">"tech-news-digest-cn"</span></div><div class="pf" data-field="f-desc"><span class="k">"description"</span>: <span class="s">"生成科技新闻摘要，具有统一数据源模型、
+  质量评分和多格式输出..."</span></div><div class="pf" data-field="f-ver"><span class="k">"version"</span>: <span class="s">"3.16.0"</span></div><div class="pf" data-field="f-home"><span class="k">"homepage"</span>: <span class="s">"https://github.com/draco-agent/tech-news-digest"</span></div></div></div>
+    </div>
+
+    <div class="sec" data-s="meta" data-side="p" data-ly="deps">
+      <div class="sl"><span class="ca">▼</span><span class="dt"></span><span class="tt">元数据</span><span class="bg">只读</span></div>
+      <div class="clp"><div class="pc"><span class="k">"metadata"</span>:
+  <span class="k">"openclaw"</span>:
+    <span class="k">"requires"</span>:
+      <span class="k">"bins"</span>: [<span class="s">"<span class="en" data-eid="python3">python3</span>"</span>]
+    <span class="k">"optionalBins"</span>: [
+      <span class="s">"<span class="en" data-eid="mail">mail</span>"</span>, <span class="s">"msmtp"</span>, <span class="s">"<span class="en" data-eid="gog">gog</span>"</span>,
+      <span class="s">"<span class="en" data-eid="gh">gh</span>"</span>, <span class="s">"openssl"</span>, <span class="s">"<span class="en" data-eid="weasyprint">weasyprint</span>"</span>
+    ]</div></div>
+    </div>
+
+    <div class="sec" data-s="env" data-side="p" data-ly="deps">
+      <div class="sl" onclick="navTo('env','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">环境变量</span><span class="bg">11</span></div>
+      <div class="clp"><div class="pc"><span class="k">"env"</span>:
+<div class="pf" data-field="f-e-tab">  - <span class="k">"name"</span>: <span class="s">"<span class="en" data-eid="TWITTER_API_BACKEND">TWITTER_API_BACKEND</span>"</span>
+    <span class="k">"required"</span>: <span class="b">false</span>
+    <span class="k">"description"</span>: <span class="s">"'official'、'twitterapiio' 或 'auto'"</span></div><div class="pf" data-field="f-e-xbt">  - <span class="k">"name"</span>: <span class="s">"<span class="en" data-eid="X_BEARER_TOKEN">X_BEARER_TOKEN</span>"</span>
+    <span class="k">"required"</span>: <span class="b">false</span>
+    <span class="k">"description"</span>: <span class="s">"Twitter/X API 访问令牌"</span></div><div class="pf" data-field="f-e-ght">  - <span class="k">"name"</span>: <span class="s">"<span class="en" data-eid="GITHUB_TOKEN">GITHUB_TOKEN</span>"</span>
+    <span class="k">"required"</span>: <span class="b">false</span>
+    <span class="k">"description"</span>: <span class="s">"GitHub 令牌，用于提高 API 速率限制"</span></div><div class="pf" data-field="f-e-bak">  - <span class="k">"name"</span>: <span class="s">"<span class="en" data-eid="BRAVE_API_KEYS">BRAVE_API_KEYS</span>"</span>
+    <span class="k">"required"</span>: <span class="b">false</span>
+    <span class="k">"description"</span>: <span class="s">"Brave 搜索 API 密钥（逗号分隔用于轮换）"</span></div><div class="pf" data-field="f-e-tak">  - <span class="k">"name"</span>: <span class="s">"<span class="en" data-eid="TAVILY_API_KEY">TAVILY_API_KEY</span>"</span>
+    <span class="k">"required"</span>: <span class="b">false</span>
+    <span class="k">"description"</span>: <span class="s">"Tavily 搜索 API 密钥"</span></div><span class="dm">  … (共 11 项)</span></div></div>
+    </div>
+
+    <div class="sec" data-s="tools" data-side="p" data-ly="caps">
+      <div class="sl" onclick="navTo('tools','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">工具</span><span class="bg">3</span></div>
+      <div class="clp"><div class="pc"><span class="k">"tools"</span>:
+<div class="pf" data-field="f-t-py">  - <span class="k">"<span class="en" data-eid="python3">python3</span>"</span>: <span class="s">"必需。运行数据收集和合并脚本。"</span></div><div class="pf" data-field="f-t-mail">  - <span class="k">"<span class="en" data-eid="mail">mail</span>"</span>: <span class="s">"可选。基于 msmtp 的邮件命令，用于电子邮件传送。"</span></div><div class="pf" data-field="f-t-gog">  - <span class="k">"<span class="en" data-eid="gog">gog</span>"</span>: <span class="s">"可选。Gmail CLI，电子邮件传送备用。"</span></div></div></div>
+    </div>
+
+    <div class="sec" data-s="files" data-side="p" data-ly="caps">
+      <div class="sl" onclick="navTo('files','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">文件权限</span></div>
+      <div class="clp"><div class="pc"><span class="k">"files"</span>:
+<div class="pf" data-field="f-fr">  <span class="k">"read"</span>:
+    - <span class="s">"<span class="en" data-eid="config-defaults">config/defaults/</span>"</span>: <span class="s">"默认源和主题配置"</span>
+    - <span class="s">"<span class="en" data-eid="references-dir">references/</span>"</span>: <span class="s">"提示模板和输出模板"</span>
+    - <span class="s">"<span class="en" data-eid="scripts-dir">scripts/</span>"</span>: <span class="s">"Python 管道脚本"</span>
+    - <span class="s">"&lt;workspace&gt;/archive/..."</span></div><div class="pf" data-field="f-fw">  <span class="k">"write"</span>:
+    - <span class="s">"/tmp/td-*.json"</span>: <span class="s">"临时管道中间输出"</span>
+    - <span class="s">"/tmp/td-email.html"</span>
+    - <span class="s">"/tmp/td-digest.pdf"</span></div><span class="dm">---</span></div></div>
+    </div>
+
+    <div class="sec" data-s="exec" data-side="p" data-ly="exec">
+      <div class="sl" onclick="navTo('exec','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">脚本管道</span></div>
+      <div class="clp"><div class="pc">
+<div class="pf" data-field="f-d-pp"><span class="h">## 脚本管道</span></div>
+<div class="pf" data-field="f-x-rss"><span class="h">### <span class="en" data-eid="fetch-rss">collect-rss.py</span></span>
+从 RSS 源收集文章 → /tmp/td-rss.json</div>
+<div class="pf" data-field="f-x-tw"><span class="h">### <span class="en" data-eid="fetch-twitter">collect-twitter.py</span></span>
+收集 Twitter/X KOL 推文 → /tmp/td-twitter.json</div>
+<div class="pf" data-field="f-x-web"><span class="h">### <span class="en" data-eid="fetch-web">collect-web.py</span></span>
+Web 搜索数据收集 → /tmp/td-web.json</div>
+<div class="pf" data-field="f-x-gh"><span class="h">### <span class="en" data-eid="fetch-github">collect-github.py</span></span>
+收集 GitHub Releases → /tmp/td-github.json</div>
+<div class="pf" data-field="f-x-rd"><span class="h">### <span class="en" data-eid="fetch-reddit">collect-reddit.py</span></span>
+收集 Reddit 讨论 → /tmp/td-reddit.json</div>
+<div class="pf" data-field="f-x-merge"><span class="h">### <span class="en" data-eid="merge-sources">merge-and-score.py</span></span>
+合并所有数据源，按 <span class="en" data-eid="topics.json">topics.json</span> 分组
+质量评分 + 去重 → /tmp/td-merged.json</div>
+<div class="pf" data-field="f-x-pdf"><span class="h">### <span class="en" data-eid="generate-pdf">generate-pdf.py</span></span>
+使用 <span class="en" data-eid="weasyprint">weasyprint</span> 将 HTML 转为 PDF 报告</div></div></div>
+    </div>
+
+    <div class="sec" data-s="doc" data-side="p" data-ly="ops">
+      <div class="sl" onclick="navTo('doc','e')"><span class="ca">▼</span><span class="dt"></span><span class="tt">文档正文</span></div>
+      <div class="clp"><div class="pc">
+<div class="pf" data-field="f-d-h1"><span class="h"># 科技新闻摘要</span>
+具有统一数据源模型、质量评分管道和多格式输出
+的自动化科技新闻摘要系统。</div>
+<div class="pf" data-field="f-d-qs"><span class="h">## 快速开始</span>
+1. 配置设置：默认配置位于 <span class="en" data-eid="config-defaults">config/defaults/</span></div>
+<div class="pf" data-field="f-d-ds"><span class="h">## 数据源架构</span>
+统一模型支持：RSS、Twitter/X、GitHub、Reddit、Web Search。</div>
+<div class="pf" data-field="f-d-out"><span class="h">## 输出格式</span>
+支持 Markdown、HTML、PDF、邮件多种格式...</div>
+<div class="pf" data-field="f-d-cfg"><span class="h">## 配置说明</span>
+详见 <span class="en" data-eid="sources.json">sources.json</span> 和
+<span class="en" data-eid="topics.json">topics.json</span></div></div></div>
+    </div>
+
+  </div>
+</div>
+
+  <!-- SVG 桥线叠加层：在所有面板 DOM 之后，z-index:20，不受 panel overflow:hidden 限制 -->
+  <svg id="bridgeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+</div><!-- /layout -->
+
+<!-- 桥线 tooltip -->
+<div class="bridge-tip" id="bridgeTip"></div>
+<!-- 关系气泡浮窗 -->
+<div class="bub" id="bub"></div>
+<!-- Hover tooltip -->
+<div class="htip" id="htip">点击查看关联关系</div>
+
+<!-- 关系路径栏（选中元素时出现）-->
+<div class="rel-bar" id="relBar">
+  <div class="rel-hd"><span class="rel-nm" id="relNm"></span><span class="rel-x" onclick="clrSel()">✕ 清除</span></div>
+  <div id="relRows"></div>
+</div>
+
+<!-- 底部上下文栏 -->
+<div class="pbar">
+  <div class="pbar-sec" id="pbarSec">
+    <span class="dot" id="pbarDot"></span>
+    <span class="name" id="pbarName">基本信息</span>
+    <span class="pos" id="pbarPos">(1/7)</span>
+  </div>
+  <span class="pbar-sep">·</span>
+  <div class="pbar-pct">
+    <span style="font-size:8px;">左</span>
+    <div class="bar"><div class="fill" id="pbarLFill" style="width:0;background:var(--blue);"></div></div>
+    <span id="pbarLPct">0%</span>
+    <span style="color:var(--dim);margin:0 2px;">↔</span>
+    <span style="font-size:8px;">右</span>
+    <div class="bar"><div class="fill" id="pbarRFill" style="width:0;background:var(--emerald);"></div></div>
+    <span id="pbarRPct">0%</span>
+  </div>
+  <span class="pbar-sep">·</span>
+  <div class="pbar-alt" id="pbarAlt">⚡ 独立滚动中</div>
+  <div class="pbar-hint" id="pbarHint"><kbd>Alt</kbd>+滚动 = 独立滚动</div>
+</div>
+
+<script>
+// ===== 常量 =====
+const SEC_COLORS = {
+  basic:'#3b82f6', meta:'#64748b', env:'#f59e0b',
+  tools:'#10b981', files:'#8b5cf6', exec:'#14b8a6', doc:'#14b8a6'
+};
+const SECTIONS = ['basic','meta','env','tools','files','exec','doc'];
+const SEC_NAMES = {basic:'基本信息',meta:'元数据',env:'环境变量',tools:'工具',files:'文件权限',exec:'脚本管道',doc:'文档结构'};
+const LM = {identity:['basic'],deps:['meta','env'],caps:['tools','files'],config:[],exec:['exec'],ops:['doc']};
+const EXTEND = 12;
+
+let curLayer = null, syncEnabled = true, bridgeEnabled = true, hovSec = null;
+let userPanel = null;   // 'e' | 'p' | null
+let pendingRaf = false; // 合并 rAF 标记
+let selEid = null;      // 当前选中的元素 ID（关系高亮）
+
+// ===== 关系数据（描述严格来自 SKILL.md 原文）=====
+const R = {
+  'GITHUB_TOKEN':[{t:'→',id:'fetch-github',lb:'fetch-github.py',d:'GitHub 令牌，用于提高 API 速率限制'},{t:'↔',id:'gh',lb:'gh (CLI)',d:'如果未设置，从 GitHub App 自动生成'}],
+  'TWITTER_API_BACKEND':[{t:'→',id:'fetch-twitter',lb:'fetch-twitter.py',d:"Twitter API 后端：'official'、'twitterapiio' 或 'auto'"}],
+  'X_BEARER_TOKEN':[{t:'→',id:'fetch-twitter',lb:'fetch-twitter.py',d:'Twitter/X API 访问令牌'}],
+  'BRAVE_API_KEYS':[{t:'→',id:'fetch-web',lb:'fetch-web.py',d:'Brave 搜索 API 密钥（逗号分隔用于轮换）'},{t:'↔',id:'TAVILY_API_KEY',lb:'TAVILY_API_KEY',d:'Web 搜索后端选择'}],
+  'TAVILY_API_KEY':[{t:'→',id:'fetch-web',lb:'fetch-web.py',d:'Tavily 搜索 API 密钥'},{t:'↔',id:'BRAVE_API_KEYS',lb:'BRAVE_API_KEYS',d:'Web 搜索后端选择'}],
+  'python3':[{t:'→',id:'run-pipeline',lb:'run-pipeline.py',d:'必需。运行数据收集和合并脚本。'}],
+  'mail':[{t:'↔',id:'gog',lb:'gog',d:'Gmail CLI，电子邮件传送备用'}],
+  'gog':[{t:'↔',id:'mail',lb:'mail',d:'基于 msmtp 的邮件命令，用于电子邮件传送'}],
+  'run-pipeline':[{t:'→',id:'fetch-rss',lb:'fetch-rss.py',d:'从 RSS 源收集文章'},{t:'→',id:'fetch-twitter',lb:'fetch-twitter.py',d:'收集 Twitter/X KOL 推文'},{t:'→',id:'fetch-web',lb:'fetch-web.py',d:'Web 搜索数据收集'},{t:'→',id:'fetch-github',lb:'fetch-github.py',d:'收集 GitHub Releases'},{t:'→',id:'fetch-reddit',lb:'fetch-reddit.py',d:'收集 Reddit 讨论'},{t:'→',id:'merge-sources',lb:'merge-sources.py',d:'合并数据源，质量评分，去重'}],
+  'merge-sources':[{t:'→',id:'topics.json',lb:'topics.json',d:'按主题分组合并数据'},{t:'→',id:'tmp-output',lb:'/tmp/td-*',d:'输出合并后的 JSON 数据'}],
+  'generate-pdf':[{t:'→',id:'weasyprint',lb:'weasyprint',d:'HTML 转 PDF 引擎'},{t:'→',id:'references-dir',lb:'references/',d:'读取输出模板'}],
+  'sources.json':[{t:'→',id:'fetch-rss',lb:'fetch-rss.py',d:'定义 RSS 数据源列表'},{t:'→',id:'fetch-twitter',lb:'fetch-twitter.py',d:'定义 Twitter KOL 列表'},{t:'→',id:'fetch-github',lb:'fetch-github.py',d:'定义 GitHub 仓库列表'}],
+  'topics.json':[{t:'→',id:'fetch-web',lb:'fetch-web.py',d:'定义搜索主题和关键词'},{t:'→',id:'merge-sources',lb:'merge-sources.py',d:'定义主题分组规则'}],
+  'config-defaults':[{t:'⊂',id:'sources.json',lb:'sources.json',d:'默认数据源配置'},{t:'⊂',id:'topics.json',lb:'topics.json',d:'默认主题配置'}],
+};
+const TL = {'→':'引用','↔':'替代','⊂':'包含'};
+
+const eScr = document.getElementById('eScr');
+const pScr = document.getElementById('pScr');
+const bridgeSvg = document.getElementById('bridgeSvg');
+const bridgeTip = document.getElementById('bridgeTip');
+const layout = document.querySelector('.layout');
+const bridgeCol = document.getElementById('bridgeCol');
+
+// ===== [优化1] 锚点缓存 =====
+// offsetTop 在滚动时不变，只在 resize/fold 时需要重建
+let eAnchors = [], pAnchors = [];
+
+function rebuildAnchors() {
+  eAnchors = buildAnchorsFor(eScr);
+  pAnchors = buildAnchorsFor(pScr);
+}
+function buildAnchorsFor(scr) {
+  const secs = scr.querySelectorAll('.sec');
+  const a = [];
+  secs.forEach(s => a.push(s.offsetTop - scr.offsetTop));
+  if (secs.length) {
+    const last = secs[secs.length - 1];
+    a.push(last.offsetTop - scr.offsetTop + last.offsetHeight);
+  }
+  return a;
+}
+
+// ===== 分段线性映射（纯计算，无 DOM 操作）=====
+function mapScroll(src, tgt, scrollTop) {
+  const n = src.length;
+  if (n < 2) return scrollTop;
+  if (scrollTop <= src[0]) return tgt[0] + (scrollTop - src[0]);
+  if (scrollTop >= src[n - 1]) return tgt[n - 1] + (scrollTop - src[n - 1]);
+  for (let i = 0; i < n - 1; i++) {
+    if (scrollTop < src[i + 1]) {
+      const span = src[i + 1] - src[i];
+      if (span === 0) return tgt[i];
+      return tgt[i] + (scrollTop - src[i]) / span * (tgt[i + 1] - tgt[i]);
+    }
+  }
+  return scrollTop;
+}
+
+// ===== Pointer 追踪 + Alt 键独立滚动 =====
+let altHeld = false;
+
+eScr.addEventListener('pointerenter', () => { userPanel = 'e'; });
+eScr.addEventListener('pointerleave', () => { if (userPanel === 'e') userPanel = null; });
+pScr.addEventListener('pointerenter', () => { userPanel = 'p'; });
+pScr.addEventListener('pointerleave', () => { if (userPanel === 'p') userPanel = null; });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Alt') { altHeld = true; updateAltUI(); }
+  if (e.key === 'Escape') { clrSel(); hideBub(); htip.classList.remove('vis'); }
+});
+document.addEventListener('keyup', e => { if (e.key === 'Alt') { altHeld = false; updateAltUI(); } });
+
+function updateAltUI() {
+  document.getElementById('pbarAlt').classList.toggle('vis', altHeld);
+  document.getElementById('pbarHint').style.display = altHeld ? 'none' : '';
+}
+
+// ===== 滚动事件 → 合并到单个 rAF =====
+// scroll 事件中只记录"需要同步"，实际同步 + 桥线更新都在 rAF 中批量执行
+let needSync = false;
+
+function onScroll(side) {
+  if (userPanel === side) needSync = true;
+  if (!pendingRaf) {
+    pendingRaf = true;
+    requestAnimationFrame(frame);
+  }
+}
+
+// 单帧内完成所有工作：同步 → 桥线更新 → 底部栏更新（读写分离）
+function frame() {
+  pendingRaf = false;
+
+  // WRITE: 同步目标面板的 scrollTop（Alt 键按住时跳过）
+  if (needSync && syncEnabled && !altHeld) {
+    needSync = false;
+    if (userPanel === 'e') {
+      pScr.scrollTop = mapScroll(eAnchors, pAnchors, eScr.scrollTop);
+    } else if (userPanel === 'p') {
+      eScr.scrollTop = mapScroll(pAnchors, eAnchors, pScr.scrollTop);
+    }
+  } else {
+    needSync = false;
+  }
+
+  updateBridgePositions();
+  updatePbar();
+}
+
+eScr.addEventListener('scroll', () => onScroll('e'), { passive: true });
+pScr.addEventListener('scroll', () => onScroll('p'), { passive: true });
+
+// ===== [优化2] 桥线：创建一次 SVG 元素，滚动时只更新属性 =====
+// 每个区块对应一组 SVG 元素：fill path + top line + bottom line + hover dot
+const bridgeEls = {};
+
+function initBridge() {
+  const layoutRect = layout.getBoundingClientRect();
+  bridgeSvg.setAttribute('width', layoutRect.width);
+  bridgeSvg.setAttribute('height', layoutRect.height);
+  bridgeSvg.setAttribute('viewBox', `0 0 ${layoutRect.width} ${layoutRect.height}`);
+  bridgeSvg.innerHTML = '';
+
+  SECTIONS.forEach(sec => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const fill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const topLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    const botLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
+    fill.dataset.sec = sec;
+    fill.style.cursor = 'pointer';
+    const c = SEC_COLORS[sec];
+    fill.setAttribute('fill', c);
+    topLine.setAttribute('stroke', c);
+    botLine.setAttribute('stroke', c);
+    dot.setAttribute('fill', c);
+    dot.setAttribute('r', '3');
+    dot.setAttribute('opacity', '0');
+
+    g.append(fill, topLine, botLine, dot);
+    bridgeSvg.appendChild(g);
+    bridgeEls[sec] = { g, fill, topLine, botLine, dot };
+
+    // 事件只绑一次，不随滚动重建
+    fill.addEventListener('mouseenter', e => {
+      hovSec = sec;
+      document.querySelectorAll(`.sec[data-s="${sec}"]`).forEach(x => x.classList.add('sh'));
+      bridgeTip.textContent = `${SEC_NAMES[sec]} — 点击双面板跳转`;
+      bridgeTip.style.left = (e.clientX + 14) + 'px';
+      bridgeTip.style.top = (e.clientY - 6) + 'px';
+      bridgeTip.classList.add('vis');
+      scheduleFrame();
+    });
+    fill.addEventListener('mousemove', e => {
+      bridgeTip.style.left = (e.clientX + 14) + 'px';
+      bridgeTip.style.top = (e.clientY - 6) + 'px';
+    });
+    fill.addEventListener('mouseleave', () => {
+      document.querySelectorAll(`.sec[data-s="${sec}"]`).forEach(x => x.classList.remove('sh'));
+      hovSec = null;
+      bridgeTip.classList.remove('vis');
+      scheduleFrame();
+    });
+    fill.addEventListener('click', () => scrollBothTo(sec));
+  });
+}
+
+function scheduleFrame() {
+  if (!pendingRaf) { pendingRaf = true; requestAnimationFrame(frame); }
+}
+
+// 只更新 SVG 属性，不重建 DOM、不绑事件
+function updateBridgePositions() {
+  const layoutRect = layout.getBoundingClientRect();
+  const bcRect = bridgeCol.getBoundingClientRect();
+  const W = layoutRect.width, H = layoutRect.height;
+  if (H <= 0) return;
+
+  bridgeSvg.setAttribute('width', W);
+  bridgeSvg.setAttribute('height', H);
+  bridgeSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const fx0 = bcRect.left - layoutRect.left - EXTEND;
+  const fx1 = bcRect.right - layoutRect.left + EXTEND;
+  const cx = (bcRect.left + bcRect.right) / 2 - layoutRect.left;
+
+  // 批量 READ：一次性读取所有 getBoundingClientRect
+  const rects = {};
+  SECTIONS.forEach(sec => {
+    const le = eScr.querySelector(`.sec[data-s="${sec}"]`);
+    const re = pScr.querySelector(`.sec[data-s="${sec}"]`);
+    if (le && re) rects[sec] = { l: le.getBoundingClientRect(), r: re.getBoundingClientRect() };
+  });
+
+  // 批量 WRITE：更新所有 SVG 属性
+  SECTIONS.forEach(sec => {
+    const el = bridgeEls[sec];
+    const r = rects[sec];
+    if (!el || !r) return;
+
+    const lt = r.l.top - layoutRect.top, lb = r.l.bottom - layoutRect.top;
+    const rt = r.r.top - layoutRect.top, rb = r.r.bottom - layoutRect.top;
+
+    // 不可见则隐藏
+    if ((lb < -5 && rb < -5) || (lt > H + 5 && rt > H + 5)) {
+      el.g.setAttribute('visibility', 'hidden');
+      return;
+    }
+    el.g.setAttribute('visibility', 'visible');
+
+    const isHov = hovSec === sec;
+    const isDimmed = curLayer && !(LM[curLayer] || []).includes(sec);
+    const fillA = isDimmed ? 0 : isHov ? 0.1 : 0.03;
+    const lineA = isDimmed ? 0.04 : isHov ? 0.85 : 0.28;
+    const lineW = isHov ? 1.5 : 0.8;
+    const topDiff = Math.abs(lt - rt), botDiff = Math.abs(lb - rb);
+
+    el.fill.setAttribute('d', `M${fx0},${lt} L${fx1},${rt} L${fx1},${rb} L${fx0},${lb} Z`);
+    el.fill.setAttribute('fill-opacity', fillA);
+    el.fill.style.pointerEvents = bridgeEnabled ? 'all' : 'none';
+
+    el.topLine.setAttribute('x1', fx0); el.topLine.setAttribute('y1', lt);
+    el.topLine.setAttribute('x2', fx1); el.topLine.setAttribute('y2', rt);
+    el.topLine.setAttribute('stroke-opacity', lineA);
+    el.topLine.setAttribute('stroke-width', lineW);
+    el.topLine.setAttribute('stroke-dasharray', topDiff > 3 ? '4 3' : 'none');
+
+    el.botLine.setAttribute('x1', fx0); el.botLine.setAttribute('y1', lb);
+    el.botLine.setAttribute('x2', fx1); el.botLine.setAttribute('y2', rb);
+    el.botLine.setAttribute('stroke-opacity', lineA);
+    el.botLine.setAttribute('stroke-width', lineW);
+    el.botLine.setAttribute('stroke-dasharray', botDiff > 3 ? '4 3' : 'none');
+
+    el.dot.setAttribute('cx', cx);
+    el.dot.setAttribute('cy', (lt + lb + rt + rb) / 4);
+    el.dot.setAttribute('opacity', isHov ? 0.85 : 0);
+  });
+}
+
+// ===== 架构条 =====
+function focusL(l) {
+  if (curLayer === l) { curLayer = null; clrLayer(); scheduleFrame(); return; }
+  curLayer = l;
+  document.querySelectorAll('.arch-chip').forEach(c => c.classList.toggle('on', c.dataset.l === l));
+  const active = LM[l] || [];
+  document.querySelectorAll('.sec').forEach(s => {
+    s.classList.remove('sh','sd');
+    s.classList.add(active.includes(s.dataset.s) ? 'sh' : 'sd');
+  });
+  scheduleFrame();
+}
+function clrLayer() {
+  document.querySelectorAll('.arch-chip').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('sh','sd'));
+}
+
+// ===== 区块 hover =====
+document.querySelectorAll('.sec').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    if (curLayer) return;
+    hovSec = el.dataset.s;
+    document.querySelectorAll(`.sec[data-s="${hovSec}"]`).forEach(x => x.classList.add('sh'));
+    scheduleFrame();
+  });
+  el.addEventListener('mouseleave', () => {
+    if (curLayer) return;
+    document.querySelectorAll(`.sec[data-s="${hovSec}"]`).forEach(x => x.classList.remove('sh'));
+    hovSec = null;
+    scheduleFrame();
+  });
+});
+
+// ===== 区块标题/桥线导航 =====
+function navTo(sid) { scrollBothTo(sid); }
+function scrollBothTo(sid) {
+  const saved = userPanel; userPanel = null;
+  ['e','p'].forEach(side => {
+    const el = document.querySelector(`.sec[data-s="${sid}"][data-side="${side}"]`);
+    if (!el) return;
+    const pb = el.closest('.pb');
+    pb.scrollTo({ top: el.offsetTop - pb.offsetTop - 10, behavior: 'smooth' });
+  });
+  document.querySelectorAll(`.sec[data-s="${sid}"]`).forEach(x => x.classList.add('sh'));
+  setTimeout(() => {
+    document.querySelectorAll(`.sec[data-s="${sid}"]`).forEach(x => x.classList.remove('sh'));
+    userPanel = saved;
+  }, 1200);
+}
+
+// ===== 折叠/展开 =====
+document.querySelectorAll('.ca').forEach(c => {
+  c.addEventListener('click', e => {
+    e.stopPropagation();
+    c.closest('.sec').classList.toggle('col');
+    setTimeout(() => { rebuildAnchors(); scheduleFrame(); }, 280);
+  });
+});
+
+// ===== 合并 click：字段高亮 + 元素关系 =====
+let selField = null;
+const bub = document.getElementById('bub');
+let bubTmr = null;
+
+document.addEventListener('click', e => {
+  if (e.target.closest('.arch-bar') || e.target.closest('.sl') || e.target.closest('#bridgeSvg') || e.target.closest('.pbar') || e.target.closest('.rel-bar') || e.target.closest('.ri')) return;
+
+  // 气泡点击 → 选中该元素
+  const bubEl = e.target.closest('.bub');
+  if (bubEl) { const bid = bubEl.dataset.eid; if (bid) { hideBub(); selByEid(bid); } return; }
+
+  const eidEl = e.target.closest('[data-eid]');
+  const fieldEl = e.target.closest('[data-field]');
+
+  if (eidEl || fieldEl) {
+    clrSel(); hideBub();
+    const eid = eidEl?.dataset.eid;
+    const fid = fieldEl?.dataset.field;
+
+    if (fid) {
+      selField = fid;
+      document.querySelectorAll(`[data-field="${fid}"]`).forEach(el => {
+        el.classList.add((el === fieldEl || el.contains(e.target)) ? 'fa' : 'fm');
+      });
+    }
+
+    if (eid) {
+      selEid = eid;
+      const rels = R[eid];
+      const targets = rels ? rels.map(r => r.id) : [];
+      document.querySelectorAll('.en').forEach(el => {
+        el.classList.remove('es','er','edm');
+        if (el.dataset.eid === eid) el.classList.add('es');
+        else if (targets.includes(el.dataset.eid)) el.classList.add('er');
+        else if (rels) el.classList.add('edm');
+      });
+      if (rels) updRelBar(eid, rels);
+    }
+  } else {
+    clrSel();
+  }
+});
+
+function selByEid(eid) {
+  hideBub(); clrSel();
+  selEid = eid;
+  const rels = R[eid];
+  const targets = rels ? rels.map(r => r.id) : [];
+  document.querySelectorAll('.en').forEach(el => {
+    el.classList.remove('es','er','edm');
+    if (el.dataset.eid === eid) el.classList.add('es');
+    else if (targets.includes(el.dataset.eid)) el.classList.add('er');
+    else if (rels) el.classList.add('edm');
+  });
+  const first = document.querySelector(`.en[data-eid="${eid}"]`);
+  if (first) {
+    const fe = first.closest('[data-field]');
+    if (fe) {
+      selField = fe.dataset.field;
+      document.querySelectorAll(`[data-field="${selField}"]`).forEach(el => el.classList.add(el === fe ? 'fa' : 'fm'));
+    }
+  }
+  if (rels) updRelBar(eid, rels);
+}
+
+function clrSel() {
+  selEid = null; selField = null;
+  document.querySelectorAll('.en').forEach(el => el.classList.remove('es','er','edm'));
+  document.querySelectorAll('[data-field]').forEach(el => el.classList.remove('fa','fm'));
+  document.getElementById('relBar').classList.remove('vis');
+}
+
+// ===== 关系指示器 → 气泡 =====
+document.querySelectorAll('.ri[data-ri]').forEach(ind => {
+  ind.addEventListener('mouseenter', function() {
+    clearTimeout(bubTmr);
+    const eid = this.dataset.ri, rels = R[eid];
+    if (!rels) return;
+    showBub(eid, rels, this.getBoundingClientRect());
+  });
+  ind.addEventListener('mouseleave', () => { bubTmr = setTimeout(hideBub, 200); });
+});
+bub.addEventListener('mouseenter', () => clearTimeout(bubTmr));
+bub.addEventListener('mouseleave', () => { bubTmr = setTimeout(hideBub, 150); });
+
+function showBub(eid, rels, rect) {
+  const grp = {};
+  rels.forEach(r => { (grp[r.t] = grp[r.t] || []).push(r); });
+  bub.dataset.eid = eid;
+  let h = `<div class="bub-t">${eid}</div>`;
+  for (const [type, items] of Object.entries(grp)) {
+    h += `<div class="bub-g"><div class="bub-gl"><span class="ti">${type}</span> ${TL[type]||''} (${items.length})</div>`;
+    items.forEach(i => { h += `<div class="bub-i">${i.lb}</div>`; });
+    h += '</div>';
+  }
+  bub.innerHTML = h;
+  let left = rect.right + 8, top = rect.top - 4;
+  if (left + 230 > window.innerWidth - 8) left = rect.left - 238;
+  if (top + 180 > window.innerHeight) top = window.innerHeight - 190;
+  if (top < 8) top = 8;
+  bub.style.left = left + 'px'; bub.style.top = top + 'px';
+  bub.classList.add('vis');
+}
+function hideBub() { bub.classList.remove('vis'); }
+
+// ===== 关系路径栏 =====
+function updRelBar(eid, rels) {
+  const bar = document.getElementById('relBar');
+  document.getElementById('relNm').textContent = eid;
+  const grp = {};
+  rels.forEach(r => { (grp[r.t] = grp[r.t] || []).push(r); });
+  let h = '';
+  for (const [type, items] of Object.entries(grp)) {
+    items.forEach(i => {
+      h += `<div class="pr"><span class="pr-t">${type}</span><span class="pr-tg" data-tid="${i.id}" onclick="selByEid('${i.id}')">${i.lb}</span><span class="pr-d">${i.d}</span></div>`;
+    });
+  }
+  document.getElementById('relRows').innerHTML = h;
+  bar.classList.add('vis');
+}
+
+// ===== 路径栏 hover → flash =====
+document.getElementById('relRows').addEventListener('mouseover', e => {
+  const tg = e.target.closest('.pr-tg');
+  if (!tg) return;
+  const tid = tg.dataset.tid;
+  if (!tid) return;
+  document.querySelectorAll(`.en[data-eid="${tid}"]`).forEach(el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); });
+});
+document.getElementById('relRows').addEventListener('mouseout', e => {
+  if (e.target.closest('.pr-tg')) document.querySelectorAll('.en.flash').forEach(el => el.classList.remove('flash'));
+});
+
+// ===== has-rel 标记 + hover tooltip =====
+const htip = document.getElementById('htip');
+let htipTmr = null;
+Object.keys(R).forEach(eid => {
+  document.querySelectorAll(`.en[data-eid="${eid}"]`).forEach(el => el.classList.add('has-rel'));
+});
+document.querySelectorAll('.en.has-rel').forEach(el => {
+  el.addEventListener('mouseenter', function() {
+    if (selEid) return;
+    clearTimeout(htipTmr);
+    const r = this.getBoundingClientRect();
+    htip.style.left = (r.left + r.width / 2) + 'px';
+    htip.style.top = (r.bottom + 6) + 'px';
+    htipTmr = setTimeout(() => htip.classList.add('vis'), 400);
+  });
+  el.addEventListener('mouseleave', () => { clearTimeout(htipTmr); htip.classList.remove('vis'); });
+  el.addEventListener('click', () => { clearTimeout(htipTmr); htip.classList.remove('vis'); });
+});
+
+// ===== 浮窗 + 开关（hover 触发，鼠标移出关闭）=====
+const bridgePhZone = document.getElementById('bridgePhZone');
+const bridgePop = document.getElementById('bridgePop');
+const bridgeCtrlEl = document.getElementById('bridgeCtrl');
+let popHideTmr = null;
+
+function showPop() {
+  clearTimeout(popHideTmr);
+  bridgePop.classList.add('vis');
+  bridgeCtrlEl.classList.add('pop-open');
+}
+function hidePop() {
+  popHideTmr = setTimeout(() => {
+    bridgePop.classList.remove('vis');
+    bridgeCtrlEl.classList.remove('pop-open');
+  }, 150);
+}
+
+bridgePhZone.addEventListener('mouseenter', showPop);
+bridgePhZone.addEventListener('mouseleave', hidePop);
+bridgePop.addEventListener('mouseenter', () => clearTimeout(popHideTmr));
+bridgePop.addEventListener('mouseleave', hidePop);
+
+function toggleSync() {
+  syncEnabled = !syncEnabled;
+  document.getElementById('syncToggle').classList.toggle('on', syncEnabled);
+}
+function toggleBridge() {
+  bridgeEnabled = !bridgeEnabled;
+  document.getElementById('bridgeToggle').classList.toggle('on', bridgeEnabled);
+  bridgeSvg.style.opacity = bridgeEnabled ? '1' : '0';
+}
+
+// ===== 底部上下文栏 =====
+function updatePbar() {
+  // 当前区块
+  const srcScr = userPanel === 'p' ? pScr : eScr;
+  const rect = srcScr.getBoundingClientRect();
+  const threshold = rect.top + rect.height * 0.33;
+  let bestSec = SECTIONS[0], bestDist = Infinity, bestIdx = 0;
+  srcScr.querySelectorAll('.sec').forEach((sec, i) => {
+    const sr = sec.getBoundingClientRect();
+    const dist = Math.abs(sr.top - threshold);
+    if (dist < bestDist) { bestDist = dist; bestSec = sec.dataset.s; bestIdx = i; }
+  });
+  document.getElementById('pbarName').textContent = SEC_NAMES[bestSec] || bestSec;
+  document.getElementById('pbarPos').textContent = `(${bestIdx + 1}/${SECTIONS.length})`;
+  document.getElementById('pbarDot').style.background = SEC_COLORS[bestSec] || '#888';
+
+  // 滚动百分比
+  const ePct = eScr.scrollHeight > eScr.clientHeight
+    ? Math.round(eScr.scrollTop / (eScr.scrollHeight - eScr.clientHeight) * 100) : 0;
+  const pPct = pScr.scrollHeight > pScr.clientHeight
+    ? Math.round(pScr.scrollTop / (pScr.scrollHeight - pScr.clientHeight) * 100) : 0;
+  document.getElementById('pbarLPct').textContent = ePct + '%';
+  document.getElementById('pbarRPct').textContent = pPct + '%';
+  document.getElementById('pbarLFill').style.width = ePct + '%';
+  document.getElementById('pbarRFill').style.width = pPct + '%';
+}
+
+// ===== resize → 重建锚点 + 桥线 =====
+window.addEventListener('resize', () => { rebuildAnchors(); scheduleFrame(); });
+document.querySelectorAll('.clp').forEach(el => {
+  el.addEventListener('transitionend', () => { rebuildAnchors(); scheduleFrame(); });
+});
+
+// ===== 初始化 =====
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    rebuildAnchors();
+    initBridge();
+    updateBridgePositions();
+  });
+});
+</script>
+</body>
+</html>

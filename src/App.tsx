@@ -9,7 +9,7 @@ import { InspectorPanel } from "@/components/workspace/inspector-panel"
 import { WorkspaceContext, useWorkspaceReducer } from "@/hooks/use-workspace"
 import { loadTestSkills } from "@/data/skill-loader"
 import { isTauri, loadLocalSkills } from "@/lib/tauri-fs"
-import { DemoLinkingPage } from "@/demo-linking"
+
 import type { ParsedSkill } from "@/types/skill"
 
 function useSkills() {
@@ -65,22 +65,8 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
   )
 }
 
-const isDemoMode =
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).get("demo") === "linking"
-
 export default function App() {
   const { skills, loading } = useSkills()
-
-  if (isDemoMode) {
-    return (
-      <ErrorBoundary>
-        <TooltipProvider>
-          <DemoLinkingPage />
-        </TooltipProvider>
-      </ErrorBoundary>
-    )
-  }
 
   return (
     <ErrorBoundary>
