@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillForge — 三种关系可视化方案对比</title>
+<style>
+  :root {
+    --bg: #09090b; --surface: #18181b; --border: #27272a;
+    --text: #e4e4e7; --muted: #71717a; --dim: #52525b;
+    --blue: #3b82f6; --amber: #f59e0b; --emerald: #10b981;
+    --teal: #14b8a6; --violet: #8b5cf6; --rose: #f43f5e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* Tab bar */
+  .tab-bar { display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+  .tab { padding:12px 24px; font-size:14px; cursor:pointer; border-bottom:2px solid transparent; color:var(--muted); transition: all 0.15s; }
+  .tab:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+  .tab.active { color:var(--text); border-bottom-color:var(--blue); font-weight:600; }
+  .tab-desc { padding:10px 24px; font-size:12px; color:var(--dim); background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border); flex-shrink:0; }
+
+  /* Panels */
+  .panel-area { flex:1; overflow:hidden; position:relative; }
+  .panel-content { position:absolute; inset:0; overflow-y:auto; padding:24px; display:none; }
+  .panel-content.active { display:block; }
+
+  /* === APPROACH A: Architecture Map === */
+  .arch-map { display:flex; gap:4px; align-items:stretch; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:20px; }
+  .arch-layer { flex:1; padding:10px 8px; border-radius:6px; text-align:center; cursor:pointer; transition:all 0.2s; border:1px solid transparent; position:relative; }
+  .arch-layer:hover, .arch-layer.active { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+  .arch-layer .emoji { font-size:20px; display:block; margin-bottom:4px; }
+  .arch-layer .label { font-size:12px; font-weight:600; }
+  .arch-layer .sub { font-size:10px; color:var(--dim); margin-top:2px; }
+  .arch-arrow { display:flex; align-items:center; color:var(--dim); font-size:14px; flex-shrink:0; }
+
+  .arch-layer[data-l="identity"] { background: rgba(59,130,246,0.08); }
+  .arch-layer[data-l="identity"].active { background: rgba(59,130,246,0.18); box-shadow: 0 0 12px rgba(59,130,246,0.2); }
+  .arch-layer[data-l="deps"] { background: rgba(245,158,11,0.08); }
+  .arch-layer[data-l="deps"].active { background: rgba(245,158,11,0.18); box-shadow: 0 0 12px rgba(245,158,11,0.2); }
+  .arch-layer[data-l="caps"] { background: rgba(16,185,129,0.08); }
+  .arch-layer[data-l="caps"].active { background: rgba(16,185,129,0.18); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
+  .arch-layer[data-l="config"] { background: rgba(139,92,246,0.08); }
+  .arch-layer[data-l="config"].active { background: rgba(139,92,246,0.18); box-shadow: 0 0 12px rgba(139,92,246,0.2); }
+  .arch-layer[data-l="exec"] { background: rgba(20,184,166,0.08); }
+  .arch-layer[data-l="exec"].active { background: rgba(20,184,166,0.18); box-shadow: 0 0 12px rgba(20,184,166,0.2); }
+  .arch-layer[data-l="ops"] { background: rgba(244,63,94,0.08); }
+  .arch-layer[data-l="ops"].active { background: rgba(244,63,94,0.18); box-shadow: 0 0 12px rgba(244,63,94,0.2); }
+
+  /* Section card for A */
+  .a-section { border-left:3px solid var(--border); padding:14px; margin-bottom:10px; border-radius:6px; transition: all 0.3s; opacity: 1; }
+  .a-section.dimmed { opacity:0.25; }
+  .a-section.highlighted { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .a-section[data-l="identity"] { border-left-color:var(--blue); }
+  .a-section[data-l="identity"].highlighted { background: rgba(59,130,246,0.06); }
+  .a-section[data-l="deps"] { border-left-color:var(--amber); }
+  .a-section[data-l="deps"].highlighted { background: rgba(245,158,11,0.06); }
+  .a-section[data-l="caps"] { border-left-color:var(--emerald); }
+  .a-section[data-l="caps"].highlighted { background: rgba(16,185,129,0.06); }
+  .a-section[data-l="config"] { border-left-color:var(--violet); }
+  .a-section[data-l="config"].highlighted { background: rgba(139,92,246,0.06); }
+  .a-section[data-l="exec"] { border-left-color:var(--teal); }
+  .a-section[data-l="exec"].highlighted { background: rgba(20,184,166,0.06); }
+  .a-section[data-l="ops"] { border-left-color:var(--rose); }
+  .a-section[data-l="ops"].highlighted { background: rgba(244,63,94,0.06); }
+  .a-section h3 { font-size:14px; font-weight:600; margin-bottom:6px; }
+  .a-section p { font-size:12px; color:var(--muted); line-height:1.6; }
+  .a-section code { font-family:monospace; font-size:11px; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px; }
+
+  /* === APPROACH B: Cross-reference Tags === */
+  .b-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:10px; }
+  .b-card h3 { font-size:14px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .b-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size:13px; flex-wrap: wrap; }
+  .b-item:last-child { border-bottom:none; }
+  .b-name { font-family:monospace; font-size:12px; font-weight:600; min-width:120px; }
+  .b-desc { font-size:12px; color:var(--muted); flex:1; min-width:150px; }
+
+  .ref-tag { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:2px 7px; border-radius:10px; cursor:pointer; transition: all 0.15s; white-space:nowrap; margin:1px; }
+  .ref-tag:hover { filter:brightness(1.3); transform:scale(1.05); }
+  .ref-tag.t-bin { background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.25); }
+  .ref-tag.t-script { background:rgba(20,184,166,0.12); color:#5eead4; border:1px solid rgba(20,184,166,0.25); }
+  .ref-tag.t-config { background:rgba(139,92,246,0.12); color:#c4b5fd; border:1px solid rgba(139,92,246,0.25); }
+  .ref-tag.t-env { background:rgba(59,130,246,0.12); color:#93c5fd; border:1px solid rgba(59,130,246,0.25); }
+  .ref-tag.t-file { background:rgba(16,185,129,0.12); color:#6ee7b7; border:1px solid rgba(16,185,129,0.25); }
+
+  /* === APPROACH C: Explore Mode === */
+  .c-hint { text-align:center; padding:12px; font-size:13px; color:var(--dim); background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:16px; }
+  .c-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .c-section { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .c-section h4 { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--muted); }
+
+  .c-item { display:inline-block; padding:5px 10px; margin:3px; border-radius:6px; font-size:12px; font-family:monospace; cursor:pointer; transition:all 0.2s; border:1px solid var(--border); background:rgba(255,255,255,0.02); }
+  .c-item:hover { border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); }
+  .c-item.glow { animation: glowPulse 0.6s ease; }
+  .c-item.selected { border-color:var(--blue); background:rgba(59,130,246,0.15); box-shadow:0 0 8px rgba(59,130,246,0.3); color:#fff; }
+  .c-item.related { border-color:var(--amber); background:rgba(245,158,11,0.1); box-shadow:0 0 6px rgba(245,158,11,0.2); }
+  .c-item.dimmed { opacity:0.15; }
+
+  @keyframes glowPulse {
+    0% { box-shadow: 0 0 4px rgba(59,130,246,0.3); }
+    50% { box-shadow: 0 0 16px rgba(59,130,246,0.5); }
+    100% { box-shadow: 0 0 8px rgba(59,130,246,0.3); }
+  }
+
+  .c-path { margin-top:14px; padding:12px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:8px; font-size:12px; color:var(--muted); display:none; }
+  .c-path.visible { display:block; }
+  .c-path strong { color:var(--text); }
+  .c-path .arrow { color:var(--dim); margin:0 6px; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('a')">A. 架构总览图</div>
+  <div class="tab" onclick="switchTab('b')">B. 交叉引用标签</div>
+  <div class="tab" onclick="switchTab('c')">C. 关系探索模式</div>
+</div>
+<div class="tab-desc" id="tab-desc">点击顶部架构图的任意层 → 下方内容聚焦到该层，其余变暗</div>
+
+<div class="panel-area">
+
+  <!-- ======== A: Architecture Map ======== -->
+  <div class="panel-content active" id="panel-a">
+    <div class="arch-map">
+      <div class="arch-layer" data-l="identity" onclick="focusLayer('identity')">
+        <span class="emoji">🪪</span>
+        <div class="label">身份</div>
+        <div class="sub">name, desc, ver</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" data-l="deps" onclick="focusLayer('deps')">
+        <span class="emoji">📦</span>
+        <div class="label">依赖</div>
+        <div class="sub">bins, env vars</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" data-l="caps" onclick="focusLayer('caps')">
+        <span class="emoji">⚡</span>
+        <div class="label">能力</div>
+        <div class="sub">tools, files</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" data-l="config" onclick="focusLayer('config')">
+        <span class="emoji">⚙️</span>
+        <div class="label">配置</div>
+        <div class="sub">sources, topics</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" data-l="exec" onclick="focusLayer('exec')">
+        <span class="emoji">▶️</span>
+        <div class="label">执行</div>
+        <div class="sub">scripts pipeline</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer" data-l="ops" onclick="focusLayer('ops')">
+        <span class="emoji">🔧</span>
+        <div class="label">运维</div>
+        <div class="sub">monitor, debug</div>
+      </div>
+    </div>
+
+    <div class="a-section" data-l="identity">
+      <h3>🪪 身份层 — "我是谁"</h3>
+      <p><code>name: tech-news-digest-cn</code> · <code>version: 3.16.0</code><br>生成科技新闻摘要，具有统一的数据源模型、质量评分和多格式输出。</p>
+    </div>
+    <div class="a-section" data-l="deps">
+      <h3>📦 依赖层 — "我需要什么"</h3>
+      <p><strong>系统依赖：</strong><code>python3</code>(必需), <code>mail</code> <code>msmtp</code> <code>gog</code> <code>gh</code> <code>openssl</code> <code>weasyprint</code>(可选)<br>
+      <strong>环境变量：</strong>11 个 API 密钥 — Twitter/X (3), Web Search (3), GitHub (4), Brave (1)</p>
+    </div>
+    <div class="a-section" data-l="caps">
+      <h3>⚡ 能力层 — "我能做什么"</h3>
+      <p><strong>工具：</strong><code>python3</code> 运行脚本, <code>mail</code> 发送邮件, <code>gog</code> Gmail 备用<br>
+      <strong>文件：</strong>读取 config/defaults/, references/, scripts/ · 写入 /tmp/td-*, archive/</p>
+    </div>
+    <div class="a-section" data-l="config">
+      <h3>⚙️ 配置层 — "怎么定制我"</h3>
+      <p><code>sources.json</code> — 151 个数据源 (RSS 62 + Twitter 48 + GitHub 28 + Reddit 13)<br>
+      <code>topics.json</code> — 主题定义、搜索关键词、显示设置<br>
+      <code>schema.json</code> — 结构验证</p>
+    </div>
+    <div class="a-section" data-l="exec">
+      <h3>▶️ 执行层 — "具体怎么跑"</h3>
+      <p><code>run-pipeline.py</code> → 并行运行 6 个获取器 → <code>merge-sources.py</code> 合并去重评分<br>
+      → <code>generate-pdf.py</code> / <code>sanitize-html.py</code> 输出 → 邮件/Discord/PDF 传送</p>
+    </div>
+    <div class="a-section" data-l="ops">
+      <h3>🔧 运维层 — "出问题怎么办"</h3>
+      <p><code>validate-config.py</code> 配置检查 · <code>source-health.py</code> 源健康监控<br>
+      所有脚本支持 <code>--verbose</code> · 自动重试 · 指数退避 · 90 天存档清理</p>
+    </div>
+  </div>
+
+  <!-- ======== B: Cross-Reference Tags ======== -->
+  <div class="panel-content" id="panel-b">
+
+    <div class="b-card">
+      <h3>⚡ 工具 (tools)</h3>
+      <div class="b-item">
+        <span class="b-name">python3</span>
+        <span class="b-desc">运行数据收集和合并脚本</span>
+        <span class="ref-tag t-bin" title="在 metadata.requires.bins 中声明">📦 requires.bins</span>
+        <span class="ref-tag t-script" title="被以下脚本使用">📄 run-pipeline.py</span>
+        <span class="ref-tag t-script">📄 fetch-rss.py</span>
+        <span class="ref-tag t-script">📄 fetch-twitter.py</span>
+        <span class="ref-tag t-script">📄 +8 more</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">mail</span>
+        <span class="b-desc">邮件传送（首选）</span>
+        <span class="ref-tag t-bin">📦 optionalBins</span>
+        <span class="ref-tag t-script">📄 sanitize-html.py</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">gog</span>
+        <span class="b-desc">Gmail CLI 备用</span>
+        <span class="ref-tag t-bin">📦 optionalBins</span>
+      </div>
+    </div>
+
+    <div class="b-card">
+      <h3>🔑 环境变量 (env) — 部分展示</h3>
+      <div class="b-item">
+        <span class="b-name">TWITTER_API_BACKEND</span>
+        <span class="b-desc">Twitter API 后端选择</span>
+        <span class="ref-tag t-script" title="被 fetch-twitter.py 使用">📄 fetch-twitter.py</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">GITHUB_TOKEN</span>
+        <span class="b-desc">GitHub 令牌</span>
+        <span class="ref-tag t-script">📄 fetch-github.py</span>
+        <span class="ref-tag t-script">📄 run-pipeline.py</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">BRAVE_API_KEYS</span>
+        <span class="b-desc">Brave 搜索 API 密钥</span>
+        <span class="ref-tag t-script">📄 fetch-web.py</span>
+      </div>
+    </div>
+
+    <div class="b-card">
+      <h3>📂 文件权限 (files.read)</h3>
+      <div class="b-item">
+        <span class="b-name">config/defaults/</span>
+        <span class="b-desc">默认源和主题配置</span>
+        <span class="ref-tag t-config" title="包含实际配置文件">📁 sources.json</span>
+        <span class="ref-tag t-config">📁 topics.json</span>
+        <span class="ref-tag t-script" title="被所有脚本的 --defaults 参数引用">📄 所有脚本 --defaults</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">scripts/</span>
+        <span class="b-desc">Python 管道脚本</span>
+        <span class="ref-tag t-script">📄 11 个 .py 脚本</span>
+        <span class="ref-tag t-bin" title="需要 python3 运行">📦 python3</span>
+      </div>
+      <div class="b-item">
+        <span class="b-name">references/</span>
+        <span class="b-desc">提示模板和输出模板</span>
+        <span class="ref-tag t-file">📄 discord.md</span>
+        <span class="ref-tag t-file">📄 email.md</span>
+        <span class="ref-tag t-file">📄 pdf.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== C: Explore Mode ======== -->
+  <div class="panel-content" id="panel-c">
+    <div class="c-hint" id="c-hint">👆 点击下方任意元素，查看它在文档中的所有关联 — 选中项变蓝，关联项变橙，无关项变暗</div>
+    <div id="c-path" class="c-path"></div>
+
+    <div class="c-grid">
+      <div class="c-section">
+        <h4>📦 系统依赖 (metadata.bins)</h4>
+        <span class="c-item" data-id="python3" onclick="explore('python3')">python3</span>
+        <span class="c-item" data-id="mail" onclick="explore('mail')">mail</span>
+        <span class="c-item" data-id="msmtp" onclick="explore('msmtp')">msmtp</span>
+        <span class="c-item" data-id="gog" onclick="explore('gog')">gog</span>
+        <span class="c-item" data-id="gh" onclick="explore('gh')">gh</span>
+        <span class="c-item" data-id="openssl" onclick="explore('openssl')">openssl</span>
+        <span class="c-item" data-id="weasyprint" onclick="explore('weasyprint')">weasyprint</span>
+      </div>
+      <div class="c-section">
+        <h4>🔑 环境变量 (env)</h4>
+        <span class="c-item" data-id="TWITTER_API_BACKEND" onclick="explore('TWITTER_API_BACKEND')">TWITTER_API_BACKEND</span>
+        <span class="c-item" data-id="X_BEARER_TOKEN" onclick="explore('X_BEARER_TOKEN')">X_BEARER_TOKEN</span>
+        <span class="c-item" data-id="GITHUB_TOKEN" onclick="explore('GITHUB_TOKEN')">GITHUB_TOKEN</span>
+        <span class="c-item" data-id="BRAVE_API_KEYS" onclick="explore('BRAVE_API_KEYS')">BRAVE_API_KEYS</span>
+        <span class="c-item" data-id="TAVILY_API_KEY" onclick="explore('TAVILY_API_KEY')">TAVILY_API_KEY</span>
+      </div>
+      <div class="c-section">
+        <h4>⚡ 工具 (tools)</h4>
+        <span class="c-item" data-id="t-python3" onclick="explore('t-python3')">python3</span>
+        <span class="c-item" data-id="t-mail" onclick="explore('t-mail')">mail</span>
+        <span class="c-item" data-id="t-gog" onclick="explore('t-gog')">gog</span>
+      </div>
+      <div class="c-section">
+        <h4>📄 脚本 (scripts)</h4>
+        <span class="c-item" data-id="run-pipeline" onclick="explore('run-pipeline')">run-pipeline.py</span>
+        <span class="c-item" data-id="fetch-rss" onclick="explore('fetch-rss')">fetch-rss.py</span>
+        <span class="c-item" data-id="fetch-twitter" onclick="explore('fetch-twitter')">fetch-twitter.py</span>
+        <span class="c-item" data-id="fetch-web" onclick="explore('fetch-web')">fetch-web.py</span>
+        <span class="c-item" data-id="fetch-github" onclick="explore('fetch-github')">fetch-github.py</span>
+        <span class="c-item" data-id="fetch-reddit" onclick="explore('fetch-reddit')">fetch-reddit.py</span>
+        <span class="c-item" data-id="merge-sources" onclick="explore('merge-sources')">merge-sources.py</span>
+        <span class="c-item" data-id="generate-pdf" onclick="explore('generate-pdf')">generate-pdf.py</span>
+      </div>
+      <div class="c-section">
+        <h4>📁 配置文件 (config)</h4>
+        <span class="c-item" data-id="sources.json" onclick="explore('sources.json')">sources.json</span>
+        <span class="c-item" data-id="topics.json" onclick="explore('topics.json')">topics.json</span>
+        <span class="c-item" data-id="schema.json" onclick="explore('schema.json')">schema.json</span>
+      </div>
+      <div class="c-section">
+        <h4>📂 文件路径 (files)</h4>
+        <span class="c-item" data-id="config-defaults" onclick="explore('config-defaults')">config/defaults/</span>
+        <span class="c-item" data-id="scripts-dir" onclick="explore('scripts-dir')">scripts/</span>
+        <span class="c-item" data-id="references-dir" onclick="explore('references-dir')">references/</span>
+        <span class="c-item" data-id="tmp-output" onclick="explore('tmp-output')">/tmp/td-*</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tab switching
+  function switchTab(id) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      t.classList.toggle('active', ['a','b','c'][i] === id);
+    });
+    document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-'+id).classList.add('active');
+    const descs = {
+      a: '点击顶部架构图的任意层 → 下方内容聚焦到该层，其余变暗',
+      b: '每个元素旁边的彩色标签 = 它在其他区域的引用。点击标签跳转到对应位置。',
+      c: '点击任意元素 → 蓝色=选中, 橙色=关联, 暗色=无关。沿关系链探索文档结构。'
+    };
+    document.getElementById('tab-desc').textContent = descs[id];
+  }
+
+  // === A: Layer focus ===
+  let activeLayer = null;
+  function focusLayer(layer) {
+    if (activeLayer === layer) { activeLayer = null; resetLayers(); return; }
+    activeLayer = layer;
+    document.querySelectorAll('.arch-layer').forEach(el => {
+      el.classList.toggle('active', el.dataset.l === layer);
+    });
+    document.querySelectorAll('.a-section').forEach(el => {
+      el.classList.remove('dimmed','highlighted');
+      if (el.dataset.l === layer) { el.classList.add('highlighted'); }
+      else { el.classList.add('dimmed'); }
+    });
+    document.querySelector(`.a-section[data-l="${layer}"]`)
+      ?.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  function resetLayers() {
+    document.querySelectorAll('.arch-layer').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.a-section').forEach(el => el.classList.remove('dimmed','highlighted'));
+  }
+
+  // === C: Explore mode ===
+  const relations = {
+    'python3':    { related: ['t-python3','run-pipeline','fetch-rss','fetch-twitter','fetch-web','fetch-github','fetch-reddit','merge-sources','generate-pdf','scripts-dir'], path: 'python3 (bin) → 被 tool:python3 声明 → 运行所有 scripts/*.py 脚本' },
+    't-python3':  { related: ['python3','run-pipeline','fetch-rss','fetch-twitter','fetch-web','fetch-github','scripts-dir'], path: 'tool:python3 → 对应 bin:python3 → 运行 scripts/ 下的脚本管道' },
+    'mail':       { related: ['t-mail','msmtp'], path: 'mail (bin) → 被 tool:mail 声明 → 与 msmtp 配合发送邮件' },
+    't-mail':     { related: ['mail','msmtp'], path: 'tool:mail → 需要 bin:mail + bin:msmtp → 用于电子邮件传送' },
+    'msmtp':      { related: ['mail','t-mail'], path: 'msmtp (bin) → 与 mail 配合 → 电子邮件传送后端' },
+    'gog':        { related: ['t-gog'], path: 'gog (bin) → 被 tool:gog 声明 → mail 不可用时的备用' },
+    't-gog':      { related: ['gog','t-mail'], path: 'tool:gog → 对应 bin:gog → mail 不可用时作为备用' },
+    'gh':         { related: ['fetch-github','GITHUB_TOKEN'], path: 'gh (bin) → 被 fetch-github.py 作为认证备用 → 当无 GITHUB_TOKEN 时' },
+    'openssl':    { related: ['fetch-github'], path: 'openssl (bin) → 被 fetch-github.py 用于 GitHub App JWT 签名' },
+    'weasyprint': { related: ['generate-pdf'], path: 'weasyprint (bin) → 被 generate-pdf.py 使用 → 生成 PDF 报告' },
+    'TWITTER_API_BACKEND': { related: ['X_BEARER_TOKEN','fetch-twitter'], path: 'TWITTER_API_BACKEND → 控制 fetch-twitter.py 的后端选择 → auto|official|twitterapiio' },
+    'X_BEARER_TOKEN': { related: ['TWITTER_API_BACKEND','fetch-twitter'], path: 'X_BEARER_TOKEN → 被 fetch-twitter.py 使用 → 官方 X API v2 认证' },
+    'GITHUB_TOKEN': { related: ['fetch-github','gh','run-pipeline'], path: 'GITHUB_TOKEN → 被 fetch-github.py 使用 → 提高 API 速率限制 (5000 req/h)' },
+    'BRAVE_API_KEYS': { related: ['fetch-web','TAVILY_API_KEY'], path: 'BRAVE_API_KEYS → 被 fetch-web.py 使用 → 与 TAVILY_API_KEY 互为替代' },
+    'TAVILY_API_KEY': { related: ['fetch-web','BRAVE_API_KEYS'], path: 'TAVILY_API_KEY → 被 fetch-web.py 使用 → Brave 的替代搜索方案' },
+    'run-pipeline': { related: ['python3','t-python3','fetch-rss','fetch-twitter','fetch-web','fetch-github','fetch-reddit','merge-sources','sources.json','topics.json','config-defaults','tmp-output','GITHUB_TOKEN'], path: 'run-pipeline.py → 调度所有 fetch-*.py → merge-sources.py → 输出到 /tmp/td-*' },
+    'fetch-rss':    { related: ['python3','run-pipeline','sources.json','config-defaults'], path: 'fetch-rss.py → 读取 sources.json (type:rss) → 并行获取 RSS 源' },
+    'fetch-twitter':{ related: ['python3','run-pipeline','sources.json','TWITTER_API_BACKEND','X_BEARER_TOKEN'], path: 'fetch-twitter.py → 读取 sources.json (type:twitter) → 使用 TWITTER API 环境变量' },
+    'fetch-web':    { related: ['python3','run-pipeline','BRAVE_API_KEYS','TAVILY_API_KEY','topics.json'], path: 'fetch-web.py → 使用 BRAVE/TAVILY API → 按 topics.json 主题搜索' },
+    'fetch-github': { related: ['python3','run-pipeline','sources.json','GITHUB_TOKEN','gh','openssl'], path: 'fetch-github.py → 读取 sources.json (type:github) → 认证: GITHUB_TOKEN → gh → openssl JWT' },
+    'fetch-reddit': { related: ['python3','run-pipeline','sources.json'], path: 'fetch-reddit.py → 读取 sources.json (type:reddit) → 无需 API 密钥' },
+    'merge-sources':{ related: ['python3','run-pipeline','topics.json','tmp-output'], path: 'merge-sources.py → 合并所有 fetch 输出 → 按 topics.json 分组 → 质量评分 + 去重' },
+    'generate-pdf': { related: ['python3','weasyprint','tmp-output','references-dir'], path: 'generate-pdf.py → 需要 weasyprint → 读取 references/templates/ → 输出 /tmp/td-digest.pdf' },
+    'sources.json': { related: ['config-defaults','fetch-rss','fetch-twitter','fetch-github','fetch-reddit','run-pipeline','schema.json'], path: 'sources.json → 位于 config/defaults/ → 被所有 fetch-*.py 读取 → 由 schema.json 验证' },
+    'topics.json':  { related: ['config-defaults','fetch-web','merge-sources','run-pipeline'], path: 'topics.json → 位于 config/defaults/ → 被 fetch-web.py 和 merge-sources.py 使用' },
+    'schema.json':  { related: ['sources.json','topics.json','config-defaults'], path: 'schema.json → 验证 sources.json 和 topics.json 的结构' },
+    'config-defaults': { related: ['sources.json','topics.json','schema.json','fetch-rss','fetch-twitter','run-pipeline','scripts-dir'], path: 'config/defaults/ → 包含 sources.json + topics.json → 被 --defaults 参数引用' },
+    'scripts-dir':  { related: ['python3','t-python3','run-pipeline','fetch-rss','fetch-twitter','fetch-web','fetch-github'], path: 'scripts/ → 包含 11 个 Python 脚本 → 由 tool:python3 运行' },
+    'references-dir': { related: ['generate-pdf'], path: 'references/ → 包含 discord/email/pdf 模板 → 被输出生成脚本引用' },
+    'tmp-output':   { related: ['run-pipeline','merge-sources','generate-pdf'], path: '/tmp/td-* → pipeline 中间输出 → merge 最终输出 → PDF/邮件生成' },
+  };
+
+  let selectedId = null;
+  function explore(id) {
+    const items = document.querySelectorAll('.c-item');
+    const pathEl = document.getElementById('c-path');
+
+    if (selectedId === id) {
+      selectedId = null;
+      items.forEach(el => el.classList.remove('selected','related','dimmed','glow'));
+      pathEl.classList.remove('visible');
+      return;
+    }
+
+    selectedId = id;
+    const rel = relations[id];
+    if (!rel) return;
+
+    items.forEach(el => {
+      el.classList.remove('selected','related','dimmed','glow');
+      if (el.dataset.id === id) {
+        el.classList.add('selected','glow');
+      } else if (rel.related.includes(el.dataset.id)) {
+        el.classList.add('related');
+      } else {
+        el.classList.add('dimmed');
+      }
+    });
+
+    pathEl.innerHTML = '<strong>' + id + '</strong>: ' + rel.path;
+    pathEl.classList.add('visible');
+  }
+</script>
+</body>
+</html>

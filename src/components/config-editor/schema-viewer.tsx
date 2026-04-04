@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -242,8 +241,8 @@ export function SchemaViewer({ schema }: SchemaViewerProps) {
   const hasRootBlock = Object.keys(rootProps).length > 0
 
   return (
-    <ScrollArea className="h-[500px] rounded-md border">
-      <div className="text-sm p-3 space-y-4 max-w-full">
+    <div className="rounded-md border">
+      <div className="max-w-full space-y-4 p-3 text-sm">
         {(title || version) && (
           <div className="space-y-1">
             {title ? (
@@ -289,6 +288,6 @@ export function SchemaViewer({ schema }: SchemaViewerProps) {
           </p>
         ) : null}
       </div>
-    </ScrollArea>
+    </div>
   )
 }

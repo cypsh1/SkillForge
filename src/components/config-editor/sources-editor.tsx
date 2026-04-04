@@ -4,7 +4,6 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Source {
   id: string
@@ -75,7 +74,7 @@ export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
         ))}
       </div>
 
-      <ScrollArea className="h-[500px] rounded-md border p-2">
+      <div className="rounded-md border p-2">
         <div className="space-y-2">
           {sources.map((source, index) => (
             <SourceCard
@@ -85,7 +84,7 @@ export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
             />
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }

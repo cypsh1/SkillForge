@@ -5,7 +5,6 @@ import {
   ChevronDown,
   FileText,
   Settings,
-  ShieldCheck,
   FolderOpen,
   Plus,
 } from "lucide-react"
@@ -92,7 +91,7 @@ export function NavigatorPanel() {
   const [wizardOpen, setWizardOpen] = useState(false)
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
         <div className="relative flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2" />
@@ -126,7 +125,7 @@ export function NavigatorPanel() {
           />
         </DialogContent>
       </Dialog>
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="min-h-0 flex-1 overflow-hidden">
         <div className="space-y-0.5 p-2 pr-3">
           {filteredSkills.map((skill) => (
             <SkillTreeBlock
@@ -161,13 +160,22 @@ function SkillTreeBlock({
 }: SkillTreeBlockProps) {
   const name = skill.frontmatter.name || skill.id
   const version = skill.frontmatter.version
+  const isSelected = selectionMatches(selection, skill.id, "skill-overview")
+
+  const handleClick = () => {
+    onToggleExpand()
+    select({ skillId: skill.id, nodeType: "skill-overview" })
+  }
 
   return (
     <div className="rounded-md">
       <button
         type="button"
-        onClick={onToggleExpand}
-        className="hover:bg-muted/60 flex w-full items-start gap-1 rounded-md px-1.5 py-1.5 text-left text-sm transition-colors"
+        onClick={handleClick}
+        className={cn(
+          "flex w-full items-start gap-1 rounded-md px-1.5 py-1.5 text-left text-sm transition-colors",
+          isSelected ? "bg-accent" : "hover:bg-muted/60",
+        )}
       >
         <span className="text-muted-foreground mt-0.5 shrink-0">
           {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
@@ -190,13 +198,6 @@ function SkillTreeBlock({
       {expanded ? (
         <div className="border-border ml-2 border-l pl-2">
           <TreeNode
-            selected={selectionMatches(selection, skill.id, "skill-overview")}
-            onClick={() => select({ skillId: skill.id, nodeType: "skill-overview" })}
-            icon={<Settings className="size-3.5 shrink-0" />}
-            label="概览"
-            description={overviewDescription(skill)}
-          />
-          <TreeNode
             selected={selectionMatches(selection, skill.id, "skill-md")}
             onClick={() => select({ skillId: skill.id, nodeType: "skill-md" })}
             icon={<FileText className="size-3.5 shrink-0" />}
@@ -206,25 +207,12 @@ function SkillTreeBlock({
           {skill.hasConfig ? (
             <ConfigSubtree skill={skill} selection={selection} select={select} />
           ) : null}
-          <TreeNode
-            selected={selectionMatches(selection, skill.id, "validation")}
-            onClick={() => select({ skillId: skill.id, nodeType: "validation" })}
-            icon={<ShieldCheck className="size-3.5 shrink-0" />}
-            label="验证"
-            description="检查配置问题"
-          />
         </div>
       ) : null}
     </div>
   )
 }
 
-function overviewDescription(skill: ParsedSkill): string {
-  const nTools = skill.tools.length
-  const nEnv = skill.envVars.length
-  const nCfg = Object.keys(skill.configFiles).length
-  return `工具 ${nTools} · 环境 ${nEnv} · 配置 ${nCfg}`
-}
 
 interface TreeNodeProps {
   selected: boolean

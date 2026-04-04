@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 
@@ -105,7 +104,7 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
         <span>{topics.length} 个主题</span>
       </div>
 
-      <ScrollArea className="h-[500px] rounded-md border p-2">
+      <div className="rounded-md border p-2">
         <div className="space-y-2">
           {topics.map((topic, index) => (
             <TopicCard
@@ -119,7 +118,7 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
             />
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { InspectorPanel } from "@/components/workspace/inspector-panel"
 import { WorkspaceContext, useWorkspaceReducer } from "@/hooks/use-workspace"
 import { loadTestSkills } from "@/data/skill-loader"
 import { isTauri, loadLocalSkills } from "@/lib/tauri-fs"
+import { DemoLinkingPage } from "@/demo-linking"
 import type { ParsedSkill } from "@/types/skill"
 
 function useSkills() {
@@ -47,15 +48,15 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
       <div className="flex flex-col h-svh">
         <AppHeader />
         <Group orientation="horizontal" className="flex-1" id="skillforge-layout">
-          <Panel defaultSize={22} minSize={15} maxSize={35}>
+          <Panel defaultSize="22%" minSize="15%" maxSize="35%">
             <NavigatorPanel />
           </Panel>
           <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors" />
-          <Panel defaultSize={50} minSize={30}>
+          <Panel defaultSize="50%" minSize="30%">
             <EditorPanel />
           </Panel>
           <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors" />
-          <Panel defaultSize={28} minSize={15} maxSize={40}>
+          <Panel defaultSize="28%" minSize="15%" maxSize="40%">
             <InspectorPanel />
           </Panel>
         </Group>
@@ -64,8 +65,22 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
   )
 }
 
+const isDemoMode =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("demo") === "linking"
+
 export default function App() {
   const { skills, loading } = useSkills()
+
+  if (isDemoMode) {
+    return (
+      <ErrorBoundary>
+        <TooltipProvider>
+          <DemoLinkingPage />
+        </TooltipProvider>
+      </ErrorBoundary>
+    )
+  }
 
   return (
     <ErrorBoundary>

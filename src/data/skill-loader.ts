@@ -4,6 +4,7 @@ import type { ParsedSkill } from "@/types/skill"
 import imageOcrSkillMd from "./test-skills/image-ocr/SKILL.md?raw"
 import urlReaderSkillMd from "./test-skills/url-reader/SKILL.md?raw"
 import techNewsDigestSkillMd from "./test-skills/tech-news-digest/SKILL.md?raw"
+import techNewsDigestCnSkillMd from "./test-skills/tech-news-digest-cn/SKILL.md?raw"
 import agentBrowserSkillMd from "./test-skills/agent-browser/SKILL.md?raw"
 import deepWritingSkillMd from "./test-skills/deep-writing/SKILL.md?raw"
 import tieredMemorySkillMd from "./test-skills/tiered-memory/SKILL.md?raw"
@@ -13,6 +14,9 @@ import skillSecurityAuditorSkillMd from "./test-skills/skill-security-auditor/SK
 import techNewsSourcesJson from "./test-skills/tech-news-digest/config/defaults/sources.json"
 import techNewsTopicsJson from "./test-skills/tech-news-digest/config/defaults/topics.json"
 import techNewsSchemaJson from "./test-skills/tech-news-digest/config/schema.json"
+import techNewsCnSourcesJson from "./test-skills/tech-news-digest-cn/config/defaults/sources.json"
+import techNewsCnTopicsJson from "./test-skills/tech-news-digest-cn/config/defaults/topics.json"
+import techNewsCnSchemaJson from "./test-skills/tech-news-digest-cn/config/schema.json"
 
 interface RawSkillData {
   id: string
@@ -30,6 +34,16 @@ const RAW_SKILLS: RawSkillData[] = [
       "config/defaults/sources.json": techNewsSourcesJson,
       "config/defaults/topics.json": techNewsTopicsJson,
       "config/schema.json": techNewsSchemaJson,
+    },
+  },
+  {
+    id: "tech-news-digest-cn",
+    skillMdContent: techNewsDigestCnSkillMd,
+    path: "~/.openclaw/workspace/skills/tech-news-digest-cn",
+    configFiles: {
+      "config/defaults/sources.json": techNewsCnSourcesJson,
+      "config/defaults/topics.json": techNewsCnTopicsJson,
+      "config/schema.json": techNewsCnSchemaJson,
     },
   },
   {

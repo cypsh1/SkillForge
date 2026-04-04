@@ -1,11 +1,12 @@
 ---
-description: 调研过程中发现的有价值的参考资料
+description: 调研过程中发现的有价值的参考资料（含对比决策）
 status: active
-last_updated: 2026-04-03
+last_updated: 2026-04-05
 ---
 # 参考资料
 
 > 调研过程中发现的有价值的产品、技术、设计参考，在此统一记录。
+> **格式要求**：技术选型必须记录"对比了什么、为什么不选"，不只记结论。
 
 ## 产品参考
 - [Butlerclaw](https://github.com/metahuan/butlerclaw) — OpenClaw GUI 工具，Python+tkinter，只解决安装问题，不解决 Skill 配置
@@ -15,15 +16,37 @@ last_updated: 2026-04-03
 - [SkillGen](https://skillgen.io/) — 可视化 Block 构建器 + 多框架导出
 
 ## 技术参考
-- [Vite](https://vite.dev/) — 构建工具，v8.0，快速 HMR
-- [React 19](https://react.dev/) — 前端框架
-- [shadcn/ui v4](https://ui.shadcn.com/) — UI 组件库，基于 Radix + Tailwind
-- [Tailwind CSS v4](https://tailwindcss.com/) — CSS 框架，与 shadcn/ui 配套
-- [react-resizable-panels v4.9](https://github.com/bvaughn/react-resizable-panels) — 分栏布局，<5KB，React 19 兼容
-- [Tauri v2](https://v2.tauri.app/) — 桌面封装，8MB 包体（vs Electron 120MB），内置文件系统 API
+
+### 构建工具
+- [Vite v8](https://vite.dev/) — 选定，快速 HMR，轻量无 SSR
+  - 对比过：Next.js — 不选，MVP 不需要 SSR，增加复杂度
+
+### 前端框架
+- [React 19](https://react.dev/) — 选定，生态最大，shadcn/ui 原生支持
+  - 对比过：Vue 3 — 不选，shadcn/ui 是 React 生态，选 Vue 需要换组件库
+
+### UI 组件库
+- [shadcn/ui v4](https://ui.shadcn.com/) — 选定，基于 Radix + Tailwind，可定制性强
+  - 对比过：Ant Design — 不选，样式偏重，定制成本高
+
+### CSS 框架
+- [Tailwind CSS v4](https://tailwindcss.com/) — 选定，与 shadcn/ui 配套
+
+### 分栏布局
+- [react-resizable-panels v4.9](https://github.com/bvaughn/react-resizable-panels) — 选定，<5KB，React 19 兼容
+  - 注意：v4 API 与文档示例不同，`PanelGroup` → `Group`，`direction` → `orientation`
+
+### 桌面封装
+- [Tauri v2](https://v2.tauri.app/) — 选定，8MB 包体（vs Electron 120MB），内置文件系统 API
+  - 对比过：Electron — 不选，120MB 包体，300MB 内存占用
 
 ## 设计参考
 - **DaVinci Resolve** — 三栏面板布局（媒体浏览器 | 预览/时间线 | 检查器），面板可调整/折叠
+- **Beyond Compare / VS Code Merge Editor** — SVG 桥线连接器（梯形映射两侧区块），分段线性滚动同步
+  - 借鉴：桥线形状表达高度差（梯形宽边=较高侧、斜线=错位、实线=等高）
+  - 借鉴：分段线性映射算法（区块 top 做锚点，段内等比插值）
+- **Tiptap Split View** — 垂直对齐 + hover 区块高亮（前序对话调研，03-fusion 采用）
+- **DatoCMS ContentLink** — 点击预览区域自动滚动到最近可编辑元素（前序对话调研）
 - [Retool Inspector](https://retool.com/blog/simplifying-retools-inspector) — 配置面板简化设计，统一分组概念
 - [Retool Tree Data UI](https://retool.com/blog/designing-a-ui-for-tree-data) — 复杂树形数据的 UI 设计
 - n8n 节点配置 UI — 配置面板交互参考

@@ -113,7 +113,7 @@ export function InspectorPanel() {
   const skillId = selectedSkill?.id ?? selection?.skillId
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-l bg-background">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l bg-background">
       <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <Info className="size-4 text-muted-foreground" aria-hidden />
@@ -145,58 +145,123 @@ export function InspectorPanel() {
         )}
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-4 p-3 text-sm">
-          {!selection && (
-            <p className="text-muted-foreground">选择一个节点以查看详情</p>
-          )}
+      {!selectedSkill || !editState ? (
+        <div className="p-3 text-sm">
+          {!selection && <p className="text-muted-foreground">选择一个节点以查看详情</p>}
+          {selection && !selectedSkill && <p className="text-muted-foreground">无法加载 Skill</p>}
+        </div>
+      ) : (
+        <>
+          <div className="shrink-0 space-y-4 p-3 text-sm">
+            <section className="space-y-2">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                文件信息
+              </h3>
+              <dl className="space-y-1.5 text-sm">
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-muted-foreground">路径</dt>
+                  <dd className="truncate font-mono">{selectedSkill.path || "—"}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-muted-foreground">版本</dt>
+                  <dd>{editState.frontmatter.version ?? "—"}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 text-muted-foreground">文件数</dt>
+                  <dd>{1 + configPaths.length}</dd>
+                </div>
+              </dl>
+            </section>
 
-          {selection && !selectedSkill && (
-            <p className="text-muted-foreground">无法加载 Skill</p>
-          )}
+            <Separator />
+            <section className="space-y-2">
+              <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Link2 className="size-3.5" aria-hidden />
+                关联文件
+              </h3>
+              <ul className="space-y-1">
+                <li>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
+                    onClick={() =>
+                      skillId &&
+                      select({ skillId, nodeType: "skill-md" })
+                    }
+                  >
+                    <FileText className="size-3.5 shrink-0" aria-hidden />
+                    SKILL.md
+                    {selection?.nodeType === "skill-md" && (
+                      <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
+                    )}
+                  </button>
+                </li>
+                {configPaths.map((path) => (
+                  <li key={path}>
+                    <button
+                      type="button"
+                      className="inline-flex max-w-full items-center gap-1 truncate text-left text-sm text-primary underline-offset-4 hover:underline"
+                      onClick={() =>
+                        skillId &&
+                        select({ skillId, nodeType: "config-file", filePath: path })
+                      }
+                    >
+                      <FileText className="size-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">{path}</span>
+                      {selection?.nodeType === "config-file" &&
+                        selection.filePath === path && (
+                          <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
+                        )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
 
-          {selection && selectedSkill && editState && (
-            <>
+          {selection && (
+            <div className="flex min-h-0 flex-1 flex-col border-t px-3 pb-3 text-sm">
               {selection.nodeType === "skill-md" && (
-                <section className="space-y-2">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    SKILL.md 预览
-                  </h3>
-                  <ScrollArea className="max-h-64 rounded-md border">
-                    <pre className="whitespace-pre-wrap break-words p-3 font-mono text-sm leading-relaxed">
-                      {skillMdPreview}
-                    </pre>
+                <>
+                  <div className="flex shrink-0 items-center justify-between py-3">
+                    <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      SKILL.md 预览
+                    </h3>
+                    <Button type="button" variant="outline" size="sm" className="h-6 gap-1 px-2 text-[11px]" onClick={exportSkillMd}>
+                      <Download className="size-3" />
+                      导出
+                    </Button>
+                  </div>
+                  <ScrollArea className="min-h-0 flex-1 rounded-md border bg-muted/30">
+                    <pre className="whitespace-pre p-3 font-mono text-[11px] leading-relaxed">{skillMdPreview}</pre>
                   </ScrollArea>
-                  <Button type="button" variant="outline" size="sm" onClick={exportSkillMd}>
-                    <Download className="mr-2 h-4 w-4" />
-                    导出 SKILL.md
-                  </Button>
-                </section>
+                </>
               )}
 
               {selection.nodeType === "config-file" && selection.filePath && (
-                <section className="space-y-2">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    配置预览
-                  </h3>
-                  <p className="truncate text-xs text-muted-foreground">{selection.filePath}</p>
+                <>
+                  <div className="flex shrink-0 items-center justify-between py-3">
+                    <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      配置预览
+                    </h3>
+                    {selectedConfigData !== undefined && (
+                      <ExportButton
+                        filename={selection.filePath.split("/").pop() ?? "config.json"}
+                        data={selectedConfigData}
+                      />
+                    )}
+                  </div>
+                  <p className="shrink-0 truncate pb-2 text-xs text-muted-foreground">{selection.filePath}</p>
                   {selectedConfigData !== undefined ? (
-                    <JsonPreview data={selectedConfigData} />
+                    <JsonPreview data={selectedConfigData} className="h-auto min-h-0 flex-1" />
                   ) : (
                     <p className="text-muted-foreground">无此文件数据</p>
                   )}
-                  {selectedConfigData !== undefined && (
-                    <ExportButton
-                      filename={selection.filePath.split("/").pop() ?? "config.json"}
-                      data={selectedConfigData}
-                      label={`导出 ${selection.filePath.split("/").pop() ?? "配置"}`}
-                    />
-                  )}
-                </section>
+                </>
               )}
 
               {selection.nodeType === "validation" && validationResult && (
-                <section className="space-y-2">
+                <section className="space-y-2 pt-3">
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     校验摘要
                   </h3>
@@ -223,123 +288,10 @@ export function InspectorPanel() {
                   )}
                 </section>
               )}
-
-            </>
+            </div>
           )}
-
-          {selectedSkill && editState && (
-            <>
-              <Separator />
-              <section className="space-y-2">
-                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  文件信息
-                </h3>
-                <dl className="space-y-1.5 text-sm">
-                  <div className="flex gap-2">
-                    <dt className="shrink-0 text-muted-foreground">路径</dt>
-                    <dd className="truncate font-mono">{selectedSkill.path || "—"}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="shrink-0 text-muted-foreground">版本</dt>
-                    <dd>{editState.frontmatter.version ?? "—"}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="shrink-0 text-muted-foreground">文件数</dt>
-                    <dd>{1 + configPaths.length}</dd>
-                  </div>
-                </dl>
-              </section>
-
-              <Separator />
-              <section className="space-y-2">
-                <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <Link2 className="size-3.5" aria-hidden />
-                  关联文件
-                </h3>
-                <ul className="space-y-1">
-                  <li>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
-                      onClick={() =>
-                        skillId &&
-                        select({ skillId, nodeType: "skill-md" })
-                      }
-                    >
-                      <FileText className="size-3.5 shrink-0" aria-hidden />
-                      SKILL.md
-                      {selection?.nodeType === "skill-md" && (
-                        <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                      )}
-                    </button>
-                  </li>
-                  {configPaths.map((path) => (
-                    <li key={path}>
-                      <button
-                        type="button"
-                        className="inline-flex max-w-full items-center gap-1 truncate text-left text-sm text-primary underline-offset-4 hover:underline"
-                        onClick={() =>
-                          skillId &&
-                          select({ skillId, nodeType: "config-file", filePath: path })
-                        }
-                      >
-                        <FileText className="size-3.5 shrink-0" aria-hidden />
-                        <span className="truncate">{path}</span>
-                        {selection?.nodeType === "config-file" &&
-                          selection.filePath === path && (
-                            <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                          )}
-                      </button>
-                    </li>
-                  ))}
-                  <li>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
-                      onClick={() =>
-                        skillId &&
-                        select({ skillId, nodeType: "validation" })
-                      }
-                    >
-                      <Info className="size-3.5 shrink-0" aria-hidden />
-                      校验
-                      {selection?.nodeType === "validation" && (
-                        <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                      )}
-                    </button>
-                  </li>
-                </ul>
-              </section>
-
-              <Separator />
-              <section className="space-y-2">
-                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  导出
-                </h3>
-                <div className="flex flex-col gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={exportSkillMd}>
-                    <Download className="mr-2 h-4 w-4" />
-                    SKILL.md
-                  </Button>
-                  {configPaths.map((path) => {
-                    const data = editState.configFiles[path]
-                    if (data === undefined) return null
-                    const name = path.split("/").pop() ?? path
-                    return (
-                      <ExportButton
-                        key={path}
-                        filename={name}
-                        data={data}
-                        label={name}
-                      />
-                    )
-                  })}
-                </div>
-              </section>
-            </>
-          )}
-        </div>
-      </ScrollArea>
+        </>
+      )}
     </div>
   )
 }

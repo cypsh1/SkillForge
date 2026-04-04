@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillForge — 编辑器-预览 区域映射 Demo</title>
+<style>
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --border: #27272a;
+    --text: #e4e4e7;
+    --text-muted: #71717a;
+    --text-dim: #52525b;
+
+    --blue: #3b82f6;
+    --amber: #f59e0b;
+    --emerald: #10b981;
+    --teal: #14b8a6;
+    --violet: #8b5cf6;
+    --slate: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100vh;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel:first-child { border-right: 1px solid var(--border); }
+
+  .panel-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-header strong { color: var(--text); }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .section {
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    transition: background 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .section.active {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  .section[data-s="basic"]  { border-left-color: var(--blue); }
+  .section[data-s="basic"].active  { background: rgba(59,130,246,0.07); }
+  .section[data-s="meta"]   { border-left-color: var(--slate); }
+  .section[data-s="meta"].active   { background: rgba(100,116,139,0.07); }
+  .section[data-s="env"]    { border-left-color: var(--amber); }
+  .section[data-s="env"].active    { background: rgba(245,158,11,0.07); }
+  .section[data-s="tools"]  { border-left-color: var(--emerald); }
+  .section[data-s="tools"].active  { background: rgba(16,185,129,0.07); }
+  .section[data-s="files"]  { border-left-color: var(--violet); }
+  .section[data-s="files"].active  { background: rgba(139,92,246,0.07); }
+  .section[data-s="doc"]    { border-left-color: var(--teal); }
+  .section[data-s="doc"].active    { background: rgba(20,184,166,0.07); }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  [data-s="basic"] .dot  { background: var(--blue); }
+  [data-s="meta"]  .dot  { background: var(--slate); }
+  [data-s="env"]   .dot  { background: var(--amber); }
+  [data-s="tools"] .dot  { background: var(--emerald); }
+  [data-s="files"] .dot  { background: var(--violet); }
+  [data-s="doc"]   .dot  { background: var(--teal); }
+
+  .section-label .title { font-size: 14px; font-weight: 600; }
+
+  .badge {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.07);
+    color: var(--text-muted);
+  }
+
+  .caret {
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+  .section.collapsed .caret { transform: rotate(-90deg); }
+
+  .source-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    margin-bottom: 10px;
+    padding-left: 16px;
+  }
+
+  .collapsible {
+    transition: max-height 0.25s ease, opacity 0.2s;
+    overflow: hidden;
+  }
+  .section.collapsed .collapsible {
+    max-height: 0 !important;
+    opacity: 0;
+  }
+
+  /* Editor card */
+  .editor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .field-row { display: flex; gap: 12px; padding: 5px 0; font-size: 13px; }
+  .field-label { width: 48px; flex-shrink: 0; color: var(--text-muted); text-align: right; }
+  .field-value { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; word-break: break-all; }
+
+  .env-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .env-table th {
+    text-align: left; padding: 6px 8px;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-muted); font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  .env-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 11px;
+  }
+  .env-table td:nth-child(2) { color: var(--text-muted); font-family: inherit; }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+  }
+  .tool-name { font-family: monospace; font-size: 13px; font-weight: 600; }
+  .tool-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .doc-item { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 0; }
+  .doc-hash { color: var(--text-dim); font-family: monospace; font-size: 11px; min-width: 20px; }
+
+  /* Preview code */
+  .preview-code {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #a1a1aa;
+  }
+  .preview-code .hl-key { color: #7dd3fc; }
+  .preview-code .hl-str { color: #86efac; }
+  .preview-code .hl-bool { color: #fbbf24; }
+  .preview-code .hl-heading { color: #e4e4e7; font-weight: 600; }
+  .preview-code .hl-dim { color: var(--text-dim); }
+
+  .sep { height: 1px; background: var(--border); margin: 4px 0 12px; }
+
+  .hint-bar {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: rgba(24,24,27,0.6);
+    letter-spacing: 0.02em;
+  }
+
+  .click-target {
+    cursor: pointer;
+  }
+  .click-target:hover .title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- 左: 可视化编辑器 -->
+  <div class="panel">
+    <div class="panel-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg>
+      <strong>编辑: tech-news-digest-cn / SKILL.md</strong>
+    </div>
+    <div class="hint-bar">💡 Hover 任意区域 → 两侧同时高亮 &nbsp;·&nbsp; 点击区域标题 → 滚动到右侧对应源码</div>
+    <div class="panel-body" id="editor-scroll">
+
+      <div class="section" data-s="basic" data-side="editor">
+        <div class="section-label click-target" onclick="nav('basic','preview')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">基本信息</span>
+        </div>
+        <div class="collapsible">
+          <div class="source-hint">frontmatter → name, description, version, homepage, source</div>
+          <div class="editor-card">
+            <div class="field-row"><span class="field-label">名称</span><span class="field-value">tech-news-digest-cn</span></div>
+            <div class="field-row"><span class="field-label">描述</span><span class="field-value">生成科技新闻摘要，具有统一的数据源模型、质量评分和多格式输出。</span></div>
+            <div class="field-row"><span class="field-label">版本</span><span class="field-value">3.16.0</span></div>
+            <div class="field-row"><span class="field-label">主页</span><span class="field-value">https://github.com/draco-agent/tech-news-digest</span></div>
+            <div class="field-row"><span class="field-label">源码</span><span class="field-value">https://github.com/draco-agent/tech-news-digest</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="section" data-s="env" data-side="editor">
+        <div class="section-label click-target" onclick="nav('env','preview')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">环境变量</span>
+          <span class="badge">11</span>
+        </div>
+        <div class="collapsible">
+          <div class="source-hint">frontmatter → env[]</div>
+          <table class="env-table">
+            <thead><tr><th>变量名</th><th>必需</th><th>描述</th></tr></thead>
+            <tbody>
+              <tr><td>TWITTER_API_BACKEND</td><td>可选</td><td>Twitter API 后端选择</td></tr>
+              <tr><td>X_BEARER_TOKEN</td><td>可选</td><td>Twitter/X API 访问令牌</td></tr>
+              <tr><td>TWITTERAPI_IO_KEY</td><td>可选</td><td>twitterapi.io API 密钥</td></tr>
+              <tr><td>TAVILY_API_KEY</td><td>可选</td><td>Tavily 搜索 API 密钥</td></tr>
+              <tr><td>WEB_SEARCH_BACKEND</td><td>可选</td><td>网页搜索后端选择</td></tr>
+              <tr><td>BRAVE_API_KEYS</td><td>可选</td><td>Brave 搜索 API 密钥（轮换）</td></tr>
+              <tr><td>BRAVE_API_KEY</td><td>可选</td><td>Brave 搜索 API 密钥（单个）</td></tr>
+              <tr><td>GITHUB_TOKEN</td><td>可选</td><td>GitHub 令牌</td></tr>
+              <tr><td>GH_APP_ID</td><td>可选</td><td>GitHub App ID</td></tr>
+              <tr><td>GH_APP_INSTALL_ID</td><td>可选</td><td>GitHub App 安装 ID</td></tr>
+              <tr><td>GH_APP_KEY_FILE</td><td>可选</td><td>GitHub App 私钥路径</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="section" data-s="tools" data-side="editor">
+        <div class="section-label click-target" onclick="nav('tools','preview')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">工具</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="collapsible">
+          <div class="source-hint">frontmatter → tools[]</div>
+          <div class="tool-card"><div class="tool-name">python3</div><div class="tool-desc">必需。运行数据收集和合并脚本。</div></div>
+          <div class="tool-card"><div class="tool-name">mail</div><div class="tool-desc">可选。基于 msmtp 的邮件命令，用于电子邮件传送。</div></div>
+          <div class="tool-card"><div class="tool-name">gog</div><div class="tool-desc">可选。Gmail CLI，电子邮件传送备用。</div></div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="section" data-s="files" data-side="editor">
+        <div class="section-label click-target" onclick="nav('files','preview')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">文件权限</span>
+        </div>
+        <div class="collapsible">
+          <div class="source-hint">frontmatter → files { read[], write[] }</div>
+          <div class="editor-card">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">📖 读取</div>
+            <div style="font-size:11px;font-family:monospace;line-height:1.8;padding-left:8px;">config/defaults/<br>references/<br>scripts/<br>&lt;workspace&gt;/archive/tech-news-digest/</div>
+            <div style="font-size:12px;color:var(--text-muted);margin:10px 0 4px;">✏️ 写入</div>
+            <div style="font-size:11px;font-family:monospace;line-height:1.8;padding-left:8px;">/tmp/td-*.json<br>/tmp/td-email.html<br>/tmp/td-digest.pdf<br>&lt;workspace&gt;/archive/tech-news-digest/</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="section" data-s="doc" data-side="editor">
+        <div class="section-label click-target" onclick="nav('doc','preview')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">文档结构</span>
+          <span class="badge">8 节</span>
+        </div>
+        <div class="collapsible">
+          <div class="source-hint">markdown body → headings & content</div>
+          <div class="doc-item"><span class="doc-hash">#</span> 科技新闻摘要 (Tech News Digest)</div>
+          <div class="doc-item" style="padding-left:16px"><span class="doc-hash">##</span> 快速开始</div>
+          <div class="doc-item" style="padding-left:16px"><span class="doc-hash">##</span> 数据源架构</div>
+          <div class="doc-item" style="padding-left:16px"><span class="doc-hash">##</span> 脚本管道</div>
+          <div class="doc-item" style="padding-left:32px"><span class="doc-hash">###</span> collect-rss.py</div>
+          <div class="doc-item" style="padding-left:32px"><span class="doc-hash">###</span> collect-twitter.py</div>
+          <div class="doc-item" style="padding-left:32px"><span class="doc-hash">###</span> merge-and-score.py</div>
+          <div class="doc-item" style="padding-left:16px"><span class="doc-hash">##</span> 输出格式</div>
+          <div class="doc-item" style="padding-left:16px"><span class="doc-hash">##</span> 配置说明</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 右: 结构化预览 -->
+  <div class="panel">
+    <div class="panel-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <strong>SKILL.MD 预览</strong>
+      <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">结构化视图</span>
+    </div>
+    <div class="hint-bar">颜色编码与左侧编辑器一一对应 &nbsp;·&nbsp; 点击区域标题 → 滚动到左侧编辑器</div>
+    <div class="panel-body" id="preview-scroll">
+
+      <div class="section" data-s="basic" data-side="preview">
+        <div class="section-label click-target" onclick="nav('basic','editor')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">基本信息</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code"><span class="hl-dim">---</span>
+<span class="hl-key">"name"</span>: <span class="hl-str">"tech-news-digest-cn"</span>
+<span class="hl-key">"description"</span>: <span class="hl-str">"生成科技新闻摘要，具有统一的数据源模型、
+  质量评分和多格式输出。六源数据收集包括 RSS 源、
+  Twitter/X 关键意见领袖、GitHub 发布..."</span>
+<span class="hl-key">"version"</span>: <span class="hl-str">"3.16.0"</span>
+<span class="hl-key">"homepage"</span>: <span class="hl-str">"https://github.com/draco-agent/tech-news-digest"</span>
+<span class="hl-key">"source"</span>: <span class="hl-str">"https://github.com/draco-agent/tech-news-digest"</span></div>
+        </div>
+      </div>
+
+      <div class="section" data-s="meta" data-side="preview">
+        <div class="section-label click-target" onclick="toggle(this)">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">元数据</span>
+          <span class="badge">只读</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code"><span class="hl-key">"metadata"</span>:
+  <span class="hl-key">"openclaw"</span>:
+    <span class="hl-key">"requires"</span>:
+      <span class="hl-key">"bins"</span>:
+        - <span class="hl-str">"python3"</span>
+    <span class="hl-key">"optionalBins"</span>:
+      - <span class="hl-str">"mail"</span>
+      - <span class="hl-str">"msmtp"</span>
+      - <span class="hl-str">"gog"</span>
+      - <span class="hl-str">"gh"</span>
+      - <span class="hl-str">"openssl"</span>
+      - <span class="hl-str">"weasyprint"</span></div>
+        </div>
+      </div>
+
+      <div class="section" data-s="env" data-side="preview">
+        <div class="section-label click-target" onclick="nav('env','editor')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">环境变量</span>
+          <span class="badge">11</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code"><span class="hl-key">"env"</span>:
+  - <span class="hl-key">"name"</span>: <span class="hl-str">"TWITTER_API_BACKEND"</span>
+    <span class="hl-key">"required"</span>: <span class="hl-bool">false</span>
+    <span class="hl-key">"description"</span>: <span class="hl-str">"Twitter API 后端：'official'、'twitterapiio' 或 'auto'"</span>
+  - <span class="hl-key">"name"</span>: <span class="hl-str">"X_BEARER_TOKEN"</span>
+    <span class="hl-key">"required"</span>: <span class="hl-bool">false</span>
+    <span class="hl-key">"description"</span>: <span class="hl-str">"Twitter/X API 访问令牌"</span>
+  - <span class="hl-key">"name"</span>: <span class="hl-str">"TWITTERAPI_IO_KEY"</span>
+    <span class="hl-key">"required"</span>: <span class="hl-bool">false</span>
+    <span class="hl-key">"description"</span>: <span class="hl-str">"twitterapi.io API 密钥"</span>
+  - <span class="hl-key">"name"</span>: <span class="hl-str">"TAVILY_API_KEY"</span>
+    <span class="hl-key">"required"</span>: <span class="hl-bool">false</span>
+    <span class="hl-key">"description"</span>: <span class="hl-str">"Tavily 搜索 API 密钥"</span>
+  <span class="hl-dim">  ... (共 11 项)</span></div>
+        </div>
+      </div>
+
+      <div class="section" data-s="tools" data-side="preview">
+        <div class="section-label click-target" onclick="nav('tools','editor')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">工具</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code"><span class="hl-key">"tools"</span>:
+  - <span class="hl-key">"python3"</span>: <span class="hl-str">"必需。运行数据收集和合并脚本。"</span>
+  - <span class="hl-key">"mail"</span>: <span class="hl-str">"可选。基于 msmtp 的邮件命令，用于电子邮件传送。"</span>
+  - <span class="hl-key">"gog"</span>: <span class="hl-str">"可选。Gmail CLI，用于电子邮件传送备用。"</span></div>
+        </div>
+      </div>
+
+      <div class="section" data-s="files" data-side="preview">
+        <div class="section-label click-target" onclick="nav('files','editor')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">文件权限</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code"><span class="hl-key">"files"</span>:
+  <span class="hl-key">"read"</span>:
+    - <span class="hl-str">"config/defaults/"</span>: <span class="hl-str">"默认源和主题配置"</span>
+    - <span class="hl-str">"references/"</span>: <span class="hl-str">"提示模板和输出模板"</span>
+    - <span class="hl-str">"scripts/"</span>: <span class="hl-str">"Python 管道脚本"</span>
+    - <span class="hl-str">"&lt;workspace&gt;/archive/tech-news-digest/"</span>
+  <span class="hl-key">"write"</span>:
+    - <span class="hl-str">"/tmp/td-*.json"</span>: <span class="hl-str">"临时管道中间输出"</span>
+    - <span class="hl-str">"/tmp/td-email.html"</span>: <span class="hl-str">"临时电子邮件 HTML"</span>
+    - <span class="hl-str">"/tmp/td-digest.pdf"</span>: <span class="hl-str">"生成的 PDF 摘要"</span>
+    - <span class="hl-str">"&lt;workspace&gt;/archive/tech-news-digest/"</span>
+<span class="hl-dim">---</span></div>
+        </div>
+      </div>
+
+      <div class="section" data-s="doc" data-side="preview">
+        <div class="section-label click-target" onclick="nav('doc','editor')">
+          <span class="caret">▼</span>
+          <span class="dot"></span>
+          <span class="title">文档正文</span>
+        </div>
+        <div class="collapsible">
+          <div class="preview-code">
+<span class="hl-heading"># 科技新闻摘要 (Tech News Digest)</span>
+
+具有统一数据源模型、质量评分管道和基于模板的
+输出生成的自动化科技新闻摘要系统。
+
+<span class="hl-heading">## 快速开始</span>
+
+1. **配置设置**：默认配置位于 `config/defaults/`。
+   复制到工作区以自定义：
+   ```bash
+   mkdir -p workspace/config
+   cp config/defaults/sources.json ...
+   ```
+
+<span class="hl-heading">## 数据源架构</span>
+
+统一的数据源模型 (UnifiedSource) 支持六种类型:
+RSS、Twitter/X KOL、GitHub Releases、
+GitHub Trending、Reddit、Web Search。
+
+<span class="hl-heading">## 脚本管道</span>
+
+<span class="hl-heading">### collect-rss.py</span>
+从 RSS 源收集文章...
+
+<span class="hl-heading">### collect-twitter.py</span>
+收集 Twitter/X KOL 推文...
+
+<span class="hl-heading">### merge-and-score.py</span>
+合并数据源，质量评分，去重...
+
+<span class="hl-heading">## 输出格式</span>
+
+支持 Markdown、HTML、PDF、邮件等多种输出...
+
+<span class="hl-heading">## 配置说明</span>
+
+详见 config/defaults/ 中的配置文件...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.section').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      const s = el.dataset.s;
+      document.querySelectorAll(`.section[data-s="${s}"]`).forEach(x => x.classList.add('active'));
+    });
+    el.addEventListener('mouseleave', () => {
+      const s = el.dataset.s;
+      document.querySelectorAll(`.section[data-s="${s}"]`).forEach(x => x.classList.remove('active'));
+    });
+  });
+
+  function nav(sectionId, targetSide) {
+    const target = document.querySelector(`.section[data-s="${sectionId}"][data-side="${targetSide}"]`);
+    if (!target) return;
+    const container = target.closest('.panel-body');
+    const offset = target.offsetTop - container.offsetTop - 12;
+    container.scrollTo({ top: offset, behavior: 'smooth' });
+
+    document.querySelectorAll(`.section[data-s="${sectionId}"]`).forEach(x => x.classList.add('active'));
+    setTimeout(() => {
+      document.querySelectorAll(`.section[data-s="${sectionId}"]`).forEach(x => x.classList.remove('active'));
+    }, 1800);
+  }
+
+  function toggle(labelEl) {
+    labelEl.closest('.section').classList.toggle('collapsed');
+  }
+
+  document.querySelectorAll('.caret').forEach(c => {
+    c.addEventListener('click', e => {
+      e.stopPropagation();
+      c.closest('.section').classList.toggle('collapsed');
+    });
+  });
+</script>
+
+</body>
+</html>
