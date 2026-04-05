@@ -14,7 +14,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**Phase 4 已完成，Demo 交互方案验证中（04-panel-alignment）**
+**Demo 验证完成（01-05），下一步：T0 Skill 结构调研（新会话自动执行）**
 
 ## 已完成
 
