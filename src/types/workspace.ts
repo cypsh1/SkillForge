@@ -4,7 +4,6 @@ export type NavigatorNodeType =
   | "skill-overview"
   | "skill-md"
   | "config-file"
-  | "validation"
 
 export interface NavigatorSelection {
   skillId: string

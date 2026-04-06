@@ -1,56 +1,597 @@
-import { useCallback, useMemo, useState } from "react"
-import {
-  Download,
-  ExternalLink,
-  FileText,
-  Info,
-  Link2,
-  Save,
-} from "lucide-react"
+import { useCallback, useMemo, useState, type MouseEvent } from "react"
+import { Download, FileText, Save } from "lucide-react"
 
 import { ExportButton } from "@/components/config-editor/export-button"
 import { JsonPreview } from "@/components/config-editor/json-preview"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { downloadFile } from "@/lib/download"
+import { getRelationCountSummary } from "@/lib/bridge-relations"
+import { BRIDGE_SECTIONS, SECTION_MAP } from "@/lib/bridge-sections"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { isTauri, saveSkillFile, saveSkillConfig } from "@/lib/tauri-fs"
-import { validateSkill } from "@/lib/skill-validator"
-import type { EnvVarDefinition, ParsedSkill } from "@/types/skill"
-import type { SkillEditState } from "@/types/workspace"
+import { cn } from "@/lib/utils"
+import type { ParsedSkill, SkillFrontmatter } from "@/types/skill"
 
-function envVarsFromFrontmatter(fm: SkillEditState["frontmatter"]): EnvVarDefinition[] {
-  if (!fm.env || !Array.isArray(fm.env)) return []
-  return fm.env.map((e) => ({
-    name: e.name,
-    required: e.required ?? false,
-    description: e.description ?? "",
-  }))
+interface PreviewParts {
+  basic: string
+  meta: string
+  env: string
+  tools: string
+  files: string
+  exec: string
+  doc: string
 }
 
-function skillForValidation(skill: ParsedSkill, edit: SkillEditState): ParsedSkill {
+function getTopLevelYamlKey(line: string): string | null {
+  if (!line.length) return null
+  if (line[0] === " " || line[0] === "\t") return null
+  if (line.trimStart().startsWith("#")) return null
+  const m = line.match(/^"?([a-zA-Z_-]+)"?\s*:/)
+  return m ? m[1] : null
+}
+
+function parseTopLevelYamlBlocks(fmInner: string): Map<string, string> {
+  const lines = fmInner.split(/\r?\n/)
+  const acc = new Map<string, string[]>()
+  let currentKey: string | null = null
+  for (const line of lines) {
+    const tk = getTopLevelYamlKey(line)
+    if (tk) {
+      currentKey = tk
+      if (!acc.has(tk)) acc.set(tk, [])
+      acc.get(tk)!.push(line)
+    } else if (currentKey) {
+      acc.get(currentKey)!.push(line)
+    }
+  }
+  return new Map([...acc].map(([k, v]) => [k, v.join("\n")]))
+}
+
+function extractFmInnerAndBody(content: string): { fmInner: string; body: string } {
+  if (!content.startsWith("---")) {
+    return { fmInner: "", body: content }
+  }
+  const openEnd = content.indexOf("\n")
+  if (openEnd === -1) {
+    return { fmInner: "", body: content }
+  }
+  const closeIdx = content.indexOf("\n---", openEnd)
+  if (closeIdx === -1) {
+    return { fmInner: content.slice(openEnd + 1), body: "" }
+  }
+  const fmInner = content.slice(openEnd + 1, closeIdx)
+  let body = content.slice(closeIdx + 4)
+  if (body.startsWith("\r\n")) body = body.slice(2)
+  else if (body.startsWith("\n")) body = body.slice(1)
+  return { fmInner, body }
+}
+
+function splitBodyExecDoc(body: string): { exec: string; doc: string } {
+  const trimmed = body.trimEnd()
+  if (!trimmed) return { exec: "", doc: "" }
+  const parts = trimmed.split(/(?=^##[^\n#])/m)
+  const execChunks: string[] = []
+  const docChunks: string[] = []
+  for (const part of parts) {
+    if (!part.trim()) continue
+    const firstLine = part.split("\n")[0] ?? ""
+    const hm = firstLine.match(/^##\s+(.+)/)
+    if (hm && /脚本|script|pipeline/i.test(hm[1])) {
+      execChunks.push(part)
+    } else {
+      docChunks.push(part)
+    }
+  }
   return {
-    ...skill,
-    frontmatter: edit.frontmatter,
-    configFiles: edit.configFiles,
-    description: edit.frontmatter.description ?? skill.description,
-    envVars: envVarsFromFrontmatter(edit.frontmatter),
+    exec: execChunks.join("\n\n").trimEnd(),
+    doc: docChunks.join("\n\n").trimEnd(),
   }
 }
 
-function countSeverity(
-  issues: { severity: "error" | "warning" | "info" }[],
-  sev: "error" | "warning" | "info",
-) {
-  return issues.filter((i) => i.severity === sev).length
+function splitPreviewInto7(content: string): PreviewParts {
+  const { fmInner, body } = extractFmInnerAndBody(content)
+  const blocks = parseTopLevelYamlBlocks(fmInner)
+  const basicKeys = ["name", "description", "version", "homepage"] as const
+  const basicLines = basicKeys
+    .map((k) => blocks.get(k) ?? "")
+    .filter((s) => s.length > 0)
+  const basic = basicLines.length > 0 ? ["---", ...basicLines].join("\n") : ""
+  const meta = blocks.get("metadata") ?? ""
+  const env = blocks.get("env") ?? ""
+  const tools = blocks.get("tools") ?? ""
+  const files = blocks.get("files") ?? ""
+  const { exec, doc } = splitBodyExecDoc(body)
+  return { basic, meta, env, tools, files, exec, doc }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+}
+
+function fieldVisualClass(
+  selectedField: string | null | undefined,
+  activePanel: "editor" | "inspector" | null | undefined,
+  fieldKey: string | undefined,
+  panel: "editor" | "inspector",
+): string {
+  if (!fieldKey || selectedField !== fieldKey) return ""
+  return activePanel === panel ? "fa" : "fm"
+}
+
+type InspectorEntityRule = { re: RegExp; eid: string; fieldKey?: string }
+
+const BASIC_FIELD_MAP: Record<string, string> = {
+  name: "f-name",
+  description: "f-desc",
+  version: "f-ver",
+  homepage: "f-home",
+}
+
+function wrapBasicFieldLines(
+  html: string,
+  selectedField: string | null,
+  activePanel: "editor" | "inspector" | null,
+): string {
+  return html.replace(
+    /(<span class="syntax-key">(name|description|version|homepage)<\/span>.*?)(?=\n|$)/g,
+    (_match, line, key) => {
+      const field = BASIC_FIELD_MAP[key]
+      if (!field) return line
+      const cls = fieldVisualClass(selectedField, activePanel, field, "inspector")
+      return `<span data-field="${field}" class="pf${cls ? ` ${cls}` : ""}">${line}</span>`
+    },
+  )
+}
+
+function wrapYamlListBlocks(
+  text: string,
+  fieldKeyForBlock: (block: string) => string | null,
+): string {
+  const lines = text.split(/\r?\n/)
+  if (lines.length === 0) return ""
+
+  const out: string[] = []
+  let block: string[] = []
+
+  const flush = () => {
+    if (block.length === 0) return
+    const content = block.join("\n")
+    const fieldKey = fieldKeyForBlock(content)
+    const html = highlightYaml(content)
+    out.push(fieldKey ? `<div class="pf" data-field="${fieldKey}">${html}</div>` : html)
+    block = []
+  }
+
+  out.push(highlightYaml(lines[0] ?? ""))
+  for (const line of lines.slice(1)) {
+    if (/^\s*-\s/.test(line)) {
+      flush()
+      block = [line]
+      continue
+    }
+    if (block.length > 0) {
+      block.push(line)
+    } else {
+      out.push(highlightYaml(line))
+    }
+  }
+  flush()
+  return out.join("\n")
+}
+
+function wrapYamlNamedBlocks(
+  text: string,
+  fieldMap: Record<string, string>,
+): string {
+  const lines = text.split(/\r?\n/)
+  if (lines.length === 0) return ""
+
+  const out: string[] = []
+  let block: string[] = []
+  let currentName: string | null = null
+
+  const flush = () => {
+    if (block.length === 0) return
+    const content = block.join("\n")
+    const html = highlightYaml(content)
+    const fieldKey = currentName ? fieldMap[currentName] : undefined
+    out.push(fieldKey ? `<div class="pf" data-field="${fieldKey}">${html}</div>` : html)
+    block = []
+    currentName = null
+  }
+
+  out.push(highlightYaml(lines[0] ?? ""))
+  for (const line of lines.slice(1)) {
+    const match = line.match(/^(\s*)(read|write):\s*$/)
+    if (match) {
+      flush()
+      currentName = match[2]
+      block = [line]
+      continue
+    }
+    if (block.length > 0) {
+      block.push(line)
+    } else {
+      out.push(highlightYaml(line))
+    }
+  }
+  flush()
+  return out.join("\n")
+}
+
+function scriptTitleToEid(title: string): string | null {
+  const m = title.match(/([\w-]+(?:\.py)?)/i)
+  if (!m) return null
+  return m[1].replace(/\.py$/i, "")
+}
+
+function docFieldKey(title: string): string {
+  return `f-d-${title.slice(0, 8).replace(/\s+/g, "-").toLowerCase()}`
+}
+
+function wrapMarkdownHeadingBlocks(
+  text: string,
+  fieldKeyForTitle: (title: string) => string | null,
+): string {
+  const trimmed = text.trimEnd()
+  if (!trimmed) return ""
+
+  const chunks = trimmed.split(/(?=^#{1,6}\s+.+$)/m).filter((chunk) => chunk.trim().length > 0)
+  return chunks
+    .map((chunk) => {
+      const title = chunk.match(/^#{1,6}\s+(.+)$/m)?.[1]?.trim()
+      const html = highlightYaml(chunk)
+      const fieldKey = title ? fieldKeyForTitle(title) : null
+      return fieldKey ? `<div class="pf" data-field="${fieldKey}">${html}</div>` : html
+    })
+    .join("\n")
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function buildInspectorEntityRules(
+  skill: ParsedSkill | null,
+  fm: SkillFrontmatter | null,
+): Record<keyof PreviewParts, InspectorEntityRule[]> {
+  const empty: Record<keyof PreviewParts, InspectorEntityRule[]> = {
+    basic: [], meta: [], env: [], tools: [], files: [], exec: [], doc: [],
+  }
+  if (!skill || !fm) return empty
+
+  const env: InspectorEntityRule[] = (fm.env ?? []).map((e) => ({
+    re: new RegExp(`\\b${escapeRegExp(e.name)}\\b`, "g"),
+    eid: e.name,
+    fieldKey: `f-e-${e.name}`,
+  }))
+
+  const tools: InspectorEntityRule[] = skill.tools.map((t) => ({
+    re: new RegExp(`\\b${escapeRegExp(t.name)}\\b`, "g"),
+    eid: t.name,
+    fieldKey: `f-t-${t.name}`,
+  }))
+
+  const filesSeen = new Set<string>()
+  const files: InspectorEntityRule[] = []
+  const addFileRule = (pattern: string, eid: string, fieldKey?: string) => {
+    if (filesSeen.has(eid)) return
+    filesSeen.add(eid)
+    files.push({ re: new RegExp(escapeRegExp(pattern), "g"), eid, fieldKey })
+  }
+  const allPaths = [
+    ...(Array.isArray(fm.files?.read) ? fm.files!.read : []),
+    ...(Array.isArray(fm.files?.write) ? fm.files!.write : []),
+  ]
+  for (const item of allPaths) {
+    const p = typeof item === "string" ? item : String(item)
+    if (p.includes("config/defaults/")) addFileRule("config/defaults/", "config-defaults", "f-p-config-defaults")
+    if (p.startsWith("references/") || p.includes("/references/")) addFileRule("references/", "references-dir", "f-p-references-dir")
+    if (p.startsWith("scripts/") || p.includes("/scripts/")) addFileRule("scripts/", "scripts-dir", "f-p-scripts-dir")
+    const basename = p.split("/").pop()
+    if (basename?.endsWith(".json")) addFileRule(basename, basename)
+  }
+
+  const exec: InspectorEntityRule[] = []
+  const execSeen = new Set<string>()
+  for (const s of skill.sections) {
+    if (!/脚本|script|pipeline/i.test(s.title)) continue
+    const m = s.title.match(/(?:###?\s+)?([\w-]+(?:\.py)?)/i)
+    if (!m) continue
+    const raw = m[1].replace(/\.py$/i, "")
+    if (execSeen.has(raw)) continue
+    execSeen.add(raw)
+    exec.push({
+      re: new RegExp(`\\b${escapeRegExp(raw)}(?:\\.py)?\\b`, "g"),
+      eid: raw,
+      fieldKey: `f-s-${raw}`,
+    })
+  }
+
+  return { basic: [], meta: [], env, tools, files, exec, doc: [] }
+}
+
+function classForBridgeEid(
+  eid: string,
+  selectedField: string | null,
+  activePanel: "editor" | "inspector" | null,
+  fieldKey: string | undefined,
+  selectedEid: string | null,
+  relatedEids: string[],
+): string {
+  const s = getRelationCountSummary(eid)
+  const hasRel = s.forward + s.alternate + s.contains > 0
+  const isSelected = selectedEid != null && selectedEid === eid
+  const isRelated = selectedEid != null && !isSelected && relatedEids.includes(eid)
+  const isDimmed = selectedEid != null && !isSelected && !relatedEids.includes(eid)
+  return [
+    "en",
+    hasRel ? "has-rel" : "",
+    isSelected ? "eid-selected" : "",
+    isRelated ? "eid-related" : "",
+    isDimmed ? "eid-dimmed" : "",
+    fieldVisualClass(selectedField, activePanel, fieldKey, "inspector"),
+  ]
+    .filter(Boolean)
+    .join(" ")
+}
+
+function wrapInspectorTextWithEntities(
+  text: string,
+  rules: InspectorEntityRule[],
+  selectedField: string | null,
+  activePanel: "editor" | "inspector" | null,
+  selectedEid: string | null,
+  relatedEids: string[],
+): string {
+  let out = text
+  for (const { re, eid, fieldKey } of rules) {
+    const cls = classForBridgeEid(eid, selectedField, activePanel, fieldKey, selectedEid, relatedEids)
+    const fieldAttr = fieldKey ?? eid
+    out = out.replace(re, (m) => {
+      return `<span class="${cls}" data-eid="${eid}" data-field="${fieldAttr}">${m}</span>`
+    })
+  }
+  return out
+}
+
+function injectInspectorBridgeEntities(
+  html: string,
+  sectionKey: keyof PreviewParts,
+  selectedField: string | null,
+  activePanel: "editor" | "inspector" | null,
+  selectedEid: string | null,
+  relatedEids: string[],
+  allRules: Record<keyof PreviewParts, InspectorEntityRule[]>,
+): string {
+  const rules = allRules[sectionKey]
+  if (!rules.length) return html
+  const sorted = [...rules].sort((a, b) => b.re.source.length - a.re.source.length)
+  const parts = html.split(/(<[^>]+>)/)
+  return parts
+    .map((part) => (
+      part.startsWith("<")
+        ? part
+        : wrapInspectorTextWithEntities(
+            part,
+            sorted,
+            selectedField,
+            activePanel,
+            selectedEid,
+            relatedEids,
+          )
+    ))
+    .join("")
+}
+
+function highlightYaml(text: string): string {
+  if (!text) return ""
+  return escapeHtml(text)
+    .replace(/^(\s*)([\w-]+)(:)/gm, "$1<span class=\"syntax-key\">$2</span>$3")
+    .replace(/:\s*"([^"]*)"/g, ": <span class=\"syntax-value\">\"$1\"</span>")
+    .replace(/:\s*'([^']*)'/g, ": <span class=\"syntax-value\">'$1'</span>")
+    .replace(/:\s*(true|false)\b/g, ": <span class=\"syntax-bool\">$1</span>")
+    .replace(/^(#{1,6}\s+.*)$/gm, "<span class=\"syntax-heading\">$1</span>")
+    .replace(/^(---)\s*$/gm, "<span class=\"syntax-dim\">$1</span>")
+}
+
+function buildSectionHtml(
+  sectionKey: keyof PreviewParts,
+  raw: string,
+  skill: ParsedSkill | null,
+  selectedField: string | null,
+  activePanel: "editor" | "inspector" | null,
+): string {
+  if (!raw) return ""
+
+  switch (sectionKey) {
+    case "basic": {
+      return wrapBasicFieldLines(highlightYaml(raw), selectedField, activePanel)
+    }
+    case "env": {
+      return wrapYamlListBlocks(raw, (block) => {
+        const name = block.match(/\bname:\s*["']?([^"'\n]+)["']?/)?.[1]?.trim()
+        return name ? `f-e-${name}` : null
+      })
+    }
+    case "tools": {
+      return wrapYamlListBlocks(raw, (block) => {
+        const toolName = block.match(/^\s*-\s*["']?([^"'\n]+)["']?/m)?.[1]?.trim()
+        return toolName ? `f-t-${toolName}` : null
+      })
+    }
+    case "files": {
+      return wrapYamlNamedBlocks(raw, { read: "f-fr", write: "f-fw" })
+    }
+    case "exec": {
+      return wrapMarkdownHeadingBlocks(raw, (title) => {
+        const eid = scriptTitleToEid(title)
+        return eid ? `f-s-${eid}` : null
+      })
+    }
+    case "doc": {
+      return wrapMarkdownHeadingBlocks(raw, (title) => {
+        if (!skill) return null
+        const matched = skill.sections.find((section) => section.title === title)
+        return matched ? docFieldKey(matched.title) : null
+      })
+    }
+    case "meta":
+    default:
+      return highlightYaml(raw)
+  }
+}
+
+function PreviewSectionBlock({
+  sectionId,
+  title,
+  color,
+  html,
+  badge,
+  dimmed,
+}: {
+  sectionId: string
+  title: string
+  color: string
+  html: string
+  badge?: string
+  dimmed?: boolean
+}) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div
+      data-bridge-section={sectionId}
+      className={cn(
+        !open && "bridge-section-collapsed",
+        dimmed && "bridge-dim",
+      )}
+    >
+      <div
+        className="bridge-section-header"
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            setOpen((v) => !v)
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        <span className="bridge-section-caret text-[8px] text-muted-foreground">▼</span>
+        <span className="bridge-section-dot" style={{ backgroundColor: color }} />
+        <span className="text-xs font-semibold">{title}</span>
+        {badge && (
+          <span className="bridge-badge">
+            {badge}
+          </span>
+        )}
+      </div>
+      <div className="bridge-section-content">
+        <div
+          className="pc"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function SectionedPreview({
+  content,
+  skill,
+  fm,
+  selectedField,
+  activePanel,
+  selectedEid,
+  relatedEids,
+  isSectionDimmed,
+}: {
+  content: string
+  skill: ParsedSkill | null
+  fm: SkillFrontmatter | null
+  selectedField: string | null
+  activePanel: "editor" | "inspector" | null
+  selectedEid: string | null
+  relatedEids: string[]
+  isSectionDimmed: (sectionId: string) => boolean
+}) {
+  const parts = useMemo(() => splitPreviewInto7(content), [content])
+  const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
+  return (
+    <div className="p-3 pl-1.5">
+      {BRIDGE_SECTIONS.map((def) => {
+        const key = def.id as keyof PreviewParts
+        const raw = parts[key] ?? ""
+        let html = buildSectionHtml(key, raw, skill, selectedField, activePanel)
+        html = injectInspectorBridgeEntities(
+          html,
+          key,
+          selectedField,
+          activePanel,
+          selectedEid,
+          relatedEids,
+          entityRules,
+        )
+        let badge: string | undefined
+        if (def.id === "meta") badge = "只读"
+        else if (def.id === "env" && skill) badge = `${skill.frontmatter.env?.length ?? 0}`
+        else if (def.id === "tools" && skill) badge = `${skill.tools.length}`
+
+        return (
+          <PreviewSectionBlock
+            key={def.id}
+            sectionId={def.id}
+            title={SECTION_MAP[def.id]?.name ?? def.id}
+            color={def.color}
+            dimmed={isSectionDimmed(def.id)}
+            badge={badge}
+            html={html}
+          />
+        )
+      })}
+    </div>
+  )
 }
 
 export function InspectorPanel() {
-  const { state, selectedSkill, editState, select } = useWorkspace()
+  const api = usePanelSyncApi()
+  const { state, selectedSkill, editState } = useWorkspace()
   const selection = state.selection
+  const selectedField = api?.selectedField ?? null
+  const activePanel = api?.activePanel ?? null
+  const selectedEid = api?.selectedEid ?? null
+  const relatedEids = api?.relatedEids ?? []
+
+  const handleInspectorClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      if (!api) return
+      let el: HTMLElement | null = e.target as HTMLElement
+      const root = e.currentTarget
+      let eid: string | null = null
+      let field: string | null = null
+      while (el && el !== root) {
+        if (!eid) eid = el.getAttribute("data-eid")
+        if (!field) field = el.getAttribute("data-field")
+        if (eid && field) break
+        el = el.parentElement
+      }
+
+      if (eid || field) {
+        api.selectFieldKey(field)
+        api.selectRelationTarget(eid)
+      } else {
+        api.clearRelationSelection()
+      }
+    },
+    [api],
+  )
 
   const markdownBody = useMemo(() => {
     if (!selectedSkill) return ""
@@ -63,20 +604,6 @@ export function InspectorPanel() {
     if (!editState) return ""
     return serializeSkillMd(editState.frontmatter, markdownBody)
   }, [editState, markdownBody])
-
-  const validationResult = useMemo(() => {
-    if (!selectedSkill || !editState) return null
-    return validateSkill(skillForValidation(selectedSkill, editState))
-  }, [selectedSkill, editState])
-
-  const configPaths = useMemo(() => {
-    if (!selectedSkill) return []
-    const keys = new Set([
-      ...Object.keys(selectedSkill.configFiles),
-      ...Object.keys(editState?.configFiles ?? {}),
-    ])
-    return [...keys].sort()
-  }, [selectedSkill, editState?.configFiles])
 
   const selectedConfigData = useMemo(() => {
     if (!selection || selection.nodeType !== "config-file" || !selection.filePath || !editState) {
@@ -110,14 +637,25 @@ export function InspectorPanel() {
     }
   }, [selectedSkill, editState, skillMdPreview])
 
-  const skillId = selectedSkill?.id ?? selection?.skillId
+  const showSkillMdChrome = selection?.nodeType === "skill-md"
+  const showConfigChrome = selection?.nodeType === "config-file" && Boolean(selection.filePath)
+  const showEmptyHint =
+    selection &&
+    selection.nodeType !== "skill-md" &&
+    selection.nodeType !== "config-file"
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l bg-background">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Info className="size-4 text-muted-foreground" aria-hidden />
-          <span className="text-sm font-medium">检查器</span>
+      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <FileText className="size-3 shrink-0" aria-hidden />
+          <strong className="text-foreground">源码预览</strong>
+          {showSkillMdChrome && (
+            <span className="text-[10px] truncate" style={{ marginLeft: 'auto' }}>SKILL.md</span>
+          )}
+          {showConfigChrome && selection.filePath && (
+            <span className="text-[10px] truncate">{selection.filePath.split("/").pop()}</span>
+          )}
           {editState?.dirty && (
             <Badge
               variant="outline"
@@ -127,22 +665,42 @@ export function InspectorPanel() {
             </Badge>
           )}
         </div>
-        {isTauri() && editState?.dirty && (
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            disabled={saving}
-            onClick={handleSaveAll}
-          >
-            <Save className="size-3.5" />
-            {saving ? "保存中…" : "保存"}
-          </Button>
-        )}
-        {saveMsg && (
-          <span className="text-xs text-muted-foreground">{saveMsg}</span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {showSkillMdChrome && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-5 gap-1 px-2 text-[11px]"
+              onClick={exportSkillMd}
+            >
+              <Download className="size-3" />
+              导出
+            </Button>
+          )}
+          {showConfigChrome && selectedConfigData !== undefined && selection.filePath && (
+            <ExportButton
+              filename={selection.filePath.split("/").pop() ?? "config.json"}
+              data={selectedConfigData}
+            />
+          )}
+          {isTauri() && editState?.dirty && (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              disabled={saving}
+              onClick={handleSaveAll}
+            >
+              <Save className="size-3.5" />
+              {saving ? "保存中…" : "保存"}
+            </Button>
+          )}
+          {saveMsg && (
+            <span className="text-xs text-muted-foreground">{saveMsg}</span>
+          )}
+        </div>
       </div>
 
       {!selectedSkill || !editState ? (
@@ -152,144 +710,41 @@ export function InspectorPanel() {
         </div>
       ) : (
         <>
-          <div className="shrink-0 space-y-4 p-3 text-sm">
-            <section className="space-y-2">
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                文件信息
-              </h3>
-              <dl className="space-y-1.5 text-sm">
-                <div className="flex gap-2">
-                  <dt className="shrink-0 text-muted-foreground">路径</dt>
-                  <dd className="truncate font-mono">{selectedSkill.path || "—"}</dd>
-                </div>
-                <div className="flex gap-2">
-                  <dt className="shrink-0 text-muted-foreground">版本</dt>
-                  <dd>{editState.frontmatter.version ?? "—"}</dd>
-                </div>
-                <div className="flex gap-2">
-                  <dt className="shrink-0 text-muted-foreground">文件数</dt>
-                  <dd>{1 + configPaths.length}</dd>
-                </div>
-              </dl>
-            </section>
+          <div
+            ref={api?.inspectorRef}
+            className="min-h-0 flex-1 overflow-y-auto"
+            onClick={api ? handleInspectorClick : undefined}
+          >
+            {selection?.nodeType === "skill-md" && (
+              <SectionedPreview
+                content={skillMdPreview}
+                skill={selectedSkill}
+                fm={editState?.frontmatter ?? null}
+                selectedField={selectedField}
+                activePanel={activePanel}
+                selectedEid={selectedEid}
+                relatedEids={relatedEids}
+                isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
+              />
+            )}
 
-            <Separator />
-            <section className="space-y-2">
-              <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <Link2 className="size-3.5" aria-hidden />
-                关联文件
-              </h3>
-              <ul className="space-y-1">
-                <li>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
-                    onClick={() =>
-                      skillId &&
-                      select({ skillId, nodeType: "skill-md" })
-                    }
-                  >
-                    <FileText className="size-3.5 shrink-0" aria-hidden />
-                    SKILL.md
-                    {selection?.nodeType === "skill-md" && (
-                      <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                    )}
-                  </button>
-                </li>
-                {configPaths.map((path) => (
-                  <li key={path}>
-                    <button
-                      type="button"
-                      className="inline-flex max-w-full items-center gap-1 truncate text-left text-sm text-primary underline-offset-4 hover:underline"
-                      onClick={() =>
-                        skillId &&
-                        select({ skillId, nodeType: "config-file", filePath: path })
-                      }
-                    >
-                      <FileText className="size-3.5 shrink-0" aria-hidden />
-                      <span className="truncate">{path}</span>
-                      {selection?.nodeType === "config-file" &&
-                        selection.filePath === path && (
-                          <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                        )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            {selection?.nodeType === "config-file" && selection.filePath && (
+              <div className="flex min-h-0 flex-col gap-2 p-3">
+                <p className="shrink-0 truncate text-xs text-muted-foreground">{selection.filePath}</p>
+                {selectedConfigData !== undefined ? (
+                  <JsonPreview data={selectedConfigData} className="h-auto min-h-[200px]" />
+                ) : (
+                  <p className="text-sm text-muted-foreground">无此文件数据</p>
+                )}
+              </div>
+            )}
+
+            {showEmptyHint && (
+              <div className="p-4 text-sm text-muted-foreground">
+                在左侧选择「SKILL.md」或配置文件以查看源码或 JSON 预览。
+              </div>
+            )}
           </div>
-
-          {selection && (
-            <div className="flex min-h-0 flex-1 flex-col border-t px-3 pb-3 text-sm">
-              {selection.nodeType === "skill-md" && (
-                <>
-                  <div className="flex shrink-0 items-center justify-between py-3">
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      SKILL.md 预览
-                    </h3>
-                    <Button type="button" variant="outline" size="sm" className="h-6 gap-1 px-2 text-[11px]" onClick={exportSkillMd}>
-                      <Download className="size-3" />
-                      导出
-                    </Button>
-                  </div>
-                  <ScrollArea className="min-h-0 flex-1 rounded-md border bg-muted/30">
-                    <pre className="whitespace-pre p-3 font-mono text-[11px] leading-relaxed">{skillMdPreview}</pre>
-                  </ScrollArea>
-                </>
-              )}
-
-              {selection.nodeType === "config-file" && selection.filePath && (
-                <>
-                  <div className="flex shrink-0 items-center justify-between py-3">
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      配置预览
-                    </h3>
-                    {selectedConfigData !== undefined && (
-                      <ExportButton
-                        filename={selection.filePath.split("/").pop() ?? "config.json"}
-                        data={selectedConfigData}
-                      />
-                    )}
-                  </div>
-                  <p className="shrink-0 truncate pb-2 text-xs text-muted-foreground">{selection.filePath}</p>
-                  {selectedConfigData !== undefined ? (
-                    <JsonPreview data={selectedConfigData} className="h-auto min-h-0 flex-1" />
-                  ) : (
-                    <p className="text-muted-foreground">无此文件数据</p>
-                  )}
-                </>
-              )}
-
-              {selection.nodeType === "validation" && validationResult && (
-                <section className="space-y-2 pt-3">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    校验摘要
-                  </h3>
-                  {validationResult.issues.length === 0 ? (
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400">验证通过</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="destructive">
-                        {countSeverity(validationResult.issues, "error")} 错误
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="text-amber-600 dark:text-amber-400"
-                      >
-                        {countSeverity(validationResult.issues, "warning")} 警告
-                      </Badge>
-                      <Badge variant="secondary">
-                        {countSeverity(validationResult.issues, "info")} 提示
-                      </Badge>
-                      <span className="w-full text-sm text-muted-foreground">
-                        共 {validationResult.issues.length} 条
-                      </span>
-                    </div>
-                  )}
-                </section>
-              )}
-            </div>
-          )}
         </>
       )}
     </div>

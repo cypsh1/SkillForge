@@ -1,9 +1,16 @@
-import { useMemo } from "react"
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react"
 import {
   ExternalLink,
   FileText,
   KeyRound,
   Layers,
+  Link2,
   Pencil,
   Settings,
   ShieldCheck,
@@ -17,12 +24,25 @@ import { FrontmatterForm } from "@/components/skill-editor/frontmatter-form"
 import { ValidationPanel } from "@/components/skill-editor/validation-panel"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
+import { BRIDGE_SECTIONS } from "@/lib/bridge-sections"
+import { getRelationCountSummary } from "@/lib/bridge-relations"
+import { cn } from "@/lib/utils"
 import { validateSkill } from "@/lib/skill-validator"
 import type { NavigatorSelection } from "@/types/workspace"
 import type { ParsedSkill, SkillFrontmatter, SkillTool } from "@/types/skill"
+
+function fieldVisualClass(
+  selectedField: string | null | undefined,
+  activePanel: "editor" | "inspector" | null | undefined,
+  fieldKey: string | undefined,
+  panel: "editor" | "inspector",
+): string {
+  if (!fieldKey || selectedField !== fieldKey) return ""
+  return activePanel === panel ? "fa" : "fm"
+}
 
 function configEditorKind(filePath: string): "sources" | "topics" | "schema" | null {
   const base = filePath.split("/").pop() ?? filePath
@@ -60,8 +80,6 @@ function headerIcon(nodeType: NavigatorSelection["nodeType"]) {
       return FileText
     case "config-file":
       return Settings
-    case "validation":
-      return ShieldCheck
     default:
       return FileText
   }
@@ -75,11 +93,26 @@ function headerSegment(sel: NavigatorSelection): string {
       return "SKILL.md"
     case "config-file":
       return sel.filePath ?? "配置"
-    case "validation":
-      return "验证"
     default:
       return ""
   }
+}
+
+function bridgeColor(sectionId: string): string {
+  return BRIDGE_SECTIONS.find((s) => s.id === sectionId)?.color ?? "#64748b"
+}
+
+function normalizeFileList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((item) => {
+    if (typeof item === "string") return item
+    if (typeof item === "object" && item !== null) {
+      return Object.entries(item)
+        .map(([k, v]) => (v ? `${k}: ${v}` : k))
+        .join(", ")
+    }
+    return String(item)
+  })
 }
 
 function mergeSkillForValidation(
@@ -95,70 +128,254 @@ function mergeSkillForValidation(
   }
 }
 
+/** 文件权限路径 → bridge eid（与 demo05 / bridge-relations 键一致） */
+function pathToFileEid(path: string): string | null {
+  const p = path.trim()
+  if (p.includes("config/defaults/")) return "config-defaults"
+  if (p.startsWith("references/") || p.includes("/references/")) return "references-dir"
+  if (p.startsWith("scripts/") || p.includes("/scripts/")) return "scripts-dir"
+  return null
+}
+
+function scriptEidFromSectionTitle(title: string): string | null {
+  const m = title.match(/([\w-]+(?:\.py)?)/i)
+  if (!m) return null
+  return m[1].replace(/\.py$/i, "")
+}
+
+function RelationIndicator({ eid, fieldKey }: { eid: string; fieldKey?: string }) {
+  const api = usePanelSyncApi()
+  const summary = getRelationCountSummary(eid)
+  const { forward, alternate, contains } = summary
+  if (forward + alternate + contains === 0) return null
+  const fieldCls = fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")
+  const parts: string[] = []
+  if (forward > 0) parts.push(`→${forward}`)
+  if (alternate > 0) parts.push(`↔${alternate}`)
+  if (contains > 0) parts.push(`⊂${contains}`)
+  return (
+    <span
+      className={cn(
+        "ri",
+        fieldCls,
+      )}
+      data-ri={eid}
+      data-eid={eid}
+      data-field={fieldKey}
+      aria-hidden
+    >
+      {parts.map((p) => (
+        <span key={p} className="rp">{p}</span>
+      ))}
+    </span>
+  )
+}
+
+function EidText({
+  eid,
+  fieldKey,
+  className,
+  children,
+}: {
+  eid: string
+  fieldKey?: string
+  className?: string
+  children: ReactNode
+}) {
+  const api = usePanelSyncApi()
+  const selectedEid = api?.selectedEid ?? null
+  const relatedEids = api?.relatedEids ?? []
+  const fieldCls = fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")
+  const summary = getRelationCountSummary(eid)
+  const hasRel =
+    summary.forward > 0 || summary.alternate > 0 || summary.contains > 0
+
+  const isSelected = selectedEid != null && selectedEid === eid
+  const isRelated =
+    selectedEid != null && !isSelected && relatedEids.includes(eid)
+  const isDimmed =
+    selectedEid != null && !isSelected && !relatedEids.includes(eid)
+
+  return (
+    <span
+      className={cn(
+        "en",
+        className,
+        hasRel && "has-rel",
+        isSelected && "eid-selected",
+        isRelated && "eid-related",
+        isDimmed && "eid-dimmed",
+        fieldCls,
+      )}
+      data-eid={eid}
+      data-field={fieldKey}
+    >
+      {children}
+    </span>
+  )
+}
+
+function BridgeSectionBlock({
+  sectionId,
+  title,
+  color,
+  badge,
+  readOnly,
+  defaultCollapsed,
+  dimmed,
+  children,
+}: {
+  sectionId: string
+  title: string
+  color: string
+  badge?: string
+  readOnly?: boolean
+  defaultCollapsed?: boolean
+  dimmed?: boolean
+  children: ReactNode
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
+  return (
+    <div
+      data-bridge-section={sectionId}
+      className={cn(
+        collapsed && "bridge-section-collapsed",
+        readOnly && "bridge-section-readonly",
+        dimmed && "bridge-dim",
+      )}
+    >
+      <div
+        className="bridge-section-header"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span
+          className="bridge-section-caret text-[8px] text-muted-foreground transition-transform"
+          style={{ transform: collapsed ? "rotate(-90deg)" : undefined }}
+        >
+          ▼
+        </span>
+        <span className="bridge-section-dot" style={{ backgroundColor: color }} />
+        <span className="text-xs font-semibold">{title}</span>
+        {badge && (
+          <span className="bridge-badge">
+            {badge}
+          </span>
+        )}
+        {readOnly && (
+          <span className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted-foreground)' }}>
+            🔒 只读
+          </span>
+        )}
+      </div>
+      <div className="bridge-section-content">{children}</div>
+    </div>
+  )
+}
+
 function ToolsBlock({ tools }: { tools: SkillTool[] }) {
   if (tools.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">未定义工具</p>
-    )
+    return <p className="text-sm text-muted-foreground">未定义工具</p>
   }
   return (
-    <div className="grid gap-3">
-      {tools.map((tool, i) => (
-        <Card key={i}>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-mono">{tool.name}</CardTitle>
-            {tool.description ? (
-              <p className="text-xs text-muted-foreground">{tool.description}</p>
-            ) : null}
-          </CardHeader>
-          {tool.parameters.length > 0 ? (
-            <CardContent className="py-2 px-4">
-              <div className="space-y-1">
-                {tool.parameters.map((param, j) => (
-                  <div key={j} className="flex items-baseline gap-2 text-xs">
-                    <code className="font-mono text-primary">{param.name}</code>
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                      {param.type}
-                    </Badge>
-                    {param.description ? (
-                      <span className="text-muted-foreground">{param.description}</span>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          ) : null}
-        </Card>
-      ))}
+    <div>
+      {tools.map((tool, i) => {
+        const fieldKey = `f-t-${tool.name}`
+        return (
+        <div key={i} className="tc" data-field={fieldKey}>
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="tn">
+                <EidText eid={tool.name} fieldKey={fieldKey}>
+                  {tool.name}
+                </EidText>
+              </span>
+              {tool.description ? (
+                <span className="td"> — {tool.description}</span>
+              ) : null}
+            </div>
+            <RelationIndicator eid={tool.name} fieldKey={fieldKey} />
+          </div>
+        </div>
+        )
+      })}
     </div>
   )
 }
 
 function SectionsTree({ skill }: { skill: ParsedSkill }) {
   if (skill.sections.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">无章节</p>
-    )
+    return <p className="text-sm text-muted-foreground">无章节</p>
   }
   return (
-    <div className="space-y-1">
-      {skill.sections.map((section, i) => (
+    <div>
+      {skill.sections.map((section, i) => {
+        const fieldKey = `f-d-${section.title.slice(0, 8).replace(/\s+/g, '-').toLowerCase()}`
+        return (
+          <div
+            key={i}
+            className="di"
+            data-field={fieldKey}
+            style={{ paddingLeft: section.level > 1 ? `${(section.level - 1) * 12}px` : undefined }}
+          >
+            <span className="dh">{"#".repeat(section.level)}</span>
+            <span>{section.title}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function BasicInfoDisplay({
+  fm,
+  onEdit,
+}: {
+  fm: SkillFrontmatter
+  onEdit: () => void
+}) {
+  const api = usePanelSyncApi()
+  const rows: { label: string; value: string; field: string; isLink?: boolean }[] = [
+    { label: "名称", value: fm.name || "—", field: "f-name" },
+    { label: "描述", value: fm.description || "—", field: "f-desc" },
+    { label: "版本", value: fm.version || "—", field: "f-ver" },
+    { label: "主页", value: fm.homepage || "—", field: "f-home", isLink: !!fm.homepage },
+  ]
+  return (
+    <div className="ecard">
+      {rows.map((r) => (
         <div
-          key={i}
-          className="flex items-center gap-2 text-sm"
-          style={{ paddingLeft: `${(section.level - 1) * 16}px` }}
+          key={r.field}
+          className={cn(
+            "fr",
+            fieldVisualClass(api?.selectedField, api?.activePanel, r.field, "editor"),
+          )}
+          data-field={r.field}
         >
-          <span className="text-muted-foreground text-xs font-mono">
-            {"#".repeat(section.level)}
-          </span>
-          <span>{section.title}</span>
-          {section.content.length > 0 ? (
-            <span className="text-xs text-muted-foreground">
-              ({section.content.length} 字符)
-            </span>
-          ) : null}
+          <span className="fl">{r.label}</span>
+          {r.isLink ? (
+            <a
+              href={r.value}
+              target="_blank"
+              rel="noreferrer"
+              className="fv text-blue-400 hover:underline"
+            >
+              {r.value}
+            </a>
+          ) : (
+            <span className="fv">{r.value}</span>
+          )}
         </div>
       ))}
+      <div className="flex justify-end pt-2">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors"
+          onClick={onEdit}
+        >
+          <Pencil className="size-3" />
+          编辑全部字段
+        </button>
+      </div>
     </div>
   )
 }
@@ -172,30 +389,306 @@ function SkillMdPanel({
   fm: SkillFrontmatter
   onChange: (updated: SkillFrontmatter) => void
 }) {
+  const api = usePanelSyncApi()
+  const [editingBasic, setEditingBasic] = useState(false)
+  const execSections = useMemo(
+    () =>
+      skill.sections.filter((s) =>
+        /脚本|script|pipeline/i.test(s.title),
+      ),
+    [skill.sections],
+  )
+
+  const readList = normalizeFileList(fm.files?.read)
+  const writeList = normalizeFileList(fm.files?.write)
+  const envRows = fm.env ?? []
+
   return (
-    <div className="space-y-6">
-      <FrontmatterForm
-        frontmatter={fm}
-        skillId={skill.id}
-        onChange={onChange}
-      />
+    <div>
+      <BridgeSectionBlock
+        sectionId="basic"
+        title="基本信息"
+        color={bridgeColor("basic")}
+        dimmed={api?.isSectionDimmed("basic")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          frontmatter → name, description, version, homepage
+        </p>
+        {editingBasic ? (
+          <div className="space-y-2">
+            <FrontmatterForm frontmatter={fm} skillId={skill.id} onChange={onChange} />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors"
+                onClick={() => setEditingBasic(false)}
+              >
+                收起编辑
+              </button>
+            </div>
+          </div>
+        ) : (
+          <BasicInfoDisplay fm={fm} onEdit={() => setEditingBasic(true)} />
+        )}
+      </BridgeSectionBlock>
 
-      <Separator />
+      <BridgeSectionBlock
+        sectionId="meta"
+        title="元数据"
+        color={bridgeColor("meta")}
+        readOnly
+        defaultCollapsed
+        dimmed={api?.isSectionDimmed("meta")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          frontmatter → metadata.openclaw
+        </p>
+        <MetaOpenclawView fm={fm} />
+      </BridgeSectionBlock>
 
-      <div className="space-y-3">
-        <h3 className="flex items-center gap-2 text-lg font-semibold">
-          <Terminal className="h-5 w-5" />
-          工具
-        </h3>
+      <BridgeSectionBlock
+        sectionId="env"
+        title="环境变量"
+        color={bridgeColor("env")}
+        badge={`${fm.env?.length ?? 0}`}
+        dimmed={api?.isSectionDimmed("env")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          frontmatter → env[]
+        </p>
+        {envRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground pl-3">无环境变量</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="et w-full">
+              <thead>
+                <tr>
+                  <th>变量名</th>
+                  <th>必需</th>
+                  <th>描述</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {envRows.map((row, i) => {
+                  const fieldKey = `f-e-${row.name}`
+                  return (
+                  <tr
+                    key={i}
+                    data-field={fieldKey}
+                    className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
+                  >
+                    <td>
+                      <span className="en font-mono text-[10px] font-semibold">
+                        <EidText eid={row.name} fieldKey={fieldKey}>
+                          {row.name}
+                        </EidText>
+                      </span>
+                    </td>
+                    <td>{row.required ? "必需" : "可选"}</td>
+                    <td className="ed">{row.description ?? "—"}</td>
+                    <td className="rc">
+                      <RelationIndicator eid={row.name} fieldKey={fieldKey} />
+                    </td>
+                  </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </BridgeSectionBlock>
+
+      <BridgeSectionBlock
+        sectionId="tools"
+        title="工具"
+        color={bridgeColor("tools")}
+        badge={`${skill.tools.length}`}
+        dimmed={api?.isSectionDimmed("tools")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          frontmatter → tools[]
+        </p>
         <ToolsBlock tools={skill.tools} />
-      </div>
+      </BridgeSectionBlock>
 
-      <Separator />
+      <BridgeSectionBlock
+        sectionId="files"
+        title="文件权限"
+        color={bridgeColor("files")}
+        dimmed={api?.isSectionDimmed("files")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          frontmatter → files {"{ read[], write[] }"}
+        </p>
+        <div className="ecard">
+          <div className="text-[10px] text-muted-foreground mb-0.5">📖 读取</div>
+          <div className="text-[10px] font-mono leading-[1.8] pl-1.5" data-field="f-fr">
+            {readList.length === 0 ? (
+              <span className="text-muted-foreground">无</span>
+            ) : (
+              readList.map((p, i) => {
+                const fileEid = pathToFileEid(p)
+                const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                return (
+                  <span key={i}>
+                    {i > 0 && <br />}
+                    <span
+                      data-field={fieldKey}
+                      className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
+                    >
+                      {fileEid ? (
+                        <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
+                      ) : (
+                        p
+                      )}
+                    </span>
+                  </span>
+                )
+              })
+            )}
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">✏️ 写入</div>
+          <div className="text-[10px] font-mono leading-[1.8] pl-1.5" data-field="f-fw">
+            {writeList.length === 0 ? (
+              <span className="text-muted-foreground">无</span>
+            ) : (
+              writeList.map((p, i) => {
+                const fileEid = pathToFileEid(p)
+                const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                return (
+                  <span key={i}>
+                    {i > 0 && <br />}
+                    <span
+                      data-field={fieldKey}
+                      className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
+                    >
+                      {fileEid ? (
+                        <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
+                      ) : (
+                        p
+                      )}
+                    </span>
+                  </span>
+                )
+              })
+            )}
+          </div>
+        </div>
+      </BridgeSectionBlock>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">文档结构</h3>
+      <BridgeSectionBlock
+        sectionId="exec"
+        title="脚本管道"
+        color={bridgeColor("exec")}
+        badge="执行层"
+        dimmed={api?.isSectionDimmed("exec")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          markdown body → 脚本相关章节
+        </p>
+        {execSections.length === 0 ? (
+          <p className="text-sm text-muted-foreground pl-1">无脚本管道章节</p>
+        ) : (
+          <div className="ecard" style={{ padding: '6px 8px' }}>
+            {execSections.map((s, i) => {
+              const scriptEid = scriptEidFromSectionTitle(s.title)
+              const fieldKey = scriptEid ? `f-s-${scriptEid}` : undefined
+              const isRoot = s.level <= 2
+              return (
+                <div
+                  key={i}
+                  className={cn("pi", !isRoot && "pi-indent")}
+                  data-field={fieldKey}
+                >
+                  {!isRoot && <span>→</span>}
+                  <span className={cn(isRoot && "text-xs font-semibold")}>
+                    {scriptEid ? (
+                      <EidText eid={scriptEid} fieldKey={fieldKey}>
+                        {s.title}
+                      </EidText>
+                    ) : (
+                      s.title
+                    )}
+                  </span>
+                  {scriptEid ? (
+                    <span className="ml-auto">
+                      <RelationIndicator eid={scriptEid} fieldKey={fieldKey} />
+                    </span>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </BridgeSectionBlock>
+
+      <BridgeSectionBlock
+        sectionId="doc"
+        title="文档结构"
+        color={bridgeColor("doc")}
+        badge={`${skill.sections.length} 节`}
+        dimmed={api?.isSectionDimmed("doc")}
+      >
+        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+          markdown body → headings
+        </p>
         <SectionsTree skill={skill} />
-      </div>
+      </BridgeSectionBlock>
+    </div>
+  )
+}
+
+type OpenclawFrontmatterSlice = {
+  requires?: { bins?: string[] }
+  optionalBins?: string[]
+}
+
+function openclawMetadataFromFm(fm: SkillFrontmatter): OpenclawFrontmatterSlice | null {
+  const raw = fm.metadata?.openclaw
+  if (typeof raw !== "object" || raw === null) return null
+  return raw as OpenclawFrontmatterSlice
+}
+
+function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
+  const oc = openclawMetadataFromFm(fm)
+  if (!oc) {
+    return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
+  }
+  const bins = oc.requires?.bins ?? []
+  const optionalBins = oc.optionalBins ?? []
+  const hasAny = bins.length > 0 || optionalBins.length > 0
+  if (!hasAny) {
+    return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
+  }
+  return (
+    <div className="ecard">
+      {bins.length > 0 && (
+        <>
+          <div className="text-[10px] text-muted-foreground mb-1">必需依赖</div>
+          <div className="text-[10px] font-mono pl-1.5 leading-[1.8]">
+            {bins.map((b: string, i: number) => (
+              <span key={i}>
+                {i > 0 && <br />}
+                <EidText eid={b}>{b}</EidText>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      {optionalBins.length > 0 && (
+        <>
+          <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">可选依赖</div>
+          <div className="text-[10px] font-mono pl-1.5 leading-[1.8] text-muted-foreground">
+            {optionalBins.map((b: string, i: number) => (
+              <span key={i}>
+                {i > 0 && " · "}
+                <EidText eid={b}>{b}</EidText>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -204,12 +697,21 @@ function SkillOverviewPanel({
   skill,
   fm,
   validationResult,
+  configPaths,
+  onSelect,
 }: {
   skill: ParsedSkill
   fm: ParsedSkill["frontmatter"]
   validationResult: ReturnType<typeof validateSkill> | null
+  configPaths: string[]
+  onSelect: (sel: NavigatorSelection) => void
 }) {
+  const { state } = useWorkspace()
+  const selection = state.selection
+
   const configCount = Object.keys(skill.configFiles).length
+  const skillId = skill.id
+
   return (
     <div className="space-y-6">
       <Card>
@@ -268,6 +770,67 @@ function SkillOverviewPanel({
         </CardHeader>
       </Card>
 
+      <section className="space-y-2">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          文件信息
+        </h3>
+        <dl className="space-y-1.5 text-sm">
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-muted-foreground">路径</dt>
+            <dd className="truncate font-mono">{skill.path || "—"}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-muted-foreground">版本</dt>
+            <dd>{fm.version ?? "—"}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-muted-foreground">文件数</dt>
+            <dd>{1 + configPaths.length}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <Separator />
+
+      <section className="space-y-2">
+        <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <Link2 className="size-3.5" aria-hidden />
+          关联文件
+        </h3>
+        <ul className="space-y-1">
+          <li>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
+              onClick={() => onSelect({ skillId, nodeType: "skill-md" })}
+            >
+              <FileText className="size-3.5 shrink-0" aria-hidden />
+              SKILL.md
+              {selection?.nodeType === "skill-md" && selection.skillId === skillId && (
+                <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
+              )}
+            </button>
+          </li>
+          {configPaths.map((path) => (
+            <li key={path}>
+              <button
+                type="button"
+                className="inline-flex max-w-full items-center gap-1 truncate text-left text-sm text-primary underline-offset-4 hover:underline"
+                onClick={() => onSelect({ skillId, nodeType: "config-file", filePath: path })}
+              >
+                <FileText className="size-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{path}</span>
+                {selection?.nodeType === "config-file" &&
+                  selection.skillId === skillId &&
+                  selection.filePath === path && (
+                    <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
+                  )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {validationResult && (
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -282,7 +845,32 @@ function SkillOverviewPanel({
 }
 
 export function EditorPanel() {
-  const { state, selectedSkill, editState, updateFrontmatter, updateConfig } = useWorkspace()
+  const api = usePanelSyncApi()
+  const { state, selectedSkill, editState, updateFrontmatter, updateConfig, select } = useWorkspace()
+
+  const handleEditorClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      if (!api) return
+      let el: HTMLElement | null = e.target as HTMLElement
+      const root = e.currentTarget
+      let eid: string | null = null
+      let field: string | null = null
+      while (el && el !== root) {
+        if (!eid) eid = el.getAttribute("data-eid")
+        if (!field) field = el.getAttribute("data-field")
+        if (eid && field) break
+        el = el.parentElement
+      }
+
+      if (eid || field) {
+        api.selectFieldKey(field)
+        api.selectRelationTarget(eid)
+      } else {
+        api.clearRelationSelection()
+      }
+    },
+    [api],
+  )
 
   const selection = state.selection
 
@@ -296,6 +884,15 @@ export function EditorPanel() {
     return validateSkill(skillForValidation)
   }, [skillForValidation])
 
+  const configPaths = useMemo(() => {
+    if (!selectedSkill) return []
+    const keys = new Set([
+      ...Object.keys(selectedSkill.configFiles),
+      ...Object.keys(editState?.configFiles ?? {}),
+    ])
+    return [...keys].sort()
+  }, [selectedSkill, editState?.configFiles])
+
   const HeaderIcon = selection ? headerIcon(selection.nodeType) : FileText
   const titleName =
     selectedSkill?.frontmatter.name ??
@@ -304,22 +901,20 @@ export function EditorPanel() {
 
   return (
     <div className="h-full flex flex-col min-h-0 min-w-0 overflow-hidden">
-      <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
-        <HeaderIcon className="size-4 text-muted-foreground shrink-0" aria-hidden />
-        <div className="flex min-w-0 items-center gap-1.5 text-sm">
-          <span className="text-muted-foreground shrink-0">编辑:</span>
-          <span className="font-mono truncate">{titleName || "—"}</span>
-          {segment ? (
-            <>
-              <span className="text-muted-foreground shrink-0">/</span>
-              <span className="truncate">{segment}</span>
-            </>
-          ) : null}
-        </div>
+      <div className="flex shrink-0 items-center gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
+        <HeaderIcon className="size-3 shrink-0" aria-hidden />
+        <strong className="text-foreground">可视化编辑</strong>
+        <span className="text-[10px] truncate" style={{ color: 'var(--muted-foreground)' }}>
+          {titleName || "—"}{segment ? ` / ${segment}` : ""}
+        </span>
       </div>
 
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="min-h-full p-4">
+      <div
+        ref={api?.editorRef}
+        className="flex-1 min-h-0 overflow-y-auto"
+        onClick={api ? handleEditorClick : undefined}
+      >
+        <div className="min-h-full p-3 pr-1.5">
           {!selection ? (
             <EmptyState title="从左侧导航选择一个 Skill 或文件" />
           ) : !selectedSkill || !editState ? (
@@ -333,6 +928,8 @@ export function EditorPanel() {
               skill={selectedSkill}
               fm={editState.frontmatter}
               validationResult={validationResult}
+              configPaths={configPaths}
+              onSelect={select}
             />
           ) : selection.nodeType === "skill-md" ? (
             <SkillMdPanel
@@ -347,19 +944,9 @@ export function EditorPanel() {
               editState={editState}
               updateConfig={updateConfig}
             />
-          ) : selection.nodeType === "validation" ? (
-            validationResult ? (
-              <ValidationPanel result={validationResult} />
-            ) : (
-              <Card>
-                <CardContent className="py-6 text-sm text-muted-foreground">
-                  无法运行验证
-                </CardContent>
-              </Card>
-            )
           ) : null}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
