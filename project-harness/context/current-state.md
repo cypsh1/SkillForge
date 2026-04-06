@@ -15,7 +15,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**执行复盘完成 + Demo 行为规格已产出，下一步：产出对齐清单 → 基于清单修复剩余差异**
+**对齐清单已完成（两轮 review 压实），下一步：按 Batch 1-5 修复剩余差异**
 
 ## 已完成
 
@@ -206,7 +206,19 @@ SkillForge — OpenClaw Skill 可视化配置工具
   - 有意差异 3 条：布局机制 / 导航面板 / 动态数据
 - 产出 `project-harness/evidence/demo-05-behavior-spec.md`（15 章，覆盖结构/样式/交互/数据属性映射/主题配色）
 - 记录 4 项流程改进（P-1 ~ P-4）到 backlog
-- **下一步**：新开会话产出对齐清单（逐项对比 spec vs 主应用当前实现）
+
+### 对齐清单产出 + Review 压实（2026-04-07）
+
+- 产出 `project-harness/evidence/demo-05-alignment-checklist.md`
+- 逐项对比 demo-05-behavior-spec 与主应用 10 个文件，A/B/C/D/R 五层分类
+- 经第二轮独立 review 压实为最终版：
+  - R 类并入 D4-D6（有意差异）
+  - B2 归入 C 类
+  - B1 改动范围纠正为 3 处
+  - 左进度条颜色从 A 类移入 P 类（待产品决策）
+  - A 类计数修正为 16 项
+- 最终分类：A 类 16 项 / B 类 1 项 / C 类 12 项 / D 类 6 项 / P 类 1 项 / 已对齐 103 项
+- **下一步**：按 Batch 1-5 执行修复（详见 `backlog.md` → 对齐修复表）
 
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）
 
@@ -320,8 +332,13 @@ public/demos/
 ## Git 历史
 
 ```
-(pending) feat: D3 可视化面板对齐 Demo（7 区块 + 源码预览 + collapsible）
-(pending) feat: D2 桥线连接器 + 滚动同步 + 底部上下文栏
+5a9715c docs: D2-D5 回顾 + 行为规格 + 对齐清单 + harness 优化
+5e2738f feat: D2-D5 bridge 可视化对齐 — 架构条/桥线/关系系统/上下文栏/滚动同步
+cd6c024 feat: T1 Frontmatter 结构化编辑器 + i18n 中英文支持
+cf91682 chore: 收尾 D1 + 准备 T0 Skill 结构调研任务
+cc6c8a0 feat: 05-complete demo（关系可视化+面板对齐合并）+ 清理早期 demo
+c3ff013 feat: Demo 交互方案验证 + Harness 机制优化
+da8b882 docs: Phase 4 收尾 — 更新状态/日志/参考资料
 82ccf67 feat: Skill 创建向导 + Dialog 集成
 d41533b feat: 本地 Skill 加载 + Tauri 文件系统集成
 aecd989 feat: Tauri v2 桌面封装初始化

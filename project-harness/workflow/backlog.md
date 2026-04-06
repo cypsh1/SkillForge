@@ -12,7 +12,9 @@ last_updated: 2026-04-07
 
 ## 当前任务
 
-**无当前任务** — 从待办中选择下一个任务开始。
+**AL-B1 主题系统对齐** — 对齐清单 Batch 1，A1 全部 6 项。
+
+基准文件：`project-harness/evidence/demo-05-alignment-checklist.md` → A1 小节
 
 ### T1 实施建议（基于 T0 调研）
 
@@ -30,13 +32,20 @@ last_updated: 2026-04-07
 
 ## 待办
 
+### 对齐修复（基准：`demo-05-alignment-checklist.md`）
+
+| ID | 优先级 | 名称 | 涉及文件 | 备注 |
+|---|---|---|---|---|
+| AL-B1 | P0 | 主题系统对齐（A1×6） | `index.css` | 新建 `--dim`；dark 色值对齐 demo hex；统一浮层底色；评估冻结 light 模式 |
+| AL-B2 | P0 | 区块交互对齐（A2×4） | `editor-panel.tsx` / `inspector-panel.tsx` | 标题行点击拆分（箭头=折叠，标题=跳转+高亮）；折叠 transition；hover inset box-shadow |
+| AL-B3 | P0 | 桥线+气泡对齐（A3×2 + A4×3） | `bridge-connector.tsx` / `relation-hover.tsx` | 桥线点击 1.2s 高亮；SVG circle dot；气泡位置右侧+翻转；消失 200ms 延迟；max-width |
+| AL-B4 | P0 | B 类决策执行 | `editor-panel.tsx` / `inspector-panel.tsx` | `f-s-*` → `f-x-*`（3 处）；D4-D6 确认记录 |
+| AL-B5 | P1 | 运行时确认+产品决策 | 多个 | 浏览器逐项验证 C 类需确认项；P1 进度条颜色并排对比 |
+
+### 功能开发
 
 | ID  | 优先级 | 名称               | 备注                                                  |
 | --- | --- | ---------------- | --------------------------------------------------- |
-| D2  | ✅   | Demo 方案落地到主应用    | 桥线连接器 + 分段线性映射滚动同步 + 底部上下文栏，已集成到主应用                 |
-| T1  | ✅   | JSON Schema 驱动表单 | P0 frontmatter 编辑器 + i18n 已完成；P1 config schema 表单待做 |
-| D4  | ✅  | `05-complete` 对齐（关系可视化） | 全部完成：关系模型 + 字段映射 + 关系探索 + 架构条 + 面板重写 + 关系全面动态化（17 实体） |
-| D5  | ✅  | Demo 全页面视觉对齐 | 4 批次完成，后续补 1 个 Inspector basic 间距 hotfix |
 | T2  | P1  | 代码分割             | 670KB JS 包体积，React.lazy + 动态 import                 |
 | T3  | P1  | 远程 SSH Skill 加载  | 直接连接 OpenClaw 服务器读取/写回 Skill                        |
 | T4  | P2  | 配置 Diff          | 对比编辑前后的变更                                           |
@@ -52,7 +61,7 @@ last_updated: 2026-04-07
 | P-2 | 执行者验收闭环 | D2 复盘发现：执行者把"落地范围 3 项"当成完整工作清单，做完即收工，没有回头对照 05-complete 做整体视觉验收。需讨论：如何在 harness 机制中确保"落地范围"完成后仍要对照最终基准验收，而不是范围即终点。 |
 | P-3 | ✅ Demo 行为规格 | 已完成：`project-harness/evidence/demo-05-behavior-spec.md`（15 章，覆盖结构/样式/交互/数据映射/主题配色） |
 | P-4 | 有意差异清单 | Demo 与主应用存在若干有意不同之处（布局机制：CSS Grid vs react-resizable-panels；导航面板：demo 无 vs 主应用三栏；数据：hardcode vs 动态）。当前 3 条，暂不单独建文件；若后续增多再考虑持久化维护。注：主题已决定对齐 demo 纯暗色方案，不再作为有意差异。 |
-| P-5 | 对齐清单 | 逐项对比 demo-05-behavior-spec 与主应用当前实现，产出可打钩的差距分析文档，作为修复和验收的依据。 |
+| P-5 | ✅ 对齐清单 | 已完成：`project-harness/evidence/demo-05-alignment-checklist.md`（A/B/C/D/P 五层分类，经两轮 review 压实） |
 | P-6 | 复杂问题多模型交叉 Review | 当问题复杂、分歧大或风险高时，引入多模型并行分析 + 相互 review 的机制：主模型负责拆题与裁决，辅助模型分别产出方案/质疑/审查意见，最后沉淀为可执行结论，避免单模型盲点。 |
 
 
@@ -76,3 +85,4 @@ last_updated: 2026-04-07
 | D5-BUG  | Inspector basic 预览间距 hotfix | 2026-04-06 | `evidence/task-logs/2026-04-06-d5-inspector-basic-spacing-hotfix.md`  |
 | D5-BUG2 | Inspector 字段级镜像映射补齐 | 2026-04-06 | `evidence/task-logs/2026-04-06-d5-inspector-field-mapping-hotfix.md`  |
 | P-3     | 执行复盘 + Demo 行为规格产出 | 2026-04-07 | `evidence/task-logs/2026-04-07-retrospective-and-behavior-spec.md` |
+| P-5     | 对齐清单产出 + 两轮 review 压实 | 2026-04-07 | `evidence/demo-05-alignment-checklist.md` |
