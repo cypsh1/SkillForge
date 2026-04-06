@@ -2,7 +2,7 @@
 
 ## description: 会话交接页（最近完成、下一步、环境状态）
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-06
 
 # 当前状态
 
@@ -14,7 +14,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**Demo 验证完成（01-05），下一步：T0 Skill 结构调研（新会话自动执行）**
+**T1 Frontmatter 结构化编辑器全部完成（含 i18n），下一步：D2 Demo 方案落地**
 
 ## 已完成
 
@@ -59,6 +59,30 @@ SkillForge — OpenClaw Skill 可视化配置工具
 - 强化 `session-governor.mdc`（收尾清单 4 项 + task-log 必须含调研记录）
 - `references.md` 要求记录对比决策过程
 
+### T0 Skill 结构调研（2026-04-05）
+
+- 分析了 OpenClaw 服务器 18 个真实 Skill 的目录结构
+- 调研了官方文档（docs.openclaw.ai）和 ClawHub 规范
+- 输出完整分析报告：`project-harness/evidence/skill-structure-analysis.md`
+- 核心发现：
+  - 55% 的 Skill 是简单结构（L1+L2），核心就是 SKILL.md
+  - 只有 6%（tech-news-digest）使用 JSON Schema 定义配置
+  - SKILL.md frontmatter 是唯一的官方元数据来源
+  - 建议 T1 优先做好 frontmatter 结构化编辑器，再扩展 config 编辑
+
+### T1 Frontmatter 结构化编辑器（2026-04-06）
+
+- Batch 1: 安装 zod@4.3.6 + react-hook-form@7.72.1 + @hookform/resolvers@5.2.2
+- Batch 1: 创建完整的 Zod frontmatter schema（覆盖所有已知字段 + metadata 别名处理）
+- Batch 1: 类型对齐 — SkillFrontmatter 从 Zod 推导，零 breaking change
+- Batch 2: 8 个新文件 — TagInput 组件 + FrontmatterForm 主包装 + 5 个分组子组件 + UnknownFieldsSection
+- Batch 3: 集成到 editor-panel.tsx 和 skill-detail.tsx，替换两处旧编辑器
+- Batch 5: 运行时验证通过，删除旧 frontmatter-editor.tsx
+- Batch 4: i18n 中英文支持（i18next@26.0.3 + react-i18next@17.0.2）
+  - 新增 src/i18n/（初始化 + zh/en 两套 locale JSON）
+  - 6 个表单组件 + Header + TagInput 全部 t() 化，零硬编码中文
+  - Header 新增语言切换按钮，persist 到 localStorage
+
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）
 
 **前序对话产出**（04-04）：
@@ -86,6 +110,8 @@ SkillForge — OpenClaw Skill 可视化配置工具
 | 分栏布局  | react-resizable-panels     | v4.9             |
 | 桌面封装  | Tauri                      | v2.10            |
 | 状态管理  | React Context + useReducer | —                |
+| 表单管理  | react-hook-form + Zod          | RHF 7.72, Zod 4.3   |
+| 国际化   | i18next + react-i18next        | i18next 26.0, react-i18next 17.0 |
 | 后端    | 无（Tauri fs 插件直接读写文件）       | —                |
 
 
@@ -95,6 +121,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 src/
 ├── components/
 │   ├── ui/                     # shadcn/ui 组件
+│   │   └── tag-input.tsx       # 标签输入（Frontmatter 表单）
 │   ├── layout/                 # 布局（Header）
 │   ├── workspace/              # 三栏布局面板
 │   │   ├── navigator-panel.tsx # 左栏：两级导航树
@@ -102,8 +129,23 @@ src/
 │   │   └── inspector-panel.tsx # 右栏：检查器/预览
 │   ├── config-editor/          # 配置编辑器（sources, topics, schema, export）
 │   ├── skill-editor/           # Skill 编辑器（frontmatter, validation）
+│   │   ├── frontmatter-form/          # 新！Frontmatter 结构化表单
+│   │   │   ├── index.tsx              # 主包装（useForm + FormProvider）
+│   │   │   ├── basic-info-section.tsx # 基本信息
+│   │   │   ├── trigger-section.tsx    # 触发条件
+│   │   │   ├── runtime-section.tsx    # 运行时要求（metadata.openclaw）
+│   │   │   ├── env-vars-section.tsx   # 环境变量动态数组
+│   │   │   ├── install-section.tsx    # 安装配置
+│   │   │   └── unknown-fields-section.tsx # 未知字段 K-V 编辑器
 │   └── skill-wizard/           # 创建向导（5 步表单）
+├── i18n/
+│   ├── index.ts               # i18next 初始化
+│   └── locales/
+│       ├── zh.json            # 中文
+│       └── en.json            # English
 ├── lib/
+│   ├── schemas/
+│   │   └── frontmatter-schema.ts  # Zod schema + metadata helpers
 │   ├── skill-parser.ts         # SKILL.md 解析器
 │   ├── skill-serializer.ts     # SKILL.md 序列化器
 │   ├── skill-validator.ts      # Skill 验证器
@@ -182,6 +224,9 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 | README/文档生成 | 高   | —                              |
 | 独立功能模块      | 高   | 导出按钮、暗色模式、Schema 查看器、错误边界      |
 | 创建向导（多步表单）  | 高   | 还主动扩展了 tauri-fs.ts             |
+| 表单组件体系（多文件）  | 高   | 8 个文件一次完成，规格详细时 fast 模型质量好 |
+| i18n 批量替换     | 高   | 10+ 文件的 t() 替换，提供完整映射表后一次通过 |
+| 数据采集/调研     | 高   | git clone + 文件分析、GitHub API 批量查询（注意 API 限速） |
 
 
 ### 需注意的场景
@@ -190,6 +235,7 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 | 任务类型                 | 问题                                   | 对策              |
 | -------------------- | ------------------------------------ | --------------- |
 | 使用 shadcn/ui Card 组件 | v4 API 变化，子 Agent 用了不存在的 `size` prop | 委派时提供准确的 API 签名 |
+| shadcn/ui Form 组件上下文 | FormLabel/FormDescription 在 FormField 外使用会报运行时错误 | 不走 RHF 管理的字段用普通 Label 替代 |
 | 涉及类型断言的编辑器           | sources/topics 类型转换容易出错              | 提供明确的类型定义和示例    |
 
 

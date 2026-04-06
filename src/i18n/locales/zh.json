@@ -1,0 +1,91 @@
+{
+  "header": {
+    "subtitle": "OpenClaw Skill 可视化配置",
+    "switchToLight": "切换到浅色",
+    "switchToDark": "切换到深色",
+    "langLabel": "EN"
+  },
+  "form": {
+    "basicInfo": {
+      "title": "基本信息",
+      "name": "名称",
+      "namePlaceholder": "my-skill",
+      "description": "描述",
+      "descriptionPlaceholder": "简要描述 Skill 的功能",
+      "version": "版本",
+      "versionPlaceholder": "1.0.0",
+      "emoji": "Emoji",
+      "emojiPlaceholder": "🔧",
+      "author": "作者",
+      "homepage": "主页",
+      "homepagePlaceholder": "https://...",
+      "source": "源码",
+      "sourcePlaceholder": "https://github.com/..."
+    },
+    "trigger": {
+      "title": "触发条件",
+      "keywords": "触发关键词",
+      "keywordsPlaceholder": "输入关键词后按回车",
+      "keywordsDesc": "当用户消息包含这些关键词时触发此 Skill",
+      "readWhen": "读取条件",
+      "readWhenPlaceholder": "描述何时读取此 Skill",
+      "autoTrigger": "自动触发",
+      "autoTriggerDesc": "无需用户显式调用",
+      "userInvocable": "用户可调用",
+      "userInvocableDesc": "可作为斜杠命令",
+      "allowedTools": "允许的工具",
+      "allowedToolsPlaceholder": "工具匹配模式",
+      "advancedDispatch": "高级命令分发",
+      "disableModelInvocation": "禁用模型调用",
+      "disableModelInvocationDesc": "排除出 prompt",
+      "commandDispatch": "命令分发",
+      "commandTool": "命令工具",
+      "commandArgMode": "参数传递模式"
+    },
+    "runtime": {
+      "title": "运行时要求",
+      "requiredBins": "必需二进制",
+      "requiredBinsPlaceholder": "如 python3, ffmpeg",
+      "requiredBinsDesc": "必须在 PATH 上存在的命令行工具",
+      "requiredEnv": "必需环境变量",
+      "requiredEnvPlaceholder": "如 OPENAI_API_KEY",
+      "requiredConfig": "必需配置",
+      "requiredConfigPlaceholder": "配置路径",
+      "optionalBins": "可选二进制",
+      "optionalBinsPlaceholder": "可选的命令行工具",
+      "osRestrictions": "操作系统限制",
+      "osRestrictionsPlaceholder": "darwin, linux, win32",
+      "osRestrictionsDesc": "留空表示支持所有平台",
+      "alwaysActive": "始终激活",
+      "alwaysActiveDesc": "Skill 始终处于活跃状态"
+    },
+    "envVars": {
+      "title": "环境变量",
+      "add": "添加",
+      "empty": "暂无环境变量",
+      "name": "名称",
+      "namePlaceholder": "ENV_VAR_NAME",
+      "description": "描述",
+      "required": "必填"
+    },
+    "install": {
+      "title": "安装配置",
+      "add": "添加",
+      "empty": "暂无安装配置",
+      "kind": "类型",
+      "kindPlaceholder": "brew | node | pip",
+      "package": "包名",
+      "packagePlaceholder": "包名称",
+      "label": "标签",
+      "labelPlaceholder": "显示名称",
+      "bins": "二进制文件",
+      "binsPlaceholder": "安装后提供的命令"
+    },
+    "unknownFields": {
+      "title": "其他字段"
+    }
+  },
+  "tagInput": {
+    "defaultPlaceholder": "输入后按回车添加"
+  }
+}

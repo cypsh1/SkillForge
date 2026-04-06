@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { getSkillById } from "@/data/skill-loader"
 import { ConfigEditor } from "@/components/config-editor/config-editor"
 import { ExportButton } from "@/components/config-editor/export-button"
-import { FrontmatterEditor } from "@/components/skill-editor/frontmatter-editor"
+import { FrontmatterForm } from "@/components/skill-editor/frontmatter-form"
 import { ValidationPanel } from "@/components/skill-editor/validation-panel"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { validateSkill } from "@/lib/skill-validator"
@@ -120,8 +120,9 @@ function SkillDetailContent({ skill, onBack }: { skill: ParsedSkill; onBack: () 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">表单编辑</h4>
-              <FrontmatterEditor
+              <FrontmatterForm
                 frontmatter={editedFrontmatter}
+                skillId={skill.id}
                 onChange={setEditedFrontmatter}
               />
             </div>

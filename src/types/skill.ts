@@ -1,25 +1,8 @@
-export interface SkillFrontmatter {
-  name: string
-  description?: string
-  version?: string
-  author?: string
-  homepage?: string
-  source?: string
-  metadata?: Record<string, unknown>
-  env?: EnvVarDefinition[]
-  tools?: unknown[]
-  files?: {
-    read?: string[]
-    write?: string[]
-  }
-  [key: string]: unknown
-}
+import type { FrontmatterData, EnvVarData } from "@/lib/schemas/frontmatter-schema"
 
-export interface EnvVarDefinition {
-  name: string
-  required: boolean
-  description: string
-}
+// Re-export Zod-derived types as the canonical source
+export type SkillFrontmatter = FrontmatterData
+export type EnvVarDefinition = EnvVarData
 
 export interface ToolParameter {
   name: string

@@ -1,35 +1,28 @@
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
-  Check,
   ExternalLink,
   FileText,
   KeyRound,
   Layers,
   Pencil,
-  Plus,
   Settings,
   ShieldCheck,
   Terminal,
-  X,
 } from "lucide-react"
 import { SourcesEditor } from "@/components/config-editor/sources-editor"
 import { TopicsEditor } from "@/components/config-editor/topics-editor"
 import { SchemaViewer } from "@/components/config-editor/schema-viewer"
 import { EmptyState } from "@/components/empty-state"
+import { FrontmatterForm } from "@/components/skill-editor/frontmatter-form"
 import { ValidationPanel } from "@/components/skill-editor/validation-panel"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { validateSkill } from "@/lib/skill-validator"
 import type { NavigatorSelection } from "@/types/workspace"
-import type { EnvVarDefinition, ParsedSkill, SkillFrontmatter, SkillTool } from "@/types/skill"
+import type { ParsedSkill, SkillFrontmatter, SkillTool } from "@/types/skill"
 
 function configEditorKind(filePath: string): "sources" | "topics" | "schema" | null {
   const base = filePath.split("/").pop() ?? filePath
@@ -141,42 +134,6 @@ function ToolsBlock({ tools }: { tools: SkillTool[] }) {
   )
 }
 
-function EnvTable({ envVars }: { envVars: EnvVarDefinition[] }) {
-  if (envVars.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">未声明环境变量</p>
-    )
-  }
-  return (
-    <div className="rounded-md border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="px-3 py-2 text-left font-medium">变量名</th>
-            <th className="px-3 py-2 text-left font-medium w-20">必需</th>
-            <th className="px-3 py-2 text-left font-medium">描述</th>
-          </tr>
-        </thead>
-        <tbody>
-          {envVars.map((env, i) => (
-            <tr key={i} className="border-b last:border-0">
-              <td className="px-3 py-2 font-mono text-xs">{env.name}</td>
-              <td className="px-3 py-2">
-                <Badge variant={env.required ? "default" : "secondary"} className="text-[10px]">
-                  {env.required ? "必需" : "可选"}
-                </Badge>
-              </td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                {env.description}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
 function SectionsTree({ skill }: { skill: ParsedSkill }) {
   if (skill.sections.length === 0) {
     return (
@@ -215,253 +172,16 @@ function SkillMdPanel({
   fm: SkillFrontmatter
   onChange: (updated: SkillFrontmatter) => void
 }) {
-  const [isEditing, setIsEditing] = useState(false)
-  const envList = fm.env ?? []
-
-  const updateEnv = useCallback(
-    (index: number, patch: Partial<EnvVarDefinition>) => {
-      const next = [...envList]
-      next[index] = { ...next[index], ...patch }
-      onChange({ ...fm, env: next })
-    },
-    [envList, fm, onChange],
-  )
-
-  const addEnv = useCallback(() => {
-    onChange({ ...fm, env: [...envList, { name: "", required: false, description: "" }] })
-  }, [envList, fm, onChange])
-
-  const removeEnv = useCallback(
-    (index: number) => {
-      const next = envList.filter((_, i) => i !== index)
-      onChange({ ...fm, env: next.length > 0 ? next : undefined })
-    },
-    [envList, fm, onChange],
-  )
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant={isEditing ? "default" : "outline"}
-          size="sm"
-          onClick={() => setIsEditing((v) => !v)}
-        >
-          {isEditing ? (
-            <Check className="mr-1.5 size-3.5" />
-          ) : (
-            <Pencil className="mr-1.5 size-3.5" />
-          )}
-          {isEditing ? "完成" : "编辑"}
-        </Button>
-      </div>
-
-      {/* 基本信息 */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">基本信息</h3>
-        <Card>
-          <CardContent className="pt-4">
-            {isEditing ? (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="md-name" className="text-sm text-muted-foreground">
-                    名称
-                  </Label>
-                  <Input
-                    id="md-name"
-                    value={fm.name}
-                    onChange={(e) => onChange({ ...fm, name: e.target.value })}
-                    className="h-8 text-sm"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="md-desc" className="text-sm text-muted-foreground">
-                    描述
-                  </Label>
-                  <Textarea
-                    id="md-desc"
-                    value={fm.description ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      onChange({ ...fm, description: v === "" ? undefined : v })
-                    }}
-                    rows={3}
-                    className="text-sm min-h-[4.5rem] resize-y"
-                  />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="md-version" className="text-sm text-muted-foreground">
-                      版本
-                    </Label>
-                    <Input
-                      id="md-version"
-                      value={fm.version ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        onChange({ ...fm, version: v === "" ? undefined : v })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="md-homepage" className="text-sm text-muted-foreground">
-                      主页
-                    </Label>
-                    <Input
-                      id="md-homepage"
-                      value={fm.homepage ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        onChange({ ...fm, homepage: v === "" ? undefined : v })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="md-source" className="text-sm text-muted-foreground">
-                    源码
-                  </Label>
-                  <Input
-                    id="md-source"
-                    value={fm.source ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      onChange({ ...fm, source: v === "" ? undefined : v })
-                    }}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              </div>
-            ) : (
-              <dl className="space-y-2 text-sm">
-                {(
-                  [
-                    ["名称", fm.name, true],
-                    ["描述", fm.description, false],
-                    ["版本", fm.version, false],
-                    ["主页", fm.homepage, false],
-                    ["源码", fm.source, false],
-                  ] as [string, string | undefined, boolean][]
-                ).map(([label, value, isMono]) => (
-                  <div key={label} className="flex gap-3">
-                    <dt className="w-14 shrink-0 text-muted-foreground">{label}</dt>
-                    <dd className={isMono ? "font-mono font-medium" : "text-muted-foreground"}>
-                      {value || "—"}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <FrontmatterForm
+        frontmatter={fm}
+        skillId={skill.id}
+        onChange={onChange}
+      />
 
       <Separator />
 
-      {/* 环境变量 */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <KeyRound className="h-5 w-5" />
-            环境变量
-            {envList.length > 0 && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                {envList.length}
-              </Badge>
-            )}
-          </h3>
-          {isEditing && (
-            <Button type="button" variant="outline" size="sm" onClick={addEnv}>
-              <Plus className="size-3.5" />
-              添加
-            </Button>
-          )}
-        </div>
-        {isEditing ? (
-          <div className="space-y-3">
-            {envList.length === 0 ? (
-              <p className="text-sm text-muted-foreground">暂无环境变量</p>
-            ) : (
-              <Card>
-                <CardContent className="space-y-3 pt-4">
-                  {envList.map((item, index) => (
-                    <div key={index}>
-                      {index > 0 && <Separator className="mb-3" />}
-                      <div className="flex items-start gap-2">
-                        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-                          <div className="space-y-1.5">
-                            <Label
-                              htmlFor={`md-env-name-${index}`}
-                              className="text-sm text-muted-foreground"
-                            >
-                              名称
-                            </Label>
-                            <Input
-                              id={`md-env-name-${index}`}
-                              value={item.name}
-                              onChange={(e) => updateEnv(index, { name: e.target.value })}
-                              className="h-8 text-sm font-mono"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label
-                              htmlFor={`md-env-desc-${index}`}
-                              className="text-sm text-muted-foreground"
-                            >
-                              描述
-                            </Label>
-                            <Input
-                              id={`md-env-desc-${index}`}
-                              value={item.description}
-                              onChange={(e) => updateEnv(index, { description: e.target.value })}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-2 pt-6 sm:flex-row sm:items-center sm:pt-0">
-                          <div className="flex items-center gap-2">
-                            <Label
-                              htmlFor={`md-env-req-${index}`}
-                              className="whitespace-nowrap text-sm text-muted-foreground"
-                            >
-                              必填
-                            </Label>
-                            <Switch
-                              id={`md-env-req-${index}`}
-                              checked={item.required}
-                              onCheckedChange={(checked) => updateEnv(index, { required: checked })}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-destructive"
-                            onClick={() => removeEnv(index)}
-                            aria-label="移除"
-                          >
-                            <X className="size-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        ) : (
-          <EnvTable envVars={skill.envVars} />
-        )}
-      </div>
-
-      <Separator />
-
-      {/* 工具（只读）*/}
       <div className="space-y-3">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
           <Terminal className="h-5 w-5" />
@@ -472,7 +192,6 @@ function SkillMdPanel({
 
       <Separator />
 
-      {/* 文档结构（只读）*/}
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">文档结构</h3>
         <SectionsTree skill={skill} />

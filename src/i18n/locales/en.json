@@ -1,0 +1,91 @@
+{
+  "header": {
+    "subtitle": "OpenClaw Skill Visual Configurator",
+    "switchToLight": "Switch to light",
+    "switchToDark": "Switch to dark",
+    "langLabel": "中文"
+  },
+  "form": {
+    "basicInfo": {
+      "title": "Basic Info",
+      "name": "Name",
+      "namePlaceholder": "my-skill",
+      "description": "Description",
+      "descriptionPlaceholder": "Briefly describe the Skill",
+      "version": "Version",
+      "versionPlaceholder": "1.0.0",
+      "emoji": "Emoji",
+      "emojiPlaceholder": "🔧",
+      "author": "Author",
+      "homepage": "Homepage",
+      "homepagePlaceholder": "https://...",
+      "source": "Source",
+      "sourcePlaceholder": "https://github.com/..."
+    },
+    "trigger": {
+      "title": "Trigger Conditions",
+      "keywords": "Trigger Keywords",
+      "keywordsPlaceholder": "Type keyword and press Enter",
+      "keywordsDesc": "Triggers this Skill when user message contains these keywords",
+      "readWhen": "Read Conditions",
+      "readWhenPlaceholder": "Describe when to read this Skill",
+      "autoTrigger": "Auto Trigger",
+      "autoTriggerDesc": "No explicit user invocation needed",
+      "userInvocable": "User Invocable",
+      "userInvocableDesc": "Can be used as slash command",
+      "allowedTools": "Allowed Tools",
+      "allowedToolsPlaceholder": "Tool match pattern",
+      "advancedDispatch": "Advanced Command Dispatch",
+      "disableModelInvocation": "Disable Model Invocation",
+      "disableModelInvocationDesc": "Exclude from prompt",
+      "commandDispatch": "Command Dispatch",
+      "commandTool": "Command Tool",
+      "commandArgMode": "Argument Mode"
+    },
+    "runtime": {
+      "title": "Runtime Requirements",
+      "requiredBins": "Required Binaries",
+      "requiredBinsPlaceholder": "e.g. python3, ffmpeg",
+      "requiredBinsDesc": "CLI tools that must exist on PATH",
+      "requiredEnv": "Required Env Vars",
+      "requiredEnvPlaceholder": "e.g. OPENAI_API_KEY",
+      "requiredConfig": "Required Config",
+      "requiredConfigPlaceholder": "Config path",
+      "optionalBins": "Optional Binaries",
+      "optionalBinsPlaceholder": "Optional CLI tools",
+      "osRestrictions": "OS Restrictions",
+      "osRestrictionsPlaceholder": "darwin, linux, win32",
+      "osRestrictionsDesc": "Leave empty to support all platforms",
+      "alwaysActive": "Always Active",
+      "alwaysActiveDesc": "Skill is always active"
+    },
+    "envVars": {
+      "title": "Environment Variables",
+      "add": "Add",
+      "empty": "No environment variables",
+      "name": "Name",
+      "namePlaceholder": "ENV_VAR_NAME",
+      "description": "Description",
+      "required": "Required"
+    },
+    "install": {
+      "title": "Install Configuration",
+      "add": "Add",
+      "empty": "No install configuration",
+      "kind": "Type",
+      "kindPlaceholder": "brew | node | pip",
+      "package": "Package",
+      "packagePlaceholder": "Package name",
+      "label": "Label",
+      "labelPlaceholder": "Display name",
+      "bins": "Binaries",
+      "binsPlaceholder": "Commands provided after install"
+    },
+    "unknownFields": {
+      "title": "Other Fields"
+    }
+  },
+  "tagInput": {
+    "defaultPlaceholder": "Type and press Enter to add"
+  }
+}
