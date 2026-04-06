@@ -52,5 +52,18 @@ last_updated: 2026-04-05
 - n8n 节点配置 UI — 配置面板交互参考
 - [Zed Settings UI](https://zed.dev/blog/settings-ui) — 开发者工具配置界面设计
 
+### 关系可视化交互（2026-04-06）
+- [TanStack Devtools — Bidirectional Communication](https://tanstack.com/devtools/latest/docs/bidirectional-communication) — 借鉴：观察事件与命令事件分离、面板→应用双向控制模式，映射到 `selectedEid`/`selectRelationTarget` 的状态协议
+- [Hygraph Schema Graph](https://hygraph.com/docs/experimental/schema-graph) — 借鉴：关系节点的可视化探索路径（选中→关联高亮→上下文详情）
+  - 对比过：[GoJS Tree Mapper](https://gojs.net/latest/samples/treeMapper.html) — 不选原因：偏重拖拽建模与画布交互，超出当前「编辑器/源码双栏」范围
+  - 对比过：[Rich Tooltip（Helios Design System）](https://helios.hashicorp.design/components/rich-tooltip) — 不选原因：仅 tooltip 不足以承载关系路径，仍需持久化关系栏
+- [Google Code Search — Cross References](https://developers.google.com/code-search/user/cross-references) — 借鉴：跨引用导航采用“可点击目标 + 上下文说明”的低认知负担模式，落地为 Relation Bar 的「关系类型 + 目标 + 描述」
+
+### 实体规则动态化策略决策（2026-04-06）
+- **策略 A（选定）**：仅动态化 `INSPECTOR_ENTITY_RULES`（从 Skill 数据生成 regex），`BRIDGE_RELATIONS` 保持 tech-news-digest 的手工语义关系
+- **策略 B（不选）**：两者都动态化，自动推断语义关系
+  - 不选原因：语义关系（"GITHUB_TOKEN 被 fetch-github.py 使用"、"mail 和 gog 互为替代"）无法从纯数据结构推断，需要人工标注或 AI 辅助；虚假的自动推断比没有关系更差
+  - 未来可考虑：用 LLM 分析 SKILL.md 自动生成关系数据，作为增量功能
+
 ## 竞品/同类工具
 - [Butlerclaw](https://github.com/metahuan/butlerclaw) — OpenClaw GUI，只做安装管理，不做 Skill 配置
