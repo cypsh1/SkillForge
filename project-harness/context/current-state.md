@@ -15,7 +15,24 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**对齐清单 Batch 1-5 全部完成，Demo 对齐告一段落。下一步：从 backlog 待办中选择新任务（T2 代码分割 / T3 远程 SSH / UX-2 保存交互 等）**
+**V1.0 路线图已确定，进入准备→执行阶段。**
+
+当前任务：P2 — 产出 `06-inline-edit.html` Demo（F2+F3 编辑态视觉基准）。
+
+### V1.0 执行顺序
+
+```
+P2 Demo 06（准备）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
+```
+
+### 关键决策（2026-04-07 规划会话）
+
+1. **F1 主题切换推迟到 V1.1**：V1.0 保持纯暗色（与 demo 对齐），避免无基准的 light mode
+2. **F2+F3 必须 Demo 先行**：基于复盘 L1/L4 教训，编码前先产出 06-inline-edit.html 验证编辑态交互
+3. **每个任务预设验收标准**：写入 backlog，"完成"= 验收清单全部 ✅
+4. **新增 trigger 区块**：在 basic 和 meta 之间，展示触发条件（之前表单中有但展示面板中无）
+5. **新增 FilesSection 表单**：files.read[] + files.write[] 的编辑组件（之前只有展示无编辑）
+6. **执行策略**：新会话执行具体任务，harness 三件套传递上下文
 
 ## 已完成
 
@@ -278,6 +295,17 @@ SkillForge — OpenClaw Skill 可视化配置工具
 - 元数据区块默认展开：移除 `defaultCollapsed`，7 个区块统一默认展开
 - 桥线 tooltip 文案："点击跳转" → "点击双面板跳转"（C6）
 
+### 前端布局优化（2026-04-07）
+
+- App.tsx 嵌套面板重构：ArchitectureBar/BridgeConnector/RelationBar/ContextBar 移入右栏内部，桥线区缩窄（GUTTER 25→6）
+- 字段高亮集中化：移除各组件 `fieldVisualClass` 逻辑，改由 `usePanelSync` DOM 事件委托统一注入 fa/fm class
+- 新增 `hoveredField` 追踪：hover 即高亮，点击锁定
+- 视觉紧凑化：区块边框透明度 32%、padding/margin 缩减、预览行高 1.65→1.45
+- 新增 `.thin-scroll` 滚动条样式
+- 移除 bridge-connector circle dots
+- navigator-panel：搜索图标 + 创建按钮图标 16→18px，节点字号 sm→xs，描述 10→11px
+- 验收：tsc ✅ build ✅
+
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）
 
 **前序对话产出**（04-04）：
@@ -390,6 +418,9 @@ public/demos/
 ## Git 历史
 
 ```
+568432b feat: 前端布局优化 — 嵌套面板 + 字段高亮集中化 + 视觉紧凑化
+92c7b16 docs: harness 更新 — Demo 05 对齐全批次记录 + backlog 同步
+62b37bf feat: Demo 05 对齐 + 字体/颜色统一（Batch 1-5）
 5a9715c docs: D2-D5 回顾 + 行为规格 + 对齐清单 + harness 优化
 5e2738f feat: D2-D5 bridge 可视化对齐 — 架构条/桥线/关系系统/上下文栏/滚动同步
 cd6c024 feat: T1 Frontmatter 结构化编辑器 + i18n 中英文支持
