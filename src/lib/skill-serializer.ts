@@ -84,6 +84,7 @@ export function serializeSkillMd(frontmatter: SkillFrontmatter, markdownBody: st
   const yamlText = stringify(payload, {
     lineWidth: 0,
     defaultStringType: "QUOTE_DOUBLE",
+    defaultKeyType: "PLAIN",
   }).replace(/\n$/, "")
 
   return `---\n${yamlText}\n---\n${markdownBody}`

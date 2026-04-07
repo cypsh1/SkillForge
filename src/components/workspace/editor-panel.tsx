@@ -235,6 +235,7 @@ function BridgeSectionBlock({
   children: ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
+  const api = usePanelSyncApi()
   return (
     <div
       data-bridge-section={sectionId}
@@ -246,11 +247,15 @@ function BridgeSectionBlock({
     >
       <div
         className="bridge-section-header"
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={() => api?.scrollBothToSection(sectionId)}
       >
         <span
           className="bridge-section-caret text-[8px] text-muted-foreground transition-transform"
           style={{ transform: collapsed ? "rotate(-90deg)" : undefined }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setCollapsed(!collapsed)
+          }}
         >
           ▼
         </span>
@@ -411,7 +416,7 @@ function SkillMdPanel({
         color={bridgeColor("basic")}
         dimmed={api?.isSectionDimmed("basic")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → name, description, version, homepage
         </p>
         {editingBasic ? (
@@ -437,10 +442,9 @@ function SkillMdPanel({
         title="元数据"
         color={bridgeColor("meta")}
         readOnly
-        defaultCollapsed
         dimmed={api?.isSectionDimmed("meta")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → metadata.openclaw
         </p>
         <MetaOpenclawView fm={fm} />
@@ -453,7 +457,7 @@ function SkillMdPanel({
         badge={`${fm.env?.length ?? 0}`}
         dimmed={api?.isSectionDimmed("env")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → env[]
         </p>
         {envRows.length === 0 ? (
@@ -506,7 +510,7 @@ function SkillMdPanel({
         badge={`${skill.tools.length}`}
         dimmed={api?.isSectionDimmed("tools")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → tools[]
         </p>
         <ToolsBlock tools={skill.tools} />
@@ -518,7 +522,7 @@ function SkillMdPanel({
         color={bridgeColor("files")}
         dimmed={api?.isSectionDimmed("files")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → files {"{ read[], write[] }"}
         </p>
         <div className="ecard">
@@ -584,7 +588,7 @@ function SkillMdPanel({
         badge="执行层"
         dimmed={api?.isSectionDimmed("exec")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           markdown body → 脚本相关章节
         </p>
         {execSections.length === 0 ? (
@@ -593,7 +597,7 @@ function SkillMdPanel({
           <div className="ecard" style={{ padding: '6px 8px' }}>
             {execSections.map((s, i) => {
               const scriptEid = scriptEidFromSectionTitle(s.title)
-              const fieldKey = scriptEid ? `f-s-${scriptEid}` : undefined
+              const fieldKey = scriptEid ? `f-x-${scriptEid}` : undefined
               const isRoot = s.level <= 2
               return (
                 <div
@@ -630,7 +634,7 @@ function SkillMdPanel({
         badge={`${skill.sections.length} 节`}
         dimmed={api?.isSectionDimmed("doc")}
       >
-        <p className="text-[9px] text-muted-foreground font-mono pl-3 mb-1.5">
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           markdown body → headings
         </p>
         <SectionsTree skill={skill} />

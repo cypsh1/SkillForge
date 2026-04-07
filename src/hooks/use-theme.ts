@@ -1,52 +1,13 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect } from "react"
 
-export type Theme = "light" | "dark" | "system"
-
-const STORAGE_KEY = "skillforge-theme"
-
-function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system"
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (raw === "light" || raw === "dark" || raw === "system") return raw
-  return "system"
-}
-
-export function useTheme(): {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-  resolvedTheme: "light" | "dark"
-} {
-  const [theme, setThemeState] = useState<Theme>(readStoredTheme)
-  const [systemDark, setSystemDark] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-      : false
-  )
-
-  const resolvedTheme: "light" | "dark" =
-    theme === "system" ? (systemDark ? "dark" : "light") : theme
-
+/**
+ * 主题已冻结为纯暗色方案（对齐 demo-05），不支持 light 模式切换。
+ * 保留 hook 接口以兼容已有调用点，后续可安全删除。
+ */
+export function useTheme() {
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)")
-    const onChange = () => setSystemDark(mq.matches)
-    mq.addEventListener("change", onChange)
-    setSystemDark(mq.matches)
-    return () => mq.removeEventListener("change", onChange)
+    document.documentElement.classList.add("dark")
   }, [])
 
-  useEffect(() => {
-    const root = document.documentElement
-    if (resolvedTheme === "dark") {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
-    }
-  }, [resolvedTheme])
-
-  const setTheme = useCallback((next: Theme) => {
-    localStorage.setItem(STORAGE_KEY, next)
-    setThemeState(next)
-  }, [])
-
-  return { theme, setTheme, resolvedTheme }
+  return { theme: "dark" as const, setTheme: () => {}, resolvedTheme: "dark" as const }
 }

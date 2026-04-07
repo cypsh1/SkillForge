@@ -45,6 +45,7 @@ export function RelationHover() {
   const [htip, setHtip] = useState<{ left: number; top: number } | null>(null)
 
   const htipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bubTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastHtipEnRef = useRef<Element | null>(null)
 
   const clearHtipTimer = useCallback(() => {
@@ -53,6 +54,21 @@ export function RelationHover() {
       htipTimerRef.current = null
     }
   }, [])
+
+  const clearBubTimer = useCallback(() => {
+    if (bubTimerRef.current != null) {
+      clearTimeout(bubTimerRef.current)
+      bubTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleBubHide = useCallback(
+    (delayMs: number) => {
+      clearBubTimer()
+      bubTimerRef.current = window.setTimeout(() => setBub(null), delayMs)
+    },
+    [clearBubTimer],
+  )
 
   useEffect(() => {
     if (selectedEid != null) {
@@ -69,14 +85,14 @@ export function RelationHover() {
 
       const ri = el.closest("[data-ri]")
       if (ri) {
+        clearBubTimer()
         const eid = ri.getAttribute("data-ri")
         if (eid) {
           const rect = ri.getBoundingClientRect()
-          setBub({
-            eid,
-            left: rect.left,
-            top: rect.bottom + 6,
-          })
+          let left = rect.right + 8
+          const top = rect.top - 4
+          if (left + 230 > window.innerWidth - 8) left = rect.left - 238
+          setBub({ eid, left, top: Math.max(8, Math.min(top, window.innerHeight - 190)) })
         }
       }
 
@@ -93,7 +109,7 @@ export function RelationHover() {
         setHtip({ left: rect.left + rect.width / 2, top: rect.bottom + 6 })
       }, 400)
     },
-    [api, clearHtipTimer],
+    [api, clearHtipTimer, clearBubTimer],
   )
 
   const onMouseOut = useCallback(
@@ -104,16 +120,17 @@ export function RelationHover() {
 
       const fromBub = el.closest(".bub")
       if (fromBub && (related == null || !fromBub.contains(related))) {
-        setBub(null)
+        const toRi = related instanceof Element ? related.closest("[data-ri]") : null
+        if (!toRi) scheduleBubHide(150)
       }
 
       const fromRi = el.closest("[data-ri]")
       if (fromRi) {
         if (related == null) {
-          setBub(null)
+          scheduleBubHide(200)
         } else if (!fromRi.contains(related)) {
           const toBub = related instanceof Element ? related.closest(".bub") : null
-          if (!toBub) setBub(null)
+          if (!toBub) scheduleBubHide(200)
         }
       }
 
@@ -138,7 +155,7 @@ export function RelationHover() {
         }
       }
     },
-    [clearHtipTimer],
+    [clearHtipTimer, scheduleBubHide],
   )
 
   useEffect(() => {
@@ -168,6 +185,7 @@ export function RelationHover() {
       const el = targetElement(e)
       if (!el) return
       if (el.closest(".bub") || el.closest("[data-ri]")) return
+      clearBubTimer()
       setBub(null)
 
       if (!el.closest(".htip") && !el.closest(".en.has-rel")) {
@@ -175,7 +193,7 @@ export function RelationHover() {
         setHtip(null)
       }
     },
-    [clearHtipTimer],
+    [clearHtipTimer, clearBubTimer],
   )
 
   useEffect(() => {
@@ -190,10 +208,12 @@ export function RelationHover() {
     <div className="pointer-events-none absolute inset-0 z-[36] overflow-visible" aria-hidden>
       {bub && rels.length > 0 ? (
         <div
-          className="bub vis pointer-events-auto fixed z-[36] min-w-[200px] max-w-[min(360px,calc(100vw-24px))]"
+          className="bub vis pointer-events-auto fixed z-[36] min-w-[160px]"
           style={{ left: bub.left, top: bub.top }}
           role="dialog"
           aria-label={`关系：${bub.eid}`}
+          onMouseEnter={clearBubTimer}
+          onMouseLeave={() => scheduleBubHide(150)}
         >
           <div className="bub-t font-mono text-[11px]">{bub.eid}</div>
           {REL_ORDER.map((t) => {

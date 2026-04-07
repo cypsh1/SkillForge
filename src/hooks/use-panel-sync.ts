@@ -46,6 +46,7 @@ export interface PanelSyncApi {
   toggleLayer: (layer: BridgeLayerId) => void
   clearLayer: () => void
   isSectionDimmed: (sectionId: string) => boolean
+  scrollBothToSection: (sectionId: string) => void
 
   requestRedraw: () => void
   drawTick: number
@@ -192,6 +193,7 @@ export function usePanelSync(
     [currentLayer],
   )
 
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const eAnchorsRef = useRef<number[]>([])
   const pAnchorsRef = useRef<number[]>([])
   const rafRef = useRef(0)
@@ -242,6 +244,34 @@ export function usePanelSync(
     rebuildAnchors()
     scheduleFrame()
   }, [rebuildAnchors, scheduleFrame])
+
+  const scrollBothToSection = useCallback(
+    (sectionId: string) => {
+      const eSc = editorRef.current
+      const pSc = inspectorRef.current
+      if (!eSc || !pSc) return
+
+      for (const container of [eSc, pSc]) {
+        const el = container.querySelector(`[data-bridge-section="${sectionId}"]`)
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" })
+          el.classList.add("bridge-highlight")
+        }
+      }
+
+      clearTimeout(highlightTimerRef.current)
+      highlightTimerRef.current = setTimeout(() => {
+        for (const container of [eSc, pSc]) {
+          container.querySelectorAll(".bridge-highlight").forEach((n) =>
+            n.classList.remove("bridge-highlight"),
+          )
+        }
+      }, 1200)
+
+      setTimeout(() => rebuildAnchors(), 300)
+    },
+    [rebuildAnchors],
+  )
 
   // Scroll handlers
   useEffect(() => {
@@ -358,6 +388,7 @@ export function usePanelSync(
     toggleLayer,
     clearLayer,
     isSectionDimmed,
+    scrollBothToSection,
     requestRedraw,
     drawTick,
   }

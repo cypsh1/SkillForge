@@ -29,7 +29,7 @@ export function ContextBar() {
     <div className="flex h-7 items-center gap-0 border-t border-border bg-card px-4 text-[10px] text-muted-foreground">
       <div className="flex min-w-0 items-center gap-1">
         <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: leftColor }} />
-        <span className="truncate text-foreground/90">{name}</span>
+        <span className="truncate font-bold text-muted-foreground">{name}</span>
         {pos ? <span className="shrink-0 font-mono text-[9px] tabular-nums">{pos}</span> : null}
       </div>
       <span className="shrink-0 mx-2 text-border" aria-hidden>
@@ -48,8 +48,8 @@ export function ContextBar() {
         <span className="text-[8px]">右</span>
         <div className="h-[3px] w-10 overflow-hidden rounded-sm bg-border">
           <div
-            className="h-full rounded-sm bg-emerald-500 transition-[width] duration-75"
-            style={{ width: `${inspectorScrollPct}%` }}
+            className="h-full rounded-sm transition-[width] duration-75"
+            style={{ width: `${inspectorScrollPct}%`, backgroundColor: leftColor }}
           />
         </div>
         <span className="tabular-nums">{inspectorScrollPct}%</span>

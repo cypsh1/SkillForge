@@ -208,10 +208,11 @@ function wrapYamlNamedBlocks(
 
   out.push(highlightYaml(lines[0] ?? ""))
   for (const line of lines.slice(1)) {
-    const match = line.match(/^(\s*)(read|write):\s*$/)
+    // handle both  read:  and  "read":
+    const match = line.match(/^(\s*)(?:"(read|write)"|(read|write)):\s*$/)
     if (match) {
       flush()
-      currentName = match[2]
+      currentName = match[2] ?? match[3] ?? null
       block = [line]
       continue
     }
@@ -310,7 +311,7 @@ function buildInspectorEntityRules(
     exec.push({
       re: new RegExp(`\\b${escapeRegExp(raw)}(?:\\.py)?\\b`, "g"),
       eid: raw,
-      fieldKey: `f-s-${raw}`,
+      fieldKey: `f-x-${raw}`,
     })
   }
 
@@ -393,7 +394,11 @@ function injectInspectorBridgeEntities(
 function highlightYaml(text: string): string {
   if (!text) return ""
   return escapeHtml(text)
-    .replace(/^(\s*)([\w-]+)(:)/gm, "$1<span class=\"syntax-key\">$2</span>$3")
+    // match both plain key (name:) and quoted key ("name":)
+    .replace(/^(\s*)(?:"([\w-]+)"|([\w-]+))(:)/gm, (_, indent, qKey, pKey, colon) => {
+      const key = qKey ?? pKey
+      return `${indent}<span class="syntax-key">${key}</span>${colon}`
+    })
     .replace(/:\s*"([^"]*)"/g, ": <span class=\"syntax-value\">\"$1\"</span>")
     .replace(/:\s*'([^']*)'/g, ": <span class=\"syntax-value\">'$1'</span>")
     .replace(/:\s*(true|false)\b/g, ": <span class=\"syntax-bool\">$1</span>")
@@ -416,7 +421,8 @@ function buildSectionHtml(
     }
     case "env": {
       return wrapYamlListBlocks(raw, (block) => {
-        const name = block.match(/\bname:\s*["']?([^"'\n]+)["']?/)?.[1]?.trim()
+        // handle both  name: MY_VAR  and  "name": "MY_VAR"
+        const name = block.match(/(?:"name"|name):\s*["']?([^"'\n]+?)["']?\s*$/m)?.[1]?.trim()
         return name ? `f-e-${name}` : null
       })
     }
@@ -432,7 +438,7 @@ function buildSectionHtml(
     case "exec": {
       return wrapMarkdownHeadingBlocks(raw, (title) => {
         const eid = scriptTitleToEid(title)
-        return eid ? `f-s-${eid}` : null
+        return eid ? `f-x-${eid}` : null
       })
     }
     case "doc": {
@@ -464,6 +470,7 @@ function PreviewSectionBlock({
   dimmed?: boolean
 }) {
   const [open, setOpen] = useState(true)
+  const api = usePanelSyncApi()
   return (
     <div
       data-bridge-section={sectionId}
@@ -474,17 +481,34 @@ function PreviewSectionBlock({
     >
       <div
         className="bridge-section-header"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => api?.scrollBothToSection(sectionId)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault()
-            setOpen((v) => !v)
+            api?.scrollBothToSection(sectionId)
           }
         }}
         role="button"
         tabIndex={0}
       >
-        <span className="bridge-section-caret text-[8px] text-muted-foreground">▼</span>
+        <span
+          className="bridge-section-caret text-[8px] text-muted-foreground"
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpen((v) => !v)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation()
+              e.preventDefault()
+              setOpen((v) => !v)
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          ▼
+        </span>
         <span className="bridge-section-dot" style={{ backgroundColor: color }} />
         <span className="text-xs font-semibold">{title}</span>
         {badge && (
