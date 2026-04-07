@@ -49,6 +49,12 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --spacing-1: 2px;
+    --spacing-2: 4px;
+    --spacing-3: 6px;
+    --spacing-4: 8px;
+    --spacing-5: 12px;
+    --spacing-6: 16px;
 }
 
 :root {
@@ -197,8 +203,8 @@
 [data-bridge-section] {
   border-left: 3px solid transparent;
   border-radius: 6px;
-  padding: 9px 11px;
-  margin-bottom: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
   transition:
     background 0.2s,
     box-shadow 0.2s,
@@ -206,7 +212,7 @@
 }
 
 [data-bridge-section="basic"] {
-  border-left-color: #3b82f6;
+  border-left-color: rgba(59, 130, 246, 0.32);
 }
 [data-bridge-section="basic"].bridge-highlight {
   background: rgba(59, 130, 246, 0.07);
@@ -214,7 +220,7 @@
 }
 
 [data-bridge-section="meta"] {
-  border-left-color: #64748b;
+  border-left-color: rgba(100, 116, 139, 0.32);
 }
 [data-bridge-section="meta"].bridge-highlight {
   background: rgba(100, 116, 139, 0.07);
@@ -222,7 +228,7 @@
 }
 
 [data-bridge-section="env"] {
-  border-left-color: #f59e0b;
+  border-left-color: rgba(245, 158, 11, 0.32);
 }
 [data-bridge-section="env"].bridge-highlight {
   background: rgba(245, 158, 11, 0.07);
@@ -230,7 +236,7 @@
 }
 
 [data-bridge-section="tools"] {
-  border-left-color: #10b981;
+  border-left-color: rgba(16, 185, 129, 0.32);
 }
 [data-bridge-section="tools"].bridge-highlight {
   background: rgba(16, 185, 129, 0.07);
@@ -238,7 +244,7 @@
 }
 
 [data-bridge-section="files"] {
-  border-left-color: #8b5cf6;
+  border-left-color: rgba(139, 92, 246, 0.32);
 }
 [data-bridge-section="files"].bridge-highlight {
   background: rgba(139, 92, 246, 0.07);
@@ -246,7 +252,7 @@
 }
 
 [data-bridge-section="exec"] {
-  border-left-color: #14b8a6;
+  border-left-color: rgba(20, 184, 166, 0.32);
 }
 [data-bridge-section="exec"].bridge-highlight {
   background: rgba(20, 184, 166, 0.07);
@@ -254,7 +260,7 @@
 }
 
 [data-bridge-section="doc"] {
-  border-left-color: #14b8a6;
+  border-left-color: rgba(20, 184, 166, 0.32);
 }
 [data-bridge-section="doc"].bridge-highlight {
   background: rgba(20, 184, 166, 0.07);
@@ -264,10 +270,10 @@
 .bridge-section-header {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   cursor: pointer;
   user-select: none;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .bridge-badge {
@@ -395,22 +401,22 @@
 .pc {
   font-family: var(--font-mono);
   font-size: 11px;
-  line-height: 1.65;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-all;
   color: var(--muted-foreground);
 }
 
-.pc .syntax-key, .pc .k { color: #7dd3fc; }
+.pc .syntax-key, .pc .k { color: var(--muted-foreground); }
 .pc .syntax-value, .pc .s { color: #c4c4c7; }
-.pc .syntax-bool, .pc .b { color: #fbbf24; }
+.pc .syntax-bool, .pc .b { color: #c4975a; }
 .pc .syntax-heading, .pc .h { color: var(--foreground); font-weight: 600; }
 .pc .syntax-dim, .pc .dm { color: var(--muted-foreground); opacity: 0.6; }
 
 /* Relation path bar — demo05 full-width bottom bar */
 .rel-bar {
   border-top: 1px solid var(--border);
-  padding: 6px 16px;
+  padding: 4px 12px;
   background: rgba(24, 24, 27, 0.9);
   max-height: 140px;
   overflow-y: auto;
@@ -505,7 +511,7 @@
   background: #1c1c20;
   color: var(--foreground);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-  padding: 10px 12px;
+  padding: 8px 10px;
   font-size: 10px;
   line-height: 1.4;
   max-width: 240px;
@@ -519,7 +525,7 @@
 .bub-t {
   font-weight: 600;
   color: var(--foreground);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
@@ -564,7 +570,7 @@
   border: 1px solid #444;
   background: #1c1c20;
   color: var(--muted-foreground);
-  padding: 3px 8px;
+  padding: 3px 6px;
   font-size: 9px;
   line-height: 1.35;
   white-space: nowrap;
@@ -670,7 +676,7 @@
 
 .et th {
   text-align: left;
-  padding: 4px 6px;
+  padding: 3px 6px;
   background: rgba(255, 255, 255, 0.03);
   color: var(--muted-foreground);
   font-weight: 500;
@@ -679,7 +685,7 @@
 }
 
 .et td {
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -710,13 +716,13 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 .fr {
   display: flex;
-  gap: 8px;
-  padding: 4px;
+  gap: 6px;
+  padding: 3px 4px;
   font-size: 11px;
   cursor: pointer;
   border-radius: 3px;
@@ -740,6 +746,25 @@
   font-size: 11px;
   color: #c4c4c7;
   word-break: break-all;
+}
+
+/* Thin scrollbar utility — used on panel scroll containers */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 25%, transparent) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground) 25%, transparent);
+  border-radius: 99px;
+}
+.thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
 }
 
 /* Preview field-level clickable line (inspector basic section) */

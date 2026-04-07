@@ -38,6 +38,7 @@ export interface PanelSyncApi {
 
   selectedEid: string | null
   selectedField: string | null
+  hoveredField: string | null
   relatedEids: string[]
   currentLayer: BridgeLayerId | null
   selectRelationTarget: (eid: string | null) => void
@@ -137,6 +138,7 @@ export function usePanelSync(
   const [drawTick, setDrawTick] = useState(0)
   const [selectedEid, setSelectedEid] = useState<string | null>(null)
   const [selectedField, setSelectedField] = useState<string | null>(null)
+  const [hoveredField, setHoveredField] = useState<string | null>(null)
   const [currentLayer, setCurrentLayer] = useState<BridgeLayerId | null>(null)
 
   const relationStoreVersion = useMemo(() => {
@@ -216,6 +218,9 @@ export function usePanelSync(
     const eSc = editorRef.current
     const pSc = inspectorRef.current
     if (!eSc || !pSc) return
+
+    eAnchorsRef.current = buildAnchors(eSc)
+    pAnchorsRef.current = buildAnchors(pSc)
 
     if (needSyncRef.current && syncEnabledRef.current && !altHeldRef.current) {
       needSyncRef.current = false
@@ -345,6 +350,60 @@ export function usePanelSync(
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [clearRelationSelection])
 
+  // Field hover tracking via event delegation
+  useEffect(() => {
+    const editor = editorRef.current
+    const inspector = inspectorRef.current
+    if (!editor || !inspector) return
+
+    const onOver = (e: Event) => {
+      const el = (e.target as HTMLElement).closest?.("[data-field]")
+      setHoveredField(el?.getAttribute("data-field") ?? null)
+    }
+    const onLeave = () => setHoveredField(null)
+
+    for (const c of [editor, inspector]) {
+      c.addEventListener("mouseover", onOver)
+      c.addEventListener("mouseleave", onLeave)
+    }
+    return () => {
+      for (const c of [editor, inspector]) {
+        c.removeEventListener("mouseover", onOver)
+        c.removeEventListener("mouseleave", onLeave)
+      }
+    }
+  }, [])
+
+  // DOM-based field highlight (fa/fm) — centralised for all sections
+  useEffect(() => {
+    const editor = editorRef.current
+    const inspector = inspectorRef.current
+    if (!editor || !inspector) return
+
+    const clear = () => {
+      for (const c of [editor, inspector]) {
+        c.querySelectorAll(".fa").forEach((el) => el.classList.remove("fa"))
+        c.querySelectorAll(".fm").forEach((el) => el.classList.remove("fm"))
+      }
+    }
+
+    clear()
+
+    const field = hoveredField ?? selectedField
+    if (!field) return clear
+
+    for (const [container, panel] of [
+      [editor, "editor"],
+      [inspector, "inspector"],
+    ] as const) {
+      const els = container.querySelectorAll(`[data-field="${field}"]`)
+      const cls = activePanel === panel ? "fa" : "fm"
+      els.forEach((el) => el.classList.add(cls))
+    }
+
+    return clear
+  }, [selectedField, hoveredField, activePanel])
+
   // Resize observer
   useEffect(() => {
     const layout = layoutRef.current
@@ -380,6 +439,7 @@ export function usePanelSync(
     inspectorScrollPct,
     selectedEid,
     selectedField,
+    hoveredField,
     relatedEids,
     currentLayer,
     selectRelationTarget,

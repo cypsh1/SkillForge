@@ -94,7 +94,7 @@ export function NavigatorPanel() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-[18px] -translate-y-1/2" />
           <Input
             type="search"
             placeholder="搜索 Skill…"
@@ -112,7 +112,7 @@ export function NavigatorPanel() {
           aria-label="创建新技能"
           onClick={() => setWizardOpen(true)}
         >
-          <Plus className="size-4" />
+          <Plus className="size-[18px]" />
         </Button>
       </div>
 
@@ -173,7 +173,7 @@ function SkillTreeBlock({
         type="button"
         onClick={handleClick}
         className={cn(
-          "flex w-full items-start gap-1 rounded-md px-1.5 py-1.5 text-left text-sm transition-colors",
+          "flex w-full items-start gap-1 rounded-md px-1.5 py-1.5 text-left text-xs transition-colors",
           isSelected ? "bg-accent" : "hover:bg-muted/60",
         )}
       >
@@ -190,7 +190,7 @@ function SkillTreeBlock({
             ) : null}
           </span>
           {skill.description ? (
-            <p className="text-muted-foreground mt-0.5 truncate text-[10px]">{skill.description}</p>
+            <p className="text-muted-foreground mt-0.5 truncate text-[11px]">{skill.description}</p>
           ) : null}
         </span>
       </button>
@@ -228,7 +228,7 @@ function TreeNode({ selected, onClick, icon, label, description }: TreeNodeProps
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-sm transition-colors",
+        "flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors",
         selected && "bg-accent",
         !selected && "hover:bg-muted/60",
       )}
@@ -237,7 +237,7 @@ function TreeNode({ selected, onClick, icon, label, description }: TreeNodeProps
       <span className="min-w-0 flex-1">
         <span className="block truncate">{label}</span>
         {description ? (
-          <span className="text-muted-foreground block truncate text-[10px]">{description}</span>
+          <span className="text-muted-foreground block truncate text-[11px]">{description}</span>
         ) : null}
       </span>
     </button>

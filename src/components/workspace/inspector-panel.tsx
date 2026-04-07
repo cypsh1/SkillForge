@@ -114,16 +114,6 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
 }
 
-function fieldVisualClass(
-  selectedField: string | null | undefined,
-  activePanel: "editor" | "inspector" | null | undefined,
-  fieldKey: string | undefined,
-  panel: "editor" | "inspector",
-): string {
-  if (!fieldKey || selectedField !== fieldKey) return ""
-  return activePanel === panel ? "fa" : "fm"
-}
-
 type InspectorEntityRule = { re: RegExp; eid: string; fieldKey?: string }
 
 const BASIC_FIELD_MAP: Record<string, string> = {
@@ -133,18 +123,13 @@ const BASIC_FIELD_MAP: Record<string, string> = {
   homepage: "f-home",
 }
 
-function wrapBasicFieldLines(
-  html: string,
-  selectedField: string | null,
-  activePanel: "editor" | "inspector" | null,
-): string {
+function wrapBasicFieldLines(html: string): string {
   return html.replace(
     /(<span class="syntax-key">(name|description|version|homepage)<\/span>.*?)(?=\n|$)/g,
     (_match, line, key) => {
       const field = BASIC_FIELD_MAP[key]
       if (!field) return line
-      const cls = fieldVisualClass(selectedField, activePanel, field, "inspector")
-      return `<span data-field="${field}" class="pf${cls ? ` ${cls}` : ""}">${line}</span>`
+      return `<span data-field="${field}" class="pf">${line}</span>`
     },
   )
 }
@@ -320,9 +305,6 @@ function buildInspectorEntityRules(
 
 function classForBridgeEid(
   eid: string,
-  selectedField: string | null,
-  activePanel: "editor" | "inspector" | null,
-  fieldKey: string | undefined,
   selectedEid: string | null,
   relatedEids: string[],
 ): string {
@@ -337,7 +319,6 @@ function classForBridgeEid(
     isSelected ? "eid-selected" : "",
     isRelated ? "eid-related" : "",
     isDimmed ? "eid-dimmed" : "",
-    fieldVisualClass(selectedField, activePanel, fieldKey, "inspector"),
   ]
     .filter(Boolean)
     .join(" ")
@@ -346,14 +327,12 @@ function classForBridgeEid(
 function wrapInspectorTextWithEntities(
   text: string,
   rules: InspectorEntityRule[],
-  selectedField: string | null,
-  activePanel: "editor" | "inspector" | null,
   selectedEid: string | null,
   relatedEids: string[],
 ): string {
   let out = text
   for (const { re, eid, fieldKey } of rules) {
-    const cls = classForBridgeEid(eid, selectedField, activePanel, fieldKey, selectedEid, relatedEids)
+    const cls = classForBridgeEid(eid, selectedEid, relatedEids)
     const fieldAttr = fieldKey ?? eid
     out = out.replace(re, (m) => {
       return `<span class="${cls}" data-eid="${eid}" data-field="${fieldAttr}">${m}</span>`
@@ -365,8 +344,6 @@ function wrapInspectorTextWithEntities(
 function injectInspectorBridgeEntities(
   html: string,
   sectionKey: keyof PreviewParts,
-  selectedField: string | null,
-  activePanel: "editor" | "inspector" | null,
   selectedEid: string | null,
   relatedEids: string[],
   allRules: Record<keyof PreviewParts, InspectorEntityRule[]>,
@@ -382,8 +359,6 @@ function injectInspectorBridgeEntities(
         : wrapInspectorTextWithEntities(
             part,
             sorted,
-            selectedField,
-            activePanel,
             selectedEid,
             relatedEids,
           )
@@ -410,14 +385,12 @@ function buildSectionHtml(
   sectionKey: keyof PreviewParts,
   raw: string,
   skill: ParsedSkill | null,
-  selectedField: string | null,
-  activePanel: "editor" | "inspector" | null,
 ): string {
   if (!raw) return ""
 
   switch (sectionKey) {
     case "basic": {
-      return wrapBasicFieldLines(highlightYaml(raw), selectedField, activePanel)
+      return wrapBasicFieldLines(highlightYaml(raw))
     }
     case "env": {
       return wrapYamlListBlocks(raw, (block) => {
@@ -428,8 +401,8 @@ function buildSectionHtml(
     }
     case "tools": {
       return wrapYamlListBlocks(raw, (block) => {
-        const toolName = block.match(/^\s*-\s*["']?([^"'\n]+)["']?/m)?.[1]?.trim()
-        return toolName ? `f-t-${toolName}` : null
+        const m = block.match(/^\s*-\s*["']?([\w.-]+)/m)
+        return m ? `f-t-${m[1]}` : null
       })
     }
     case "files": {
@@ -531,8 +504,6 @@ function SectionedPreview({
   content,
   skill,
   fm,
-  selectedField,
-  activePanel,
   selectedEid,
   relatedEids,
   isSectionDimmed,
@@ -540,8 +511,6 @@ function SectionedPreview({
   content: string
   skill: ParsedSkill | null
   fm: SkillFrontmatter | null
-  selectedField: string | null
-  activePanel: "editor" | "inspector" | null
   selectedEid: string | null
   relatedEids: string[]
   isSectionDimmed: (sectionId: string) => boolean
@@ -549,16 +518,14 @@ function SectionedPreview({
   const parts = useMemo(() => splitPreviewInto7(content), [content])
   const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
   return (
-    <div className="p-3 pl-1.5">
+    <div className="p-2 pl-1.5">
       {BRIDGE_SECTIONS.map((def) => {
         const key = def.id as keyof PreviewParts
         const raw = parts[key] ?? ""
-        let html = buildSectionHtml(key, raw, skill, selectedField, activePanel)
+        let html = buildSectionHtml(key, raw, skill)
         html = injectInspectorBridgeEntities(
           html,
           key,
-          selectedField,
-          activePanel,
           selectedEid,
           relatedEids,
           entityRules,
@@ -588,8 +555,6 @@ export function InspectorPanel() {
   const api = usePanelSyncApi()
   const { state, selectedSkill, editState } = useWorkspace()
   const selection = state.selection
-  const selectedField = api?.selectedField ?? null
-  const activePanel = api?.activePanel ?? null
   const selectedEid = api?.selectedEid ?? null
   const relatedEids = api?.relatedEids ?? []
 
@@ -736,7 +701,7 @@ export function InspectorPanel() {
         <>
           <div
             ref={api?.inspectorRef}
-            className="min-h-0 flex-1 overflow-y-auto"
+            className="min-h-0 flex-1 overflow-y-auto thin-scroll"
             onClick={api ? handleInspectorClick : undefined}
           >
             {selection?.nodeType === "skill-md" && (
@@ -744,8 +709,6 @@ export function InspectorPanel() {
                 content={skillMdPreview}
                 skill={selectedSkill}
                 fm={editState?.frontmatter ?? null}
-                selectedField={selectedField}
-                activePanel={activePanel}
                 selectedEid={selectedEid}
                 relatedEids={relatedEids}
                 isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
@@ -753,7 +716,7 @@ export function InspectorPanel() {
             )}
 
             {selection?.nodeType === "config-file" && selection.filePath && (
-              <div className="flex min-h-0 flex-col gap-2 p-3">
+              <div className="flex min-h-0 flex-col gap-1.5 p-2">
                 <p className="shrink-0 truncate text-xs text-muted-foreground">{selection.filePath}</p>
                 {selectedConfigData !== undefined ? (
                   <JsonPreview data={selectedConfigData} className="h-auto min-h-[200px]" />

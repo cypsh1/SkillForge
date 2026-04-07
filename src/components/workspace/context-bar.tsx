@@ -26,7 +26,7 @@ export function ContextBar() {
   const leftColor = meta?.color ?? FALLBACK
 
   return (
-    <div className="flex h-7 items-center gap-0 border-t border-border bg-card px-4 text-[10px] text-muted-foreground">
+    <div className="flex h-7 items-center gap-0 border-t border-border bg-card px-3 text-[10px] text-muted-foreground">
       <div className="flex min-w-0 items-center gap-1">
         <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: leftColor }} />
         <span className="truncate font-bold text-muted-foreground">{name}</span>

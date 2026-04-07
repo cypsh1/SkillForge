@@ -34,16 +34,6 @@ import { validateSkill } from "@/lib/skill-validator"
 import type { NavigatorSelection } from "@/types/workspace"
 import type { ParsedSkill, SkillFrontmatter, SkillTool } from "@/types/skill"
 
-function fieldVisualClass(
-  selectedField: string | null | undefined,
-  activePanel: "editor" | "inspector" | null | undefined,
-  fieldKey: string | undefined,
-  panel: "editor" | "inspector",
-): string {
-  if (!fieldKey || selectedField !== fieldKey) return ""
-  return activePanel === panel ? "fa" : "fm"
-}
-
 function configEditorKind(filePath: string): "sources" | "topics" | "schema" | null {
   const base = filePath.split("/").pop() ?? filePath
   if (base === "sources.json") return "sources"
@@ -144,21 +134,16 @@ function scriptEidFromSectionTitle(title: string): string | null {
 }
 
 function RelationIndicator({ eid, fieldKey }: { eid: string; fieldKey?: string }) {
-  const api = usePanelSyncApi()
   const summary = getRelationCountSummary(eid)
   const { forward, alternate, contains } = summary
   if (forward + alternate + contains === 0) return null
-  const fieldCls = fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")
   const parts: string[] = []
   if (forward > 0) parts.push(`→${forward}`)
   if (alternate > 0) parts.push(`↔${alternate}`)
   if (contains > 0) parts.push(`⊂${contains}`)
   return (
     <span
-      className={cn(
-        "ri",
-        fieldCls,
-      )}
+      className="ri"
       data-ri={eid}
       data-eid={eid}
       data-field={fieldKey}
@@ -185,7 +170,6 @@ function EidText({
   const api = usePanelSyncApi()
   const selectedEid = api?.selectedEid ?? null
   const relatedEids = api?.relatedEids ?? []
-  const fieldCls = fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")
   const summary = getRelationCountSummary(eid)
   const hasRel =
     summary.forward > 0 || summary.alternate > 0 || summary.contains > 0
@@ -205,7 +189,6 @@ function EidText({
         isSelected && "eid-selected",
         isRelated && "eid-related",
         isDimmed && "eid-dimmed",
-        fieldCls,
       )}
       data-eid={eid}
       data-field={fieldKey}
@@ -338,7 +321,6 @@ function BasicInfoDisplay({
   fm: SkillFrontmatter
   onEdit: () => void
 }) {
-  const api = usePanelSyncApi()
   const rows: { label: string; value: string; field: string; isLink?: boolean }[] = [
     { label: "名称", value: fm.name || "—", field: "f-name" },
     { label: "描述", value: fm.description || "—", field: "f-desc" },
@@ -350,10 +332,7 @@ function BasicInfoDisplay({
       {rows.map((r) => (
         <div
           key={r.field}
-          className={cn(
-            "fr",
-            fieldVisualClass(api?.selectedField, api?.activePanel, r.field, "editor"),
-          )}
+          className="fr"
           data-field={r.field}
         >
           <span className="fl">{r.label}</span>
@@ -371,7 +350,7 @@ function BasicInfoDisplay({
           )}
         </div>
       ))}
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end pt-1.5">
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors"
@@ -480,7 +459,6 @@ function SkillMdPanel({
                   <tr
                     key={i}
                     data-field={fieldKey}
-                    className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
                   >
                     <td>
                       <span className="en font-mono text-[10px] font-semibold">
@@ -527,7 +505,7 @@ function SkillMdPanel({
         </p>
         <div className="ecard">
           <div className="text-[10px] text-muted-foreground mb-0.5">📖 读取</div>
-          <div className="text-[10px] font-mono leading-[1.8] pl-1.5" data-field="f-fr">
+          <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fr">
             {readList.length === 0 ? (
               <span className="text-muted-foreground">无</span>
             ) : (
@@ -539,7 +517,6 @@ function SkillMdPanel({
                     {i > 0 && <br />}
                     <span
                       data-field={fieldKey}
-                      className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
                     >
                       {fileEid ? (
                         <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
@@ -553,7 +530,7 @@ function SkillMdPanel({
             )}
           </div>
           <div className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">✏️ 写入</div>
-          <div className="text-[10px] font-mono leading-[1.8] pl-1.5" data-field="f-fw">
+          <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fw">
             {writeList.length === 0 ? (
               <span className="text-muted-foreground">无</span>
             ) : (
@@ -565,7 +542,6 @@ function SkillMdPanel({
                     {i > 0 && <br />}
                     <span
                       data-field={fieldKey}
-                      className={fieldVisualClass(api?.selectedField, api?.activePanel, fieldKey, "editor")}
                     >
                       {fileEid ? (
                         <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
@@ -670,7 +646,7 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
       {bins.length > 0 && (
         <>
           <div className="text-[10px] text-muted-foreground mb-1">必需依赖</div>
-          <div className="text-[10px] font-mono pl-1.5 leading-[1.8]">
+          <div className="text-[10px] font-mono pl-1.5 leading-[1.6]">
             {bins.map((b: string, i: number) => (
               <span key={i}>
                 {i > 0 && <br />}
@@ -683,7 +659,7 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
       {optionalBins.length > 0 && (
         <>
           <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">可选依赖</div>
-          <div className="text-[10px] font-mono pl-1.5 leading-[1.8] text-muted-foreground">
+          <div className="text-[10px] font-mono pl-1.5 leading-[1.6] text-muted-foreground">
             {optionalBins.map((b: string, i: number) => (
               <span key={i}>
                 {i > 0 && " · "}
@@ -717,7 +693,7 @@ function SkillOverviewPanel({
   const skillId = skill.id
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -735,7 +711,7 @@ function SkillOverviewPanel({
               </Badge>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground pt-2">
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground pt-1.5">
             {skill.path ? (
               <span className="flex items-center gap-1 min-w-0">
                 <Layers className="h-3.5 w-3.5 shrink-0" />
@@ -754,7 +730,7 @@ function SkillOverviewPanel({
               </a>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-1.5">
             <Badge variant="outline">
               <Terminal className="mr-1 h-3 w-3" />
               {skill.tools.length} 个工具
@@ -836,7 +812,7 @@ function SkillOverviewPanel({
       </section>
 
       {validationResult && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
             <ShieldCheck className="h-5 w-5" />
             配置验证
@@ -915,10 +891,10 @@ export function EditorPanel() {
 
       <div
         ref={api?.editorRef}
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 min-h-0 overflow-y-auto thin-scroll"
         onClick={api ? handleEditorClick : undefined}
       >
-        <div className="min-h-full p-3 pr-1.5">
+        <div className="min-h-full p-2 pr-1.5">
           {!selection ? (
             <EmptyState title="从左侧导航选择一个 Skill 或文件" />
           ) : !selectedSkill || !editState ? (

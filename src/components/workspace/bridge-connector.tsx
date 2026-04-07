@@ -17,8 +17,6 @@ interface BridgeItem {
   fillPath: string
   topLine: { x1: number; y1: number; x2: number; y2: number; dashed: boolean }
   bottomLine: { x1: number; y1: number; x2: number; y2: number; dashed: boolean }
-  dotCx: number
-  dotCy: number
   color: string
   name: string
 }
@@ -106,8 +104,6 @@ export function BridgeConnector() {
         fillPath: `M ${xLeft} ${eTop} L ${xRight} ${iTop} L ${xRight} ${iBot} L ${xLeft} ${eBot} Z`,
         topLine: { x1: xLeft, y1: eTop, x2: xRight, y2: iTop, dashed: topDash },
         bottomLine: { x1: xLeft, y1: eBot, x2: xRight, y2: iBot, dashed: botDash },
-        dotCx: gapCenterX,
-        dotCy: (eTop + eBot + iTop + iBot) / 4,
         color: def.color,
         name: SECTION_MAP[def.id]?.name ?? def.id,
       })
@@ -133,6 +129,29 @@ export function BridgeConnector() {
     }
     return clear
   }, [hoveredId, editorRef, inspectorRef])
+
+  useEffect(() => {
+    const editor = editorRef?.current
+    const inspector = inspectorRef?.current
+    if (!editor || !inspector) return
+
+    const onOver = (e: Event) => {
+      const sec = (e.target as HTMLElement).closest?.("[data-bridge-section]")
+      setHoveredId(sec?.getAttribute("data-bridge-section") ?? null)
+    }
+    const onLeave = () => setHoveredId(null)
+
+    for (const c of [editor, inspector]) {
+      c.addEventListener("mouseover", onOver)
+      c.addEventListener("mouseleave", onLeave)
+    }
+    return () => {
+      for (const c of [editor, inspector]) {
+        c.removeEventListener("mouseover", onOver)
+        c.removeEventListener("mouseleave", onLeave)
+      }
+    }
+  }, [editorRef, inspectorRef])
 
   const showPop = useCallback(() => {
     clearTimeout(popTimerRef.current)
@@ -203,26 +222,7 @@ export function BridgeConnector() {
           })}
         </svg>
       </div>
-      {/* Circle dots on a higher layer so they're not obscured by PanelSeparator (z-30) */}
       <div className="pointer-events-none absolute inset-0 z-[32] overflow-visible">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute inset-0 h-full w-full overflow-visible"
-          style={{ opacity: be ? 1 : 0, transition: "opacity 0.2s" }}
-        >
-          {bridges.map((b) => (
-            <circle
-              key={b.id}
-              cx={b.dotCx}
-              cy={b.dotCy}
-              r={3}
-              fill={b.color}
-              opacity={hoveredId === b.id ? 0.85 : 0}
-              style={{ transition: "opacity 0.15s" }}
-            />
-          ))}
-        </svg>
-
         {gapLayout && (
           <div
             className="pointer-events-auto absolute z-30"

@@ -49,4 +49,4 @@ export const LAYER_SECTION_IDS = Object.fromEntries(
   ]),
 ) as Record<BridgeLayerId, string[]>
 
-export const BRIDGE_GUTTER_EXTEND = 25
+export const BRIDGE_GUTTER_EXTEND = 6

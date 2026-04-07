@@ -81,7 +81,7 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
       // Ensure source preview returns to an equal-width baseline
       // after coming back from overview auto-collapse.
       if (prevNodeType === "skill-overview") {
-        panel.resize("40%")
+        panel.resize("50%")
       }
     }
   }, [nodeType])
@@ -91,8 +91,7 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
       <PanelSyncContext.Provider value={panelSync}>
         <div className="flex flex-col h-svh">
           <AppHeader />
-          <ArchitectureBar />
-          <div className="relative flex-1 overflow-hidden" ref={panelSync.layoutRef}>
+          <div className="flex-1 min-h-0 overflow-hidden">
             <Group
               orientation="horizontal"
               className="h-full"
@@ -102,27 +101,40 @@ function WorkspaceShell({ skills }: { skills: ParsedSkill[] }) {
                 <NavigatorPanel />
               </Panel>
               <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors z-30 relative" />
-              <Panel id="editor" defaultSize="40%" minSize="22%">
-                <EditorPanel />
-              </Panel>
-              <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors z-30 relative" />
-              <Panel
-                id="inspector"
-                defaultSize="40%"
-                minSize="22%"
-                maxSize="55%"
-                collapsible
-                collapsedSize="0%"
-                panelRef={inspectorPanelRef}
-              >
-                <InspectorPanel />
+              <Panel id="right-col" defaultSize="80%">
+                <div className="flex flex-col h-full">
+                  <ArchitectureBar />
+                  <div className="relative flex-1 min-h-0 overflow-hidden" ref={panelSync.layoutRef}>
+                    <Group
+                      orientation="horizontal"
+                      className="h-full"
+                      id="skillforge-layout-inner"
+                    >
+                      <Panel id="editor" defaultSize="50%" minSize="30%">
+                        <EditorPanel />
+                      </Panel>
+                      <PanelSeparator className="w-1 bg-border hover:bg-primary/20 transition-colors z-30 relative" />
+                      <Panel
+                        id="inspector"
+                        defaultSize="50%"
+                        minSize="22%"
+                        maxSize="65%"
+                        collapsible
+                        collapsedSize="0%"
+                        panelRef={inspectorPanelRef}
+                      >
+                        <InspectorPanel />
+                      </Panel>
+                    </Group>
+                    <BridgeConnector />
+                    <RelationHover />
+                  </div>
+                  <RelationBar />
+                  <ContextBar />
+                </div>
               </Panel>
             </Group>
-            <BridgeConnector />
-            <RelationHover />
           </div>
-          <RelationBar />
-          <ContextBar />
         </div>
       </PanelSyncContext.Provider>
     </WorkspaceContext.Provider>
