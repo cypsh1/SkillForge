@@ -12,9 +12,9 @@ last_updated: 2026-04-07
 
 ## 当前任务
 
-**P2 — 产出 06-inline-edit.html Demo**
+**F2+F3 — 区块级编辑 + UI 对齐**
 
-基于 `05-complete.html`，为 basic/trigger/meta/env/files 五个区块新增编辑态交互。确认后作为 F2+F3 的唯一视觉基准。
+视觉基准 `06-inline-edit.html` 已产出（P2 完成）。下一步将编辑态交互从 Demo 翻译到 React 组件。
 
 详见下方"V1.0 路线图"。
 
@@ -27,14 +27,14 @@ last_updated: 2026-04-07
 
 | ID | 名称 | 说明 | 产出物 | 状态 |
 |---|---|---|---|---|
-| P2 | 06-inline-edit Demo | 基于 05-complete 新增编辑态交互（basic/trigger/meta/env/files），验证 DOM 结构、CSS、input 样式、保存/取消流程 | `public/demos/06-inline-edit.html` | **当前任务** |
+| P2 | 06-inline-edit Demo | 基于 05-complete 新增编辑态交互（basic/trigger/meta/env/files），验证 DOM 结构、CSS、input 样式、保存/取消流程 | `public/demos/06-inline-edit.html` | ✅ 完成 |
 | P3 | F4 交互规格 | DropdownMenu 3 层入口 + 上传流程（Web vs Tauri）+ 删除确认 + 边界情况 | 写入本文件或独立 spec | 待办 |
 
 ### 第一梯队（V1.0 必须）
 
 | 序号 | ID | 名称 | 视觉基准 | 验收标准 | 状态 |
 |---|---|---|---|---|---|
-| 1 | F2+F3 | 区块级编辑 + UI 对齐 | `06-inline-edit.html` | 见下方 | 待办（依赖 P2） |
+| 1 | F2+F3 | 区块级编辑 + UI 对齐 | `06-inline-edit.html` | 见下方 | **当前任务** |
 | 2 | T8 | 文档正文展开 | `05-complete.html` doc 区块 | 见下方 | 待办 |
 | 3 | F4 | 技能 CRUD 入口 | 交互规格（P3） | 见下方 | 待办（依赖 P3） |
 | 4 | F5 | 其他文件类型适配 | 已有 config 编辑器模式 | 见下方 | 待办 |
@@ -225,3 +225,4 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 | Batch 4 | B 类决策执行（B1 + D4-D6 确认） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b4-b-class-decision.md` |
 | Batch 5 | 运行时确认+产品决策（C 类验证 + P1 决定） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b5-runtime-verification.md` |
 | UI-OPT | 前端布局优化（嵌套面板+字段高亮集中化+视觉紧凑化） | 2026-04-07 | `evidence/task-logs/2026-04-07-frontend-layout-optimization.md` |
+| P2 | 06-inline-edit.html Demo（F2+F3 编辑态视觉基准） | 2026-04-07 | `evidence/task-logs/2026-04-07-p2-inline-edit-demo.md` |

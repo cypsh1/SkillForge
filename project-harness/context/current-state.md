@@ -15,14 +15,14 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图已确定，进入准备→执行阶段。**
+**V1.0 路线图已确定，P2 Demo 已完成，进入 F2+F3 编辑实现阶段。**
 
-当前任务：P2 — 产出 `06-inline-edit.html` Demo（F2+F3 编辑态视觉基准）。
+当前任务：F2+F3 — 区块级编辑 + UI 对齐（依赖 P2 已产出的 `06-inline-edit.html`）。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（准备）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -295,6 +295,17 @@ P2 Demo 06（准备）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD →
 - 元数据区块默认展开：移除 `defaultCollapsed`，7 个区块统一默认展开
 - 桥线 tooltip 文案："点击跳转" → "点击双面板跳转"（C6）
 
+### P2 Demo 06-inline-edit（2026-04-07）
+
+- 基于 `05-complete.html` 新增区块级编辑态交互 Demo
+- 新增 **trigger 区块**（橙色，`--orange:#f97316`）：展示态（tag pill + bool badge + 命令字段）+ 编辑态（tag input + toggle + text input）
+- 5 个可编辑区块（basic/trigger/meta/env/files）：各有独立编辑按钮、编辑态/展示态切换、"完成"/"取消"操作
+- 3 个只读区块（tools/exec/doc）：`sec-ro` 类 + "🔒 只读" 标记
+- 表单控件体系：`.fi` 输入框 / `.ft` 文本域 / `.ftg` toggle 开关 / `.fta` tag input / `.fb` 操作按钮
+- "完成" 保存后左面板展示值 + 右面板 YAML 预览同步更新
+- 8 个区块全部有桥线同步（SECTIONS 数组从 7 扩展到 8）
+- 验收：浏览器验证 ✅（编辑/保存/取消流程正常、预览更新正确、只读标记可见）
+
 ### 前端布局优化（2026-04-07）
 
 - App.tsx 嵌套面板重构：ArchitectureBar/BridgeConnector/RelationBar/ContextBar 移入右栏内部，桥线区缩窄（GUTTER 25→6）
@@ -410,7 +421,8 @@ public/demos/
 ├── 02-three-approaches.html         # 三种关系可视化方案对比
 ├── 03-fusion.html                   # 融合方案 v2（四层递进交互）
 ├── 04-panel-alignment.html          # 桥线 + 滚动同步 + 设置浮窗
-└── 05-complete.html                 # ★ 完整交互 demo（唯一 UI 基准）
+├── 05-complete.html                 # ★ 完整交互 demo（展示态 UI 基准）
+└── 06-inline-edit.html              # ★ 区块编辑态 demo（F2+F3 编辑态基准）
 ```
 
 访问方式：`npm run dev` → `http://localhost:5173/demos/0N-xxx.html`
