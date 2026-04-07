@@ -30,6 +30,7 @@ export const BRIDGE_LAYERS: BridgeLayer[] = [
 
 export const BRIDGE_SECTIONS: BridgeSection[] = [
   { id: "basic", name: "基本信息", color: "#3b82f6", layer: "identity" },
+  { id: "trigger", name: "触发条件", color: "#f97316", layer: "identity" },
   { id: "meta", name: "元数据", color: "#64748b", layer: "deps" },
   { id: "env", name: "环境变量", color: "#f59e0b", layer: "deps" },
   { id: "tools", name: "工具", color: "#10b981", layer: "caps" },

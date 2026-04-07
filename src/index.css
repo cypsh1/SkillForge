@@ -779,3 +779,341 @@
 .pf:hover {
   background: color-mix(in oklch, var(--foreground) 2.5%, transparent);
 }
+
+/* ===== Trigger section color (new block) ===== */
+[data-bridge-section="trigger"] {
+  border-left-color: rgba(249, 115, 22, 0.32);
+}
+[data-bridge-section="trigger"].bridge-highlight {
+  background: rgba(249, 115, 22, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+/* ===== Display helpers (bool badge + tag pill) ===== */
+.bool-on {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  display: inline-block;
+}
+.bool-off {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--dim);
+  display: inline-block;
+}
+.tg-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  margin: 1px 2px;
+}
+
+/* ===== Edit button (text style) ===== */
+.eb {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: none;
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.eb:hover {
+  color: var(--muted-foreground);
+  border-color: var(--dim);
+}
+
+/* Editing controls group (in section header) */
+.eb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Editing indicator */
+.editing-ind {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.editing-ind svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Cancel / Done buttons */
+.eb-cancel,
+.eb-done {
+  font-size: 10px;
+  padding: 1px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.12s;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+.eb-cancel {
+  background: none;
+  color: var(--dim);
+  border: 1px solid var(--border);
+}
+.eb-cancel:hover {
+  color: var(--muted-foreground);
+  border-color: var(--dim);
+}
+.eb-done {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--foreground);
+}
+.eb-done:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Editing section box-shadow */
+[data-bridge-section].editing {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Inline edit form controls ===== */
+
+/* Single-line edit row */
+.ef-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.ef-row:last-child {
+  margin-bottom: 0;
+}
+.ef-lbl {
+  min-width: 68px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--dim);
+  text-align: right;
+  white-space: nowrap;
+}
+.ef-row-top {
+  align-items: flex-start;
+}
+.ef-row-top .ef-lbl {
+  padding-top: 5px;
+}
+
+/* Text input */
+.fi {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 7px;
+  color: var(--foreground);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  height: 24px;
+}
+.fi:focus {
+  border-color: #52525b;
+  box-shadow: 0 0 0 3px rgba(82, 82, 91, 0.5);
+}
+.fi::placeholder {
+  color: var(--dim);
+}
+
+/* Textarea */
+.ft {
+  resize: vertical;
+  min-height: 48px;
+  height: auto;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* Toggle switch */
+.ftg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.ftg-track {
+  width: 28px;
+  height: 15px;
+  border-radius: 8px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.ftg-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--dim);
+  transition: all 0.2s;
+}
+.ftg-track.on {
+  background: rgba(82, 82, 91, 0.6);
+}
+.ftg-track.on::after {
+  left: 15px;
+  background: var(--foreground);
+}
+.ftg-lbl {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+
+/* Tag input container */
+.fta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-height: 24px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.fta:focus-within {
+  border-color: #52525b;
+  box-shadow: 0 0 0 3px rgba(82, 82, 91, 0.5);
+}
+.ftag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+.ftag-x {
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 9px;
+  margin-left: 2px;
+  line-height: 1;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.ftag-x:hover {
+  color: oklch(0.704 0.191 22.216);
+  background: rgba(244, 63, 94, 0.12);
+}
+.fti {
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 10px;
+  outline: none;
+  min-width: 60px;
+  flex: 1;
+  padding: 2px 0;
+  font-family: inherit;
+}
+.fti::placeholder {
+  color: var(--dim);
+}
+
+/* Env table edit controls */
+.et-del {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 11px;
+  transition: all 0.15s;
+  background: none;
+  border: none;
+}
+.et-del:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: oklch(0.704 0.191 22.216);
+}
+.et-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 10px;
+  transition: all 0.15s;
+  border-radius: 3px;
+  margin-top: 4px;
+}
+.et-add:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted-foreground);
+}
+
+/* Files edit list */
+.fl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.fl-item .fi {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.fl-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 10px;
+  transition: all 0.15s;
+  border-radius: 3px;
+  margin-top: 2px;
+}
+.fl-add:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted-foreground);
+}

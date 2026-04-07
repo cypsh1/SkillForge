@@ -20,7 +20,6 @@ import { SourcesEditor } from "@/components/config-editor/sources-editor"
 import { TopicsEditor } from "@/components/config-editor/topics-editor"
 import { SchemaViewer } from "@/components/config-editor/schema-viewer"
 import { EmptyState } from "@/components/empty-state"
-import { FrontmatterForm } from "@/components/skill-editor/frontmatter-form"
 import { ValidationPanel } from "@/components/skill-editor/validation-panel"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,10 +28,11 @@ import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BRIDGE_SECTIONS } from "@/lib/bridge-sections"
 import { getRelationCountSummary } from "@/lib/bridge-relations"
+import { getOpenclawMetadata, getOpenclawMetadataKey } from "@/lib/schemas/frontmatter-schema"
 import { cn } from "@/lib/utils"
 import { validateSkill } from "@/lib/skill-validator"
 import type { NavigatorSelection } from "@/types/workspace"
-import type { ParsedSkill, SkillFrontmatter, SkillTool } from "@/types/skill"
+import type { ParsedSkill, SkillFrontmatter, SkillTool, EnvVarDefinition } from "@/types/skill"
 
 function configEditorKind(filePath: string): "sources" | "topics" | "schema" | null {
   const base = filePath.split("/").pop() ?? filePath
@@ -204,6 +204,11 @@ function BridgeSectionBlock({
   color,
   badge,
   readOnly,
+  editable,
+  editing,
+  onEdit,
+  onCancel,
+  onDone,
   defaultCollapsed,
   dimmed,
   children,
@@ -213,6 +218,11 @@ function BridgeSectionBlock({
   color: string
   badge?: string
   readOnly?: boolean
+  editable?: boolean
+  editing?: boolean
+  onEdit?: () => void
+  onCancel?: () => void
+  onDone?: () => void
   defaultCollapsed?: boolean
   dimmed?: boolean
   children: ReactNode
@@ -225,6 +235,7 @@ function BridgeSectionBlock({
       className={cn(
         collapsed && "bridge-section-collapsed",
         readOnly && "bridge-section-readonly",
+        editing && "editing",
         dimmed && "bridge-dim",
       )}
     >
@@ -244,14 +255,23 @@ function BridgeSectionBlock({
         </span>
         <span className="bridge-section-dot" style={{ backgroundColor: color }} />
         <span className="text-xs font-semibold">{title}</span>
-        {badge && (
-          <span className="bridge-badge">
-            {badge}
-          </span>
-        )}
+        {badge && <span className="bridge-badge">{badge}</span>}
         {readOnly && (
           <span className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted-foreground)' }}>
             🔒 只读
+          </span>
+        )}
+        {editable && !editing && (
+          <button type="button" className="eb" onClick={(e) => { e.stopPropagation(); onEdit?.() }}>编辑</button>
+        )}
+        {editing && (
+          <span className="eb-group">
+            <span className="editing-ind">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+              编辑中
+            </span>
+            <button type="button" className="eb-cancel" onClick={(e) => { e.stopPropagation(); onCancel?.() }}>取消</button>
+            <button type="button" className="eb-done" onClick={(e) => { e.stopPropagation(); onDone?.() }}>完成</button>
           </span>
         )}
       </div>
@@ -314,35 +334,22 @@ function SectionsTree({ skill }: { skill: ParsedSkill }) {
   )
 }
 
-function BasicInfoDisplay({
-  fm,
-  onEdit,
-}: {
-  fm: SkillFrontmatter
-  onEdit: () => void
-}) {
+function BasicInfoDisplay({ fm }: { fm: SkillFrontmatter }) {
   const rows: { label: string; value: string; field: string; isLink?: boolean }[] = [
+    { label: "Emoji", value: fm.emoji || "—", field: "f-emoji" },
     { label: "名称", value: fm.name || "—", field: "f-name" },
     { label: "描述", value: fm.description || "—", field: "f-desc" },
     { label: "版本", value: fm.version || "—", field: "f-ver" },
+    { label: "作者", value: fm.author || "—", field: "f-author" },
     { label: "主页", value: fm.homepage || "—", field: "f-home", isLink: !!fm.homepage },
   ]
   return (
     <div className="ecard">
       {rows.map((r) => (
-        <div
-          key={r.field}
-          className="fr"
-          data-field={r.field}
-        >
+        <div key={r.field} className="fr" data-field={r.field}>
           <span className="fl">{r.label}</span>
           {r.isLink ? (
-            <a
-              href={r.value}
-              target="_blank"
-              rel="noreferrer"
-              className="fv text-blue-400 hover:underline"
-            >
+            <a href={r.value} target="_blank" rel="noreferrer" className="fv" style={{ color: '#3b82f6' }}>
               {r.value}
             </a>
           ) : (
@@ -350,16 +357,239 @@ function BasicInfoDisplay({
           )}
         </div>
       ))}
-      <div className="flex justify-end pt-1.5">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors"
-          onClick={onEdit}
-        >
-          <Pencil className="size-3" />
-          编辑全部字段
-        </button>
+    </div>
+  )
+}
+
+/* ===== Helpers for inline editing ===== */
+
+function toStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.filter((s): s is string => typeof s === "string")
+  if (typeof val === "string") return val ? [val] : []
+  return []
+}
+
+function InlineTagInput({
+  tags,
+  onChange,
+  placeholder,
+}: {
+  tags: string[]
+  onChange: (tags: string[]) => void
+  placeholder?: string
+}) {
+  const [input, setInput] = useState("")
+  return (
+    <div className="fta">
+      {tags.map((tag, i) => (
+        <span key={i} className="ftag">
+          {tag}
+          <span className="ftag-x" onClick={() => onChange(tags.filter((_, j) => j !== i))}>×</span>
+        </span>
+      ))}
+      <input
+        className="fti"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            const v = input.trim()
+            if (v && !tags.includes(v)) onChange([...tags, v])
+            setInput("")
+          } else if (e.key === "Backspace" && !input && tags.length > 0) {
+            onChange(tags.slice(0, -1))
+          }
+        }}
+        placeholder={placeholder ?? "输入后回车添加"}
+      />
+    </div>
+  )
+}
+
+function InlineToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="ftg" onClick={() => onChange(!value)}>
+      <div className={cn("ftg-track", value && "on")} />
+      <span className="ftg-lbl">{value ? "是" : "否"}</span>
+    </div>
+  )
+}
+
+/* ===== TriggerDisplay — 展示态 ===== */
+
+function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
+  const triggers = toStringArray(fm.triggers)
+  const readWhen = toStringArray(fm.read_when)
+  const autoTrigger = fm.auto_trigger ?? false
+  const userInvocable = fm["user-invocable"] ?? true
+  const disableModel = fm["disable-model-invocation"] ?? false
+  const cmdDispatch = fm["command-dispatch"] ?? ""
+  const cmdTool = fm["command-tool"] ?? ""
+  const cmdArgMode = fm["command-arg-mode"] ?? ""
+
+  return (
+    <div className="ecard">
+      {triggers.length > 0 && (
+        <div className="fr" data-field="f-triggers">
+          <span className="fl">触发词</span>
+          <span className="fv">{triggers.map((t, i) => <span key={i} className="tg-pill">{t}</span>)}</span>
+        </div>
+      )}
+      {readWhen.length > 0 && (
+        <div className="fr" data-field="f-readwhen">
+          <span className="fl">读取条件</span>
+          <span className="fv">{readWhen.map((t, i) => <span key={i} className="tg-pill">{t}</span>)}</span>
+        </div>
+      )}
+      <div className="fr" data-field="f-autotrigger">
+        <span className="fl">自动触发</span>
+        <span className="fv">{autoTrigger ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
       </div>
+      <div className="fr" data-field="f-userinvocable">
+        <span className="fl">用户可调</span>
+        <span className="fv">{userInvocable ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
+      </div>
+      <div className="fr" data-field="f-disablemodel">
+        <span className="fl">禁止模型</span>
+        <span className="fv">{disableModel ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
+      </div>
+      {cmdDispatch && (
+        <div className="fr" data-field="f-cmddispatch">
+          <span className="fl">命令分派</span>
+          <span className="fv font-mono">{cmdDispatch}</span>
+        </div>
+      )}
+      {cmdTool && (
+        <div className="fr" data-field="f-cmdtool">
+          <span className="fl">命令工具</span>
+          <span className="fv font-mono">{cmdTool}</span>
+        </div>
+      )}
+      {cmdArgMode && (
+        <div className="fr" data-field="f-cmdargmode">
+          <span className="fl">参数模式</span>
+          <span className="fv font-mono">{cmdArgMode}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ===== Inline Edit Forms ===== */
+
+type BasicDraft = { emoji: string; name: string; description: string; version: string; author: string; homepage: string; source: string }
+
+function BasicEditForm({ draft, onChange }: { draft: BasicDraft; onChange: (d: BasicDraft) => void }) {
+  const set = (key: keyof BasicDraft, value: string) => onChange({ ...draft, [key]: value })
+  return (
+    <div className="ecard">
+      <div className="ef-row"><span className="ef-lbl">Emoji</span><input className="fi" value={draft.emoji} onChange={(e) => set("emoji", e.target.value)} style={{ maxWidth: 48, textAlign: 'center' }} /></div>
+      <div className="ef-row"><span className="ef-lbl">名称</span><input className="fi" value={draft.name} onChange={(e) => set("name", e.target.value)} /></div>
+      <div className="ef-row ef-row-top"><span className="ef-lbl">描述</span><textarea className="fi ft" value={draft.description} onChange={(e) => set("description", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">版本</span><input className="fi" value={draft.version} onChange={(e) => set("version", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">作者</span><input className="fi" value={draft.author} onChange={(e) => set("author", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">主页</span><input className="fi" value={draft.homepage} onChange={(e) => set("homepage", e.target.value)} type="url" /></div>
+      <div className="ef-row"><span className="ef-lbl">源码</span><input className="fi" value={draft.source} onChange={(e) => set("source", e.target.value)} placeholder="https://..." /></div>
+    </div>
+  )
+}
+
+type TriggerDraft = { triggers: string[]; readWhen: string[]; autoTrigger: boolean; userInvocable: boolean; disableModel: boolean; cmdDispatch: string; cmdTool: string; cmdArgMode: string; allowedTools: string }
+
+function TriggerEditForm({ draft, onChange }: { draft: TriggerDraft; onChange: (d: TriggerDraft) => void }) {
+  const set = <K extends keyof TriggerDraft>(key: K, value: TriggerDraft[K]) => onChange({ ...draft, [key]: value })
+  return (
+    <div className="ecard">
+      <div className="ef-row"><span className="ef-lbl">触发词</span><InlineTagInput tags={draft.triggers} onChange={(v) => set("triggers", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">读取条件</span><InlineTagInput tags={draft.readWhen} onChange={(v) => set("readWhen", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">自动触发</span><InlineToggle value={draft.autoTrigger} onChange={(v) => set("autoTrigger", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">用户可调</span><InlineToggle value={draft.userInvocable} onChange={(v) => set("userInvocable", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">禁止模型</span><InlineToggle value={draft.disableModel} onChange={(v) => set("disableModel", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">命令分派</span><input className="fi" value={draft.cmdDispatch} onChange={(e) => set("cmdDispatch", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">命令工具</span><input className="fi" value={draft.cmdTool} onChange={(e) => set("cmdTool", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">参数模式</span><input className="fi" value={draft.cmdArgMode} onChange={(e) => set("cmdArgMode", e.target.value)} placeholder="positional / keyword" /></div>
+      <div className="ef-row"><span className="ef-lbl">允许工具</span><input className="fi" value={draft.allowedTools} onChange={(e) => set("allowedTools", e.target.value)} placeholder="工具名称（可选）" /></div>
+    </div>
+  )
+}
+
+type MetaDraft = { requiredBins: string[]; optionalBins: string[]; os: string[]; primaryEnv: string }
+
+function MetaEditForm({ draft, onChange }: { draft: MetaDraft; onChange: (d: MetaDraft) => void }) {
+  const set = <K extends keyof MetaDraft>(key: K, value: MetaDraft[K]) => onChange({ ...draft, [key]: value })
+  return (
+    <div className="ecard">
+      <div className="ef-row"><span className="ef-lbl">必需依赖</span><InlineTagInput tags={draft.requiredBins} onChange={(v) => set("requiredBins", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">可选依赖</span><InlineTagInput tags={draft.optionalBins} onChange={(v) => set("optionalBins", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">操作系统</span><InlineTagInput tags={draft.os} onChange={(v) => set("os", v)} placeholder="darwin / linux / win32" /></div>
+      <div className="ef-row"><span className="ef-lbl">主要环境变量</span><input className="fi" value={draft.primaryEnv} onChange={(e) => set("primaryEnv", e.target.value)} /></div>
+    </div>
+  )
+}
+
+function EnvEditForm({ draft, onChange }: { draft: EnvVarDefinition[]; onChange: (d: EnvVarDefinition[]) => void }) {
+  const updateRow = (i: number, field: keyof EnvVarDefinition, value: string | boolean) => {
+    onChange(draft.map((row, j) => j === i ? { ...row, [field]: value } : row))
+  }
+  const removeRow = (i: number) => onChange(draft.filter((_, j) => j !== i))
+  const addRow = () => onChange([...draft, { name: "", required: false, description: "" }])
+
+  return (
+    <div>
+      <table className="et w-full">
+        <thead><tr><th>变量名</th><th>必需</th><th>描述</th><th style={{ width: 24 }} /></tr></thead>
+        <tbody>
+          {draft.map((row, i) => (
+            <tr key={i}>
+              <td><input className="fi" value={row.name} onChange={(e) => updateRow(i, "name", e.target.value)} style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }} /></td>
+              <td><InlineToggle value={row.required ?? false} onChange={(v) => updateRow(i, "required", v)} /></td>
+              <td><input className="fi" value={row.description ?? ""} onChange={(e) => updateRow(i, "description", e.target.value)} /></td>
+              <td><button type="button" className="et-del" onClick={() => removeRow(i)}>×</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="et-add" onClick={addRow}>+ 添加环境变量</div>
+    </div>
+  )
+}
+
+type FilesDraft = { read: string[]; write: string[] }
+
+function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: FilesDraft) => void }) {
+  const updateItem = (key: "read" | "write", index: number, value: string) => {
+    onChange({ ...draft, [key]: draft[key].map((v, i) => i === index ? value : v) })
+  }
+  const removeItem = (key: "read" | "write", index: number) => {
+    onChange({ ...draft, [key]: draft[key].filter((_, i) => i !== index) })
+  }
+  const addItem = (key: "read" | "write") => {
+    onChange({ ...draft, [key]: [...draft[key], ""] })
+  }
+
+  return (
+    <div className="ecard">
+      <div className="text-[10px] text-muted-foreground mb-1">📖 读取</div>
+      <div>
+        {draft.read.map((p, i) => (
+          <div key={i} className="fl-item">
+            <input className="fi" value={p} onChange={(e) => updateItem("read", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
+            <button type="button" className="et-del" onClick={() => removeItem("read", i)}>×</button>
+          </div>
+        ))}
+      </div>
+      <div className="fl-add" onClick={() => addItem("read")}>+ 添加读取路径</div>
+      <div className="text-[10px] text-muted-foreground mt-2.5 mb-1">✏️ 写入</div>
+      <div>
+        {draft.write.map((p, i) => (
+          <div key={i} className="fl-item">
+            <input className="fi" value={p} onChange={(e) => updateItem("write", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
+            <button type="button" className="et-del" onClick={() => removeItem("write", i)}>×</button>
+          </div>
+        ))}
+      </div>
+      <div className="fl-add" onClick={() => addItem("write")}>+ 添加写入路径</div>
     </div>
   )
 }
@@ -374,105 +604,220 @@ function SkillMdPanel({
   onChange: (updated: SkillFrontmatter) => void
 }) {
   const api = usePanelSyncApi()
-  const [editingBasic, setEditingBasic] = useState(false)
   const execSections = useMemo(
-    () =>
-      skill.sections.filter((s) =>
-        /脚本|script|pipeline/i.test(s.title),
-      ),
+    () => skill.sections.filter((s) => /脚本|script|pipeline/i.test(s.title)),
     [skill.sections],
   )
 
   const readList = normalizeFileList(fm.files?.read)
   const writeList = normalizeFileList(fm.files?.write)
   const envRows = fm.env ?? []
+  const triggers = toStringArray(fm.triggers)
+
+  // --- Per-section editing state ---
+  const [editingBasic, setEditingBasic] = useState(false)
+  const [editingTrigger, setEditingTrigger] = useState(false)
+  const [editingMeta, setEditingMeta] = useState(false)
+  const [editingEnv, setEditingEnv] = useState(false)
+  const [editingFiles, setEditingFiles] = useState(false)
+
+  const [basicDraft, setBasicDraft] = useState<BasicDraft>({ emoji: "", name: "", description: "", version: "", author: "", homepage: "", source: "" })
+  const [triggerDraft, setTriggerDraft] = useState<TriggerDraft>({ triggers: [], readWhen: [], autoTrigger: false, userInvocable: true, disableModel: false, cmdDispatch: "", cmdTool: "", cmdArgMode: "", allowedTools: "" })
+  const [metaDraft, setMetaDraft] = useState<MetaDraft>({ requiredBins: [], optionalBins: [], os: [], primaryEnv: "" })
+  const [envDraft, setEnvDraft] = useState<EnvVarDefinition[]>([])
+  const [filesDraft, setFilesDraft] = useState<FilesDraft>({ read: [], write: [] })
+
+  // --- Start edit: snapshot fm fields to draft ---
+  const startEditBasic = useCallback(() => {
+    setBasicDraft({ emoji: fm.emoji ?? "", name: fm.name ?? "", description: fm.description ?? "", version: fm.version ?? "", author: fm.author ?? "", homepage: fm.homepage ?? "", source: fm.source ?? "" })
+    setEditingBasic(true)
+  }, [fm])
+
+  const startEditTrigger = useCallback(() => {
+    setTriggerDraft({
+      triggers: [...toStringArray(fm.triggers)],
+      readWhen: [...toStringArray(fm.read_when)],
+      autoTrigger: fm.auto_trigger ?? false,
+      userInvocable: fm["user-invocable"] ?? true,
+      disableModel: fm["disable-model-invocation"] ?? false,
+      cmdDispatch: fm["command-dispatch"] ?? "",
+      cmdTool: fm["command-tool"] ?? "",
+      cmdArgMode: fm["command-arg-mode"] ?? "",
+      allowedTools: fm["allowed-tools"] ?? "",
+    })
+    setEditingTrigger(true)
+  }, [fm])
+
+  const startEditMeta = useCallback(() => {
+    const oc = getOpenclawMetadata(fm.metadata)
+    setMetaDraft({
+      requiredBins: [...(oc?.requires?.bins ?? [])],
+      optionalBins: [...(oc?.optionalBins ?? [])],
+      os: [...(oc?.os ?? [])],
+      primaryEnv: oc?.primaryEnv ?? "",
+    })
+    setEditingMeta(true)
+  }, [fm])
+
+  const startEditEnv = useCallback(() => {
+    setEnvDraft(structuredClone(fm.env ?? []))
+    setEditingEnv(true)
+  }, [fm])
+
+  const startEditFiles = useCallback(() => {
+    setFilesDraft({ read: [...(fm.files?.read ?? [])], write: [...(fm.files?.write ?? [])] })
+    setEditingFiles(true)
+  }, [fm])
+
+  // --- Save: merge draft back to fm ---
+  const saveBasic = useCallback(() => {
+    onChange({ ...fm, emoji: basicDraft.emoji || undefined, name: basicDraft.name, description: basicDraft.description || undefined, version: basicDraft.version || undefined, author: basicDraft.author || undefined, homepage: basicDraft.homepage || undefined, source: basicDraft.source || undefined })
+    setEditingBasic(false)
+  }, [fm, basicDraft, onChange])
+
+  const saveTrigger = useCallback(() => {
+    onChange({
+      ...fm,
+      triggers: triggerDraft.triggers.length > 0 ? triggerDraft.triggers : undefined,
+      read_when: triggerDraft.readWhen.length > 0 ? triggerDraft.readWhen : undefined,
+      auto_trigger: triggerDraft.autoTrigger || undefined,
+      "user-invocable": triggerDraft.userInvocable,
+      "disable-model-invocation": triggerDraft.disableModel || undefined,
+      "command-dispatch": triggerDraft.cmdDispatch || undefined,
+      "command-tool": triggerDraft.cmdTool || undefined,
+      "command-arg-mode": triggerDraft.cmdArgMode || undefined,
+      "allowed-tools": triggerDraft.allowedTools || undefined,
+    })
+    setEditingTrigger(false)
+  }, [fm, triggerDraft, onChange])
+
+  const saveMeta = useCallback(() => {
+    const metaKey = getOpenclawMetadataKey(fm.metadata)
+    const currentOc = ((fm.metadata?.[metaKey] ?? {}) as Record<string, unknown>)
+    const updatedOc = {
+      ...currentOc,
+      requires: { ...((currentOc.requires as Record<string, unknown>) ?? {}), bins: metaDraft.requiredBins.length > 0 ? metaDraft.requiredBins : undefined },
+      optionalBins: metaDraft.optionalBins.length > 0 ? metaDraft.optionalBins : undefined,
+      os: metaDraft.os.length > 0 ? metaDraft.os : undefined,
+      primaryEnv: metaDraft.primaryEnv || undefined,
+    }
+    onChange({ ...fm, metadata: { ...(fm.metadata ?? {}), [metaKey]: updatedOc } })
+    setEditingMeta(false)
+  }, [fm, metaDraft, onChange])
+
+  const saveEnv = useCallback(() => {
+    onChange({ ...fm, env: envDraft.filter((r) => r.name.trim()) })
+    setEditingEnv(false)
+  }, [fm, envDraft, onChange])
+
+  const saveFiles = useCallback(() => {
+    onChange({ ...fm, files: { read: filesDraft.read.filter((p) => p.trim()), write: filesDraft.write.filter((p) => p.trim()) } })
+    setEditingFiles(false)
+  }, [fm, filesDraft, onChange])
 
   return (
     <div>
+      {/* ====== basic ====== */}
       <BridgeSectionBlock
         sectionId="basic"
         title="基本信息"
         color={bridgeColor("basic")}
+        editable
+        editing={editingBasic}
+        onEdit={startEditBasic}
+        onCancel={() => setEditingBasic(false)}
+        onDone={saveBasic}
         dimmed={api?.isSectionDimmed("basic")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
-          frontmatter → name, description, version, homepage
+          frontmatter → name, description, version, emoji, author, homepage
         </p>
         {editingBasic ? (
-          <div className="space-y-2">
-            <FrontmatterForm frontmatter={fm} skillId={skill.id} onChange={onChange} />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors"
-                onClick={() => setEditingBasic(false)}
-              >
-                收起编辑
-              </button>
-            </div>
-          </div>
+          <BasicEditForm draft={basicDraft} onChange={setBasicDraft} />
         ) : (
-          <BasicInfoDisplay fm={fm} onEdit={() => setEditingBasic(true)} />
+          <BasicInfoDisplay fm={fm} />
         )}
       </BridgeSectionBlock>
 
+      {/* ====== trigger ====== */}
+      <BridgeSectionBlock
+        sectionId="trigger"
+        title="触发条件"
+        color={bridgeColor("trigger")}
+        badge={triggers.length > 0 ? `${triggers.length} 触发词` : undefined}
+        editable
+        editing={editingTrigger}
+        onEdit={startEditTrigger}
+        onCancel={() => setEditingTrigger(false)}
+        onDone={saveTrigger}
+        dimmed={api?.isSectionDimmed("trigger")}
+      >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → triggers, read_when, auto_trigger, command-*
+        </p>
+        {editingTrigger ? (
+          <TriggerEditForm draft={triggerDraft} onChange={setTriggerDraft} />
+        ) : (
+          <TriggerDisplay fm={fm} />
+        )}
+      </BridgeSectionBlock>
+
+      {/* ====== meta ====== */}
       <BridgeSectionBlock
         sectionId="meta"
         title="元数据"
         color={bridgeColor("meta")}
-        readOnly
+        editable
+        editing={editingMeta}
+        onEdit={startEditMeta}
+        onCancel={() => setEditingMeta(false)}
+        onDone={saveMeta}
         dimmed={api?.isSectionDimmed("meta")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → metadata.openclaw
         </p>
-        <MetaOpenclawView fm={fm} />
+        {editingMeta ? (
+          <MetaEditForm draft={metaDraft} onChange={setMetaDraft} />
+        ) : (
+          <MetaOpenclawView fm={fm} />
+        )}
       </BridgeSectionBlock>
 
+      {/* ====== env ====== */}
       <BridgeSectionBlock
         sectionId="env"
         title="环境变量"
         color={bridgeColor("env")}
         badge={`${fm.env?.length ?? 0}`}
+        editable
+        editing={editingEnv}
+        onEdit={startEditEnv}
+        onCancel={() => setEditingEnv(false)}
+        onDone={saveEnv}
         dimmed={api?.isSectionDimmed("env")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → env[]
         </p>
-        {envRows.length === 0 ? (
+        {editingEnv ? (
+          <EnvEditForm draft={envDraft} onChange={setEnvDraft} />
+        ) : envRows.length === 0 ? (
           <p className="text-sm text-muted-foreground pl-3">无环境变量</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="et w-full">
-              <thead>
-                <tr>
-                  <th>变量名</th>
-                  <th>必需</th>
-                  <th>描述</th>
-                  <th />
-                </tr>
-              </thead>
+              <thead><tr><th>变量名</th><th>必需</th><th>描述</th><th /></tr></thead>
               <tbody>
                 {envRows.map((row, i) => {
                   const fieldKey = `f-e-${row.name}`
                   return (
-                  <tr
-                    key={i}
-                    data-field={fieldKey}
-                  >
-                    <td>
-                      <span className="en font-mono text-[10px] font-semibold">
-                        <EidText eid={row.name} fieldKey={fieldKey}>
-                          {row.name}
-                        </EidText>
-                      </span>
-                    </td>
-                    <td>{row.required ? "必需" : "可选"}</td>
-                    <td className="ed">{row.description ?? "—"}</td>
-                    <td className="rc">
-                      <RelationIndicator eid={row.name} fieldKey={fieldKey} />
-                    </td>
-                  </tr>
+                    <tr key={i} data-field={fieldKey}>
+                      <td><span className="en font-mono text-[10px] font-semibold"><EidText eid={row.name} fieldKey={fieldKey}>{row.name}</EidText></span></td>
+                      <td>{row.required ? "必需" : "可选"}</td>
+                      <td className="ed">{row.description ?? "—"}</td>
+                      <td className="rc"><RelationIndicator eid={row.name} fieldKey={fieldKey} /></td>
+                    </tr>
                   )
                 })}
               </tbody>
@@ -481,11 +826,13 @@ function SkillMdPanel({
         )}
       </BridgeSectionBlock>
 
+      {/* ====== tools (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="tools"
         title="工具"
         color={bridgeColor("tools")}
         badge={`${skill.tools.length}`}
+        readOnly
         dimmed={api?.isSectionDimmed("tools")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
@@ -494,74 +841,74 @@ function SkillMdPanel({
         <ToolsBlock tools={skill.tools} />
       </BridgeSectionBlock>
 
+      {/* ====== files ====== */}
       <BridgeSectionBlock
         sectionId="files"
         title="文件权限"
         color={bridgeColor("files")}
+        editable
+        editing={editingFiles}
+        onEdit={startEditFiles}
+        onCancel={() => setEditingFiles(false)}
+        onDone={saveFiles}
         dimmed={api?.isSectionDimmed("files")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
           frontmatter → files {"{ read[], write[] }"}
         </p>
-        <div className="ecard">
-          <div className="text-[10px] text-muted-foreground mb-0.5">📖 读取</div>
-          <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fr">
-            {readList.length === 0 ? (
-              <span className="text-muted-foreground">无</span>
-            ) : (
-              readList.map((p, i) => {
-                const fileEid = pathToFileEid(p)
-                const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
-                return (
-                  <span key={i}>
-                    {i > 0 && <br />}
-                    <span
-                      data-field={fieldKey}
-                    >
-                      {fileEid ? (
-                        <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
-                      ) : (
-                        p
-                      )}
+        {editingFiles ? (
+          <FilesEditForm draft={filesDraft} onChange={setFilesDraft} />
+        ) : (
+          <div className="ecard">
+            <div className="text-[10px] text-muted-foreground mb-0.5">📖 读取</div>
+            <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fr">
+              {readList.length === 0 ? (
+                <span className="text-muted-foreground">无</span>
+              ) : (
+                readList.map((p, i) => {
+                  const fileEid = pathToFileEid(p)
+                  const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                  return (
+                    <span key={i}>
+                      {i > 0 && <br />}
+                      <span data-field={fieldKey}>
+                        {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+                      </span>
                     </span>
-                  </span>
-                )
-              })
-            )}
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">✏️ 写入</div>
-          <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fw">
-            {writeList.length === 0 ? (
-              <span className="text-muted-foreground">无</span>
-            ) : (
-              writeList.map((p, i) => {
-                const fileEid = pathToFileEid(p)
-                const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
-                return (
-                  <span key={i}>
-                    {i > 0 && <br />}
-                    <span
-                      data-field={fieldKey}
-                    >
-                      {fileEid ? (
-                        <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText>
-                      ) : (
-                        p
-                      )}
+                  )
+                })
+              )}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">✏️ 写入</div>
+            <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fw">
+              {writeList.length === 0 ? (
+                <span className="text-muted-foreground">无</span>
+              ) : (
+                writeList.map((p, i) => {
+                  const fileEid = pathToFileEid(p)
+                  const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                  return (
+                    <span key={i}>
+                      {i > 0 && <br />}
+                      <span data-field={fieldKey}>
+                        {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+                      </span>
                     </span>
-                  </span>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </BridgeSectionBlock>
 
+      {/* ====== exec (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="exec"
         title="脚本管道"
         color={bridgeColor("exec")}
         badge="执行层"
+        readOnly
         dimmed={api?.isSectionDimmed("exec")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
@@ -576,26 +923,12 @@ function SkillMdPanel({
               const fieldKey = scriptEid ? `f-x-${scriptEid}` : undefined
               const isRoot = s.level <= 2
               return (
-                <div
-                  key={i}
-                  className={cn("pi", !isRoot && "pi-indent")}
-                  data-field={fieldKey}
-                >
+                <div key={i} className={cn("pi", !isRoot && "pi-indent")} data-field={fieldKey}>
                   {!isRoot && <span>→</span>}
                   <span className={cn(isRoot && "text-xs font-semibold")}>
-                    {scriptEid ? (
-                      <EidText eid={scriptEid} fieldKey={fieldKey}>
-                        {s.title}
-                      </EidText>
-                    ) : (
-                      s.title
-                    )}
+                    {scriptEid ? <EidText eid={scriptEid} fieldKey={fieldKey}>{s.title}</EidText> : s.title}
                   </span>
-                  {scriptEid ? (
-                    <span className="ml-auto">
-                      <RelationIndicator eid={scriptEid} fieldKey={fieldKey} />
-                    </span>
-                  ) : null}
+                  {scriptEid ? <span className="ml-auto"><RelationIndicator eid={scriptEid} fieldKey={fieldKey} /></span> : null}
                 </div>
               )
             })}
@@ -603,11 +936,13 @@ function SkillMdPanel({
         )}
       </BridgeSectionBlock>
 
+      {/* ====== doc (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="doc"
         title="文档结构"
         color={bridgeColor("doc")}
         badge={`${skill.sections.length} 节`}
+        readOnly
         dimmed={api?.isSectionDimmed("doc")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
@@ -619,25 +954,15 @@ function SkillMdPanel({
   )
 }
 
-type OpenclawFrontmatterSlice = {
-  requires?: { bins?: string[] }
-  optionalBins?: string[]
-}
-
-function openclawMetadataFromFm(fm: SkillFrontmatter): OpenclawFrontmatterSlice | null {
-  const raw = fm.metadata?.openclaw
-  if (typeof raw !== "object" || raw === null) return null
-  return raw as OpenclawFrontmatterSlice
-}
-
 function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
-  const oc = openclawMetadataFromFm(fm)
+  const oc = getOpenclawMetadata(fm.metadata)
   if (!oc) {
     return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
   }
   const bins = oc.requires?.bins ?? []
   const optionalBins = oc.optionalBins ?? []
-  const hasAny = bins.length > 0 || optionalBins.length > 0
+  const os = oc.os ?? []
+  const hasAny = bins.length > 0 || optionalBins.length > 0 || os.length > 0
   if (!hasAny) {
     return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
   }
@@ -647,7 +972,7 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
         <>
           <div className="text-[10px] text-muted-foreground mb-1">必需依赖</div>
           <div className="text-[10px] font-mono pl-1.5 leading-[1.6]">
-            {bins.map((b: string, i: number) => (
+            {bins.map((b, i) => (
               <span key={i}>
                 {i > 0 && <br />}
                 <EidText eid={b}>{b}</EidText>
@@ -660,12 +985,20 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
         <>
           <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">可选依赖</div>
           <div className="text-[10px] font-mono pl-1.5 leading-[1.6] text-muted-foreground">
-            {optionalBins.map((b: string, i: number) => (
+            {optionalBins.map((b, i) => (
               <span key={i}>
                 {i > 0 && " · "}
                 <EidText eid={b}>{b}</EidText>
               </span>
             ))}
+          </div>
+        </>
+      )}
+      {os.length > 0 && (
+        <>
+          <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">操作系统</div>
+          <div className="text-[10px] font-mono pl-1.5">
+            {os.map((o, i) => <span key={i} className="tg-pill">{o}</span>)}
           </div>
         </>
       )}

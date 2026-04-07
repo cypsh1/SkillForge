@@ -15,14 +15,14 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图已确定，P2 Demo 已完成，进入 F2+F3 编辑实现阶段。**
+**V1.0 路线图执行中，F2+F3 区块编辑已完成。**
 
-当前任务：F2+F3 — 区块级编辑 + UI 对齐（依赖 P2 已产出的 `06-inline-edit.html`）。
+当前任务：T8 — 文档正文展开（下一步）。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -328,6 +328,38 @@ P2 Demo 06（✅ 完成）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD
 - 移除 bridge-connector circle dots
 - navigator-panel：搜索图标 + 创建按钮图标 16→18px，节点字号 sm→xs，描述 10→11px
 - 验收：tsc ✅ build ✅
+
+### F2+F3 区块级编辑 + UI 对齐（2026-04-07）
+
+- **bridge-sections.ts**：新增 `trigger` 区块（`{ id: "trigger", name: "触发条件", color: "#f97316", layer: "identity" }`），总区块从 7 扩展到 8
+- **index.css**：从 `06-inline-edit.html` 移植全部编辑态 CSS 类
+  - 展示辅助：`.bool-on/.bool-off/.tg-pill`
+  - 编辑控件：`.eb/.eb-group/.editing-ind/.eb-cancel/.eb-done`
+  - 表单系统：`.ef-row/.ef-lbl/.fi/.ft/.ftg*/.fta*/.ftag*/.fti`
+  - 列表/表格：`.et-del/.et-add/.fl-item/.fl-add`
+  - trigger 区块色：`[data-bridge-section="trigger"]`
+- **BridgeSectionBlock 重构**：新增 `editable/editing/onEdit/onCancel/onDone` props
+  - 编辑按钮在标题行右侧，编辑中显示 pencil + "编辑中" + "取消" + "完成"
+  - `.editing` 类添加 box-shadow
+- **5 个可编辑区块**（basic/trigger/meta/env/files）：各区块独立编辑状态
+  - BasicEditForm：emoji + name + description(textarea) + version + author + homepage + source
+  - TriggerEditForm：tag input(triggers/readWhen) + toggle(autoTrigger/userInvocable/disableModel) + text(cmdDispatch/cmdTool/cmdArgMode/allowedTools)
+  - MetaEditForm：tag input(requiredBins/optionalBins/os) + text(primaryEnv)
+  - EnvEditForm：动态表格（name/required toggle/description + 增删行）
+  - FilesEditForm：读写路径列表（text input + 增删项）
+- **3 个只读区块**（tools/exec/doc）：`readOnly` prop + "🔒 只读" 标记
+- **TriggerDisplay 展示组件**：tag pill + bool badge + 命令字段（mono 字体）
+- **BasicInfoDisplay 增强**：新增 emoji/author 行，移除旧"编辑全部字段"按钮
+- **MetaOpenclawView 增强**：新增 OS 显示（tg-pill 标签），使用 `getOpenclawMetadata` helper
+- **InlineTagInput + InlineToggle**：Demo 风格的轻量级表单控件（替代 shadcn/ui 重量级组件）
+- **inspector-panel**：
+  - `PreviewParts` 增加 `trigger` 字段
+  - `splitPreviewInto8`：提取 trigger YAML 键（triggers/read_when/auto_trigger/command-*）
+  - `buildSectionHtml` 增加 `trigger` case
+  - `basicKeysExtended` 加入 emoji/author
+  - `BASIC_FIELD_MAP` 加入 f-emoji/f-author
+- **移除 FrontmatterForm import**：旧全字段编辑器不再在 SkillMdPanel 中使用
+- 验收：tsc ✅ build ✅ linter ✅ 浏览器验证 ✅
 
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）
 

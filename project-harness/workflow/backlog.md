@@ -10,91 +10,70 @@ last_updated: 2026-04-07
 > 所有待办、进行中、已完成的任务统一管理在此文件。
 > AI 每次对话收尾时必须更新本文件。
 
+## ID 命名规则
+
+- **V1-N**：V1.0 活跃任务（数字 = 执行顺序）
+- **历史 ID**（Phase/D/T/Batch/F/P 等）：已完成任务保持原 ID 不改，仅存档
+- **P-N**（带横杠）：流程改进讨论项（非执行任务）
+
 ## 当前任务
 
-**F2+F3 — 区块级编辑 + UI 对齐**
+**V1-1 — 文档正文展开**
 
-视觉基准 `06-inline-edit.html` 已产出（P2 完成）。下一步将编辑态交互从 Demo 翻译到 React 组件。
-
-详见下方"V1.0 路线图"。
+F2+F3 已完成（2026-04-07）。下一步：V1-1 文档正文展开。
 
 ## V1.0 路线图
 
 > 目标：用户能完整走通"打开 Skill → 编辑 → 保存"的闭环，且体验可接受。
 > 执行原则：Demo 先行（P-1）、验收对照基准（P-2）、翻译方向"从 demo 往主应用接"（复盘 L1）。
 
-### 准备阶段
+### 准备阶段（已完成）
 
-| ID | 名称 | 说明 | 产出物 | 状态 |
-|---|---|---|---|---|
-| P2 | 06-inline-edit Demo | 基于 05-complete 新增编辑态交互（basic/trigger/meta/env/files），验证 DOM 结构、CSS、input 样式、保存/取消流程 | `public/demos/06-inline-edit.html` | ✅ 完成 |
-| P3 | F4 交互规格 | DropdownMenu 3 层入口 + 上传流程（Web vs Tauri）+ 删除确认 + 边界情况 | 写入本文件或独立 spec | 待办 |
+| ID | 名称 | 产出物 | 状态 |
+|---|---|---|---|
+| P2 | 06-inline-edit Demo | `public/demos/06-inline-edit.html` | ✅ 完成 |
+| P3 | V1-2 交互规格 | 写入本文件 V1-2 验收标准 | 待办（V1-2 编码前完成） |
 
 ### 第一梯队（V1.0 必须）
 
-| 序号 | ID | 名称 | 视觉基准 | 验收标准 | 状态 |
-|---|---|---|---|---|---|
-| 1 | F2+F3 | 区块级编辑 + UI 对齐 | `06-inline-edit.html` | 见下方 | **当前任务** |
-| 2 | T8 | 文档正文展开 | `05-complete.html` doc 区块 | 见下方 | 待办 |
-| 3 | F4 | 技能 CRUD 入口 | 交互规格（P3） | 见下方 | 待办（依赖 P3） |
-| 4 | F5 | 其他文件类型适配 | 已有 config 编辑器模式 | 见下方 | 待办 |
-| 5 | UX-2+3 | 保存流程闭环 | 交互规格（内嵌） | 见下方 | 待办 |
-| 6 | T2 | 代码分割 | 无（纯技术） | 见下方 | 待办 |
+| 序号 | ID | 名称 | 视觉基准 | 状态 |
+|---|---|---|---|---|
+| — | F2+F3 | 区块级编辑 + UI 对齐 | `06-inline-edit.html` | ✅ 完成 |
+| 1 | **V1-1** | 文档正文展开 | `05-complete.html` doc 区块 | **当前任务** |
+| 2 | **V1-2** | 技能 CRUD 入口 | 交互规格（P3） | 待办 |
+| 3 | **V1-3** | 其他文件类型适配 | 已有 config 编辑器模式 | 待办 |
+| 4 | **V1-4** | 保存流程闭环 | 交互规格（内嵌） | 待办 |
+| 5 | **V1-5** | 代码分割 | 无（纯技术） | 待办 |
 
 ### 第二梯队（V1.1）
 
 | ID | 名称 | 说明 |
 |---|---|---|
-| F1 | 深色/亮色主题切换 | V1.0 保持纯暗色（与 demo 对齐）。V1.1 先产出 light mode demo 验证色值，确认后再接入。 |
-| T3 | 远程 SSH Skill 加载 | 直接连接 OpenClaw 服务器读取/写回 Skill |
-| T4 | 配置 Diff | 对比编辑前后的变更 |
-| T5 | 拖拽排序 | sources/topics 列表项拖拽重排 |
-| T6 | 批量操作 | 多 Skill 批量导出/验证 |
-| T7 | Tauri 自动更新 | 桌面应用自动检查和安装更新 |
+| V1.1-主题 | 深色/亮色主题切换 | V1.0 保持纯暗色。V1.1 先产出 light mode demo 验证色值，确认后再接入。 |
+| V1.1-SSH | 远程 SSH Skill 加载 | 直接连接 OpenClaw 服务器读取/写回 Skill |
+| V1.1-Diff | 配置 Diff | 对比编辑前后的变更 |
+| V1.1-拖拽 | 拖拽排序 | sources/topics 列表项拖拽重排 |
+| V1.1-批量 | 批量操作 | 多 Skill 批量导出/验证 |
+| V1.1-更新 | Tauri 自动更新 | 桌面应用自动检查和安装更新 |
 
 ---
 
 ## 各任务验收标准
 
-### F2+F3 区块级编辑 + UI 对齐
-
-**视觉基准**：`public/demos/06-inline-edit.html`（P2 产出后确认）
-
-**区块→表单字段映射**：
-
-| 区块 | 展示组件 | 可编辑 | frontmatter 字段 | 现有表单组件 | 需新建 |
-|---|---|---|---|---|---|
-| basic | BasicInfoDisplay | ✅ | name, description, version, emoji, author, homepage, source | BasicInfoSection | 否（拆为区块级子表单） |
-| trigger（新增） | TriggerDisplay | ✅ | triggers, read_when, auto_trigger, user-invocable, disable-model-invocation, command-dispatch, command-tool, command-arg-mode, allowed-tools | TriggerSection | ✅ 展示组件需新建 |
-| meta | MetaOpenclawView | ✅ | metadata.openclaw.* | RuntimeSection + InstallSection | 否 |
-| env | env table | ✅ | env[] | EnvVarsSection | 否 |
-| tools | ToolsBlock | ❌ 只读 | 从 markdown body 解析 | — | — |
-| files | files card | ✅ | files.read[], files.write[] | — | ✅ FilesSection |
-| exec | pipeline tree | ❌ 只读 | 从 markdown body 解析 | — | — |
-| doc | SectionsTree | ❌ 只读 | 从 markdown body 解析 | — | — |
+### F2+F3 区块级编辑 + UI 对齐（✅ 已完成）
 
 **验收清单**：
-- [ ] basic/trigger/meta/env/files 五个区块各有独立编辑按钮
-- [ ] 点击编辑仅切换当前区块为编辑态，其他区块不受影响
-- [ ] 编辑态 DOM 结构和 CSS 与 `06-inline-edit.html` 逐项对齐
-- [ ] 编辑态修改实时同步到 editState（react-hook-form）
-- [ ] "完成"按钮收回编辑态，展示态显示更新后的值
-- [ ] tools/exec/doc 无编辑按钮
-- [ ] 新建 TriggerDisplay 展示组件 + trigger 区块集成到 SkillMdPanel
-- [ ] 新建 FilesSection 表单组件（编辑 files.read[] 和 files.write[]）
-- [ ] tsc ✅ build ✅ 浏览器验证 ✅
+- [x] basic/trigger/meta/env/files 五个区块各有独立编辑按钮
+- [x] 点击编辑仅切换当前区块为编辑态，其他区块不受影响
+- [x] 编辑态 DOM 结构和 CSS 与 `06-inline-edit.html` 逐项对齐
+- [x] 编辑态修改实时同步到 editState（用 useState + structuredClone 实现，非 RHF）
+- [x] "完成"按钮收回编辑态，展示态显示更新后的值
+- [x] tools/exec/doc 无编辑按钮（有🔒只读标记）
+- [x] 新建 TriggerDisplay 展示组件 + trigger 区块集成到 SkillMdPanel
+- [x] 新建 FilesEditForm 表单组件（编辑 files.read[] 和 files.write[]）
+- [x] tsc ✅ build ✅ 浏览器验证 ✅
 
-**编辑优化需求**（P2 Demo 优化中发现，F2+F3 实现时纳入）：
-
-| 子项 | 说明 | 方案 |
-|---|---|---|
-| Undo/Redo | 编辑态内可撤销/重做操作（Ctrl+Z / Ctrl+Shift+Z） | `useReducer` + `immer` patches，标题行显示 `↶ N` 步数计数器 |
-| 表单校验 | 字段级即时反馈（version 格式、URL 格式、必填项） | 复用 `frontmatter-schema.ts` 的 zod schema，错误内联显示 |
-| 键盘快捷键 | Ctrl+S 保存当前区块、Escape 取消编辑、Tab 在字段间导航 | 区块级 `onKeyDown` 事件委托 |
-| Dirty 状态追踪 | 编辑中离开区块/切换 Skill 时提示"未保存的更改" | 对比 initialValues vs currentValues，dirty 时阻止导航 |
-| 草稿自动暂存 | 编辑中意外刷新不丢数据 | `localStorage` 按 `skillId:section` 键存草稿，进入编辑态时检测恢复 |
-
-### T8 文档正文展开
+### V1-1 文档正文展开
 
 **验收清单**：
 - [ ] doc 区块每个章节标题可点击展开/折叠
@@ -103,7 +82,7 @@ last_updated: 2026-04-07
 - [ ] 多个章节可同时展开
 - [ ] tsc ✅ build ✅
 
-### F4 技能 CRUD 入口
+### V1-2 技能 CRUD 入口
 
 **交互规格**（P3 编码前细化）：
 
@@ -124,7 +103,7 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 - [ ] 边界：非法文件提示、重名处理
 - [ ] tsc ✅ build ✅
 
-### F5 其他文件类型适配
+### V1-3 其他文件类型适配
 
 **验收清单**：
 - [ ] Navigator 树扩展：显示 `_meta.json`、`CHANGELOG.md`、`scripts/`、`references/` 等
@@ -135,7 +114,7 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 - [ ] 不引入重型依赖（Monaco 等）
 - [ ] tsc ✅ build ✅
 
-### UX-2+3 保存流程闭环
+### V1-4 保存流程闭环
 
 **验收清单**：
 - [ ] 编辑后自动出现琥珀色"已修改"徽章
@@ -145,7 +124,7 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 - [ ] Web 端：保存按钮不可见或降级为"导出"
 - [ ] tsc ✅ build ✅
 
-### T2 代码分割
+### V1-5 代码分割
 
 **验收清单**：
 - [ ] React.lazy + Suspense 拆分路由级组件
@@ -159,12 +138,12 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 
 基于 [复盘+行为规格](32b516bb) 和 [对齐清单+review](33216ea9) 的教训：
 
-1. **Demo 先行**（P-1）：F2+F3 编码前必须完成 P2 demo 并经用户确认
+1. **Demo 先行**（P-1）：涉及新交互的任务编码前先产出 demo
 2. **翻译方向**（L1）：从 demo HTML 结构出发写 JSX，不在旧组件上补丁式靠拢
 3. **验收对照**（P-2/L5/L6）：每个任务完成后对照上方验收清单逐项打钩
 4. **避免多余抽象**（L2）：编辑态 CSS 放 `index.css`，不用 Tailwind 重写 demo 样式
 5. **范式分离**（L3）：展示态组件保持 demo 结构不动，编辑态组件新建并整块替换
-6. **委派规则**：F2+F3 核心逻辑 Opus 直接写；重复性组件可委派 fast 子 Agent
+6. **委派规则**：核心逻辑 Opus 直接写；重复性组件可委派 fast 子 Agent
 
 ### 新会话启动指令
 
@@ -174,24 +153,11 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 
 | 会话 | 任务 | 执行模式 |
 |---|---|---|
-| 新会话 1 | P2 Demo 06 | Opus 直接写，用户浏览器验证迭代 |
-| 新会话 2 | F2+F3 区块编辑 | Opus 核心 + fast 重复组件 |
-| 新会话 3 | T8 + F4 | T8 小改动 + F4 规格→组件 |
-| 新会话 4 | F5 + UX-2+3 | Opus 核心 + fast 扩展 |
-| 新会话 5 | T2 代码分割 | fast 可承担 |
-
----
-
-## T1 实施建议（基于 T0 调研，存档参考）
-
-**核心发现**：80% 的 Skill 编辑需求集中在 SKILL.md frontmatter。config/ 目录虽复杂但极稀少（6%）。
-
-**分层策略**：
-1. **第一层（P0）**：Frontmatter 结构化编辑器 — ✅ 已完成（T1）
-2. **第二层（P1）**：Config 目录编辑器 — ✅ 已完成（sources/topics/schema）
-3. **第三层（P2）**：文件浏览器 — F5 将实现
-
-**调研报告**：`project-harness/evidence/skill-structure-analysis.md`
+| ~~新会话 1~~ | ~~P2 Demo 06~~ | ~~✅ 完成~~ |
+| ~~新会话 2~~ | ~~F2+F3 区块编辑~~ | ~~✅ 完成~~ |
+| 新会话 3 | V1-1 + V1-2 | V1-1 小改动 + V1-2 规格→组件 |
+| 新会话 4 | V1-3 + V1-4 | Opus 核心 + fast 扩展 |
+| 新会话 5 | V1-5 代码分割 | fast 可承担 |
 
 ---
 
@@ -199,10 +165,10 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 
 | ID | 名称 | 状态 | 说明 |
 |---|---|---|---|
-| P-1 | Demo 先行开发流程 | **执行中** | V1.0 路线图已采纳：F2+F3 编码前先产出 06-inline-edit.html demo |
-| P-2 | 执行者验收闭环 | **已落地** | session-governor 执行闸门第 4 条"基准对照"；backlog 每个任务带验收清单 |
+| P-1 | Demo 先行开发流程 | **执行中** | V1.0 路线图已采纳 |
+| P-2 | 执行者验收闭环 | **已落地** | session-governor 执行闸门第 4 条"基准对照" |
 | P-3 | ✅ Demo 行为规格 | 完成 | `project-harness/evidence/demo-05-behavior-spec.md` |
-| P-4 | 有意差异清单 | 维护中 | 当前 4 条：布局机制、导航面板、动态数据、主题（V1.0 暗色，V1.1 讨论双模式） |
+| P-4 | 有意差异清单 | 维护中 | 当前 4 条：布局机制、导航面板、动态数据、主题 |
 | P-5 | ✅ 对齐清单 | 完成 | `project-harness/evidence/demo-05-alignment-checklist.md` |
 | P-6 | 多模型交叉 Review | 待讨论 | |
 | P-7 | 分批自动串行执行 | 待讨论 | |
@@ -229,10 +195,7 @@ Skill 条目 → ContextMenu 或 hover `...` 按钮：
 | D5-BUG2 | Inspector 字段级镜像映射补齐 | 2026-04-06 | `evidence/task-logs/2026-04-06-d5-inspector-field-mapping-hotfix.md` |
 | P-3 | 执行复盘 + Demo 行为规格产出 | 2026-04-07 | `evidence/task-logs/2026-04-07-retrospective-and-behavior-spec.md` |
 | P-5 | 对齐清单产出 + 两轮 review 压实 | 2026-04-07 | `evidence/demo-05-alignment-checklist.md` |
-| Batch 1 | 主题系统对齐（A1×6 + A5-1） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b1-theme-alignment.md` |
-| Batch 2 | 区块交互对齐（A2×4） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b2-block-interaction.md` |
-| Batch 3 | 桥线+气泡对齐（A3×2 + A4×3） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b3-bridge-bubble.md` |
-| Batch 4 | B 类决策执行（B1 + D4-D6 确认） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b4-b-class-decision.md` |
-| Batch 5 | 运行时确认+产品决策（C 类验证 + P1 决定） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b5-runtime-verification.md` |
+| Batch 1-5 | Demo 05 对齐修复（主题/交互/桥线/B类/运行时） | 2026-04-07 | `evidence/task-logs/2026-04-07-al-b*.md` |
 | UI-OPT | 前端布局优化（嵌套面板+字段高亮集中化+视觉紧凑化） | 2026-04-07 | `evidence/task-logs/2026-04-07-frontend-layout-optimization.md` |
-| P2 | 06-inline-edit.html Demo（F2+F3 编辑态视觉基准） | 2026-04-07 | `evidence/task-logs/2026-04-07-p2-inline-edit-demo.md` |
+| P2 | 06-inline-edit.html Demo | 2026-04-07 | `evidence/task-logs/2026-04-07-p2-inline-edit-demo.md` |
+| F2+F3 | 区块级编辑 + UI 对齐（8 区块 + 5 可编辑 + trigger 新增） | 2026-04-07 | `evidence/task-logs/2026-04-07-f2f3-block-editing.md` |

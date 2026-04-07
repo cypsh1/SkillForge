@@ -17,6 +17,7 @@ import type { ParsedSkill, SkillFrontmatter } from "@/types/skill"
 
 interface PreviewParts {
   basic: string
+  trigger: string
   meta: string
   env: string
   tools: string
@@ -91,20 +92,35 @@ function splitBodyExecDoc(body: string): { exec: string; doc: string } {
   }
 }
 
-function splitPreviewInto7(content: string): PreviewParts {
+function splitPreviewInto8(content: string): PreviewParts {
   const { fmInner, body } = extractFmInnerAndBody(content)
   const blocks = parseTopLevelYamlBlocks(fmInner)
-  const basicKeys = ["name", "description", "version", "homepage"] as const
-  const basicLines = basicKeys
+  const basicKeysExtended = ["name", "description", "version", "homepage", "emoji", "author"] as const
+  const basicLines = basicKeysExtended
     .map((k) => blocks.get(k) ?? "")
     .filter((s) => s.length > 0)
   const basic = basicLines.length > 0 ? ["---", ...basicLines].join("\n") : ""
+  const triggerKeys = [
+    "triggers",
+    "read_when",
+    "auto_trigger",
+    "user-invocable",
+    "disable-model-invocation",
+    "command-dispatch",
+    "command-tool",
+    "command-arg-mode",
+    "allowed-tools",
+  ] as const
+  const triggerLines = triggerKeys
+    .map((k) => blocks.get(k) ?? "")
+    .filter((s) => s.length > 0)
+  const trigger = triggerLines.length > 0 ? triggerLines.join("\n") : ""
   const meta = blocks.get("metadata") ?? ""
   const env = blocks.get("env") ?? ""
   const tools = blocks.get("tools") ?? ""
   const files = blocks.get("files") ?? ""
   const { exec, doc } = splitBodyExecDoc(body)
-  return { basic, meta, env, tools, files, exec, doc }
+  return { basic, trigger, meta, env, tools, files, exec, doc }
 }
 
 function escapeHtml(s: string): string {
@@ -121,11 +137,13 @@ const BASIC_FIELD_MAP: Record<string, string> = {
   description: "f-desc",
   version: "f-ver",
   homepage: "f-home",
+  emoji: "f-emoji",
+  author: "f-author",
 }
 
 function wrapBasicFieldLines(html: string): string {
   return html.replace(
-    /(<span class="syntax-key">(name|description|version|homepage)<\/span>.*?)(?=\n|$)/g,
+    /(<span class="syntax-key">(name|description|version|homepage|emoji|author)<\/span>.*?)(?=\n|$)/g,
     (_match, line, key) => {
       const field = BASIC_FIELD_MAP[key]
       if (!field) return line
@@ -248,7 +266,14 @@ function buildInspectorEntityRules(
   fm: SkillFrontmatter | null,
 ): Record<keyof PreviewParts, InspectorEntityRule[]> {
   const empty: Record<keyof PreviewParts, InspectorEntityRule[]> = {
-    basic: [], meta: [], env: [], tools: [], files: [], exec: [], doc: [],
+    basic: [],
+    trigger: [],
+    meta: [],
+    env: [],
+    tools: [],
+    files: [],
+    exec: [],
+    doc: [],
   }
   if (!skill || !fm) return empty
 
@@ -300,7 +325,7 @@ function buildInspectorEntityRules(
     })
   }
 
-  return { basic: [], meta: [], env, tools, files, exec, doc: [] }
+  return { basic: [], trigger: [], meta: [], env, tools, files, exec, doc: [] }
 }
 
 function classForBridgeEid(
@@ -421,6 +446,7 @@ function buildSectionHtml(
         return matched ? docFieldKey(matched.title) : null
       })
     }
+    case "trigger":
     case "meta":
     default:
       return highlightYaml(raw)
@@ -515,7 +541,7 @@ function SectionedPreview({
   relatedEids: string[]
   isSectionDimmed: (sectionId: string) => boolean
 }) {
-  const parts = useMemo(() => splitPreviewInto7(content), [content])
+  const parts = useMemo(() => splitPreviewInto8(content), [content])
   const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
   return (
     <div className="p-2 pl-1.5">
