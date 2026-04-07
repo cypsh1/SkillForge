@@ -15,7 +15,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**对齐清单已完成（两轮 review 压实），下一步：按 Batch 1-5 修复剩余差异**
+**对齐清单 Batch 1-5 全部完成，Demo 对齐告一段落。下一步：从 backlog 待办中选择新任务（T2 代码分割 / T3 远程 SSH / UX-2 保存交互 等）**
 
 ## 已完成
 
@@ -128,7 +128,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 - editor-panel：点击同一元素时同时写入 `selectedField + selectedEid`（不再二选一）
 - editor-panel：env/tools/files/exec 增加 `data-field` 统一命名并消费 `fa/fm`
-- inspector-panel：实体注入规则补 `fieldKey`（与 editor `f-e-* / f-t-* / f-p-* / f-s-*` 对齐）
+- inspector-panel：实体注入规则补 `fieldKey`（与 editor `f-e-* / f-t-* / f-p-* / f-s-`* 对齐）
 - inspector-panel：点击委托改为同时处理 `data-field` 与 `data-eid`
 - inspector-panel：预览实体高亮支持 `fa/fm + eid-selected/eid-related/eid-dimmed` 同时生效
 - index.css：新增 `.fa/.fm` 字段映射样式
@@ -152,24 +152,28 @@ SkillForge — OpenClaw Skill 可视化配置工具
 - App.tsx：集成 ArchitectureBar（位于 Header 下、三栏布局上）
 - editor-panel / inspector-panel：区块根据当前层级执行 dim（与 demo05 `sd` 语义对齐）
 - bridge-connector：桥线根据层级执行 dim（fill/line opacity 降低）
-- index.css：新增 `arch-*` 样式与 `.bridge-dim`
+- index.css：新增 `arch-`* 样式与 `.bridge-dim`
 - 验收：`npx tsc -b --noEmit` ✅、`npm run build` ✅
 
 ### 方案 C 面板重写（2026-04-06）
 
 **Batch 1**：
+
 - 新增 `BasicInfoDisplay` 组件：Demo 风格字段行（名称/描述/版本/主页）
 - `SkillMdPanel` basic 区块：FrontmatterForm 从默认展示改为按需展开（"编辑全部字段" 按钮）
 - 新增 CSS 类：`.ecard/.fr/.fl/.fv`
 
 **Batch 2 CSS/视觉对齐**：
+
 - 编辑器容器 padding `p-4` → `p-3 pr-1.5`，预览容器 `space-y-1 p-1` → `p-3 pl-1.5`
 - `SkillMdPanel` 的 `space-y-6` → 去掉（让 section 自身 margin 生效）
 
 **Batch 3 data-field 补全**：
+
 - 已在 D4 + Batch 1 中完成（editor 和 inspector 双侧均已有 data-field）
 
 **Batch 4 实体规则全面动态化**：
+
 - inspector-panel：`buildInspectorEntityRules(skill, fm)` 从 skill 数据动态生成实体注入规则
 - bridge-relations.ts：完全重写 — 删除硬编码 `BRIDGE_RELATIONS`，改为动态 store
   - 新增 `buildBridgeRelations(skill, fm)`：启发式关系生成器
@@ -188,7 +192,7 @@ SkillForge — OpenClaw Skill 可视化配置工具
 - 制定 7 条风险清单 + 4 批次执行策略，避免前次 22 区域一次全改的高风险
 - **B1 CSS-only 安全修复**：arch-bar 6 种分层色 + padding 16px；context-bar 对齐 Demo；entity 高亮值（selected=蓝底白字、related=琥珀、dimmed=0.2）；`[data-field]` 基础过渡；flash 动画 2 次
 - **B2 Editor 组件结构**：env 表列序修正（关系列→末尾）+ "必需/可选"；tools Card→紧凑 `.tc`；files list→单 `.ecard` monospace；doc 去字符数 + `.di/.dh` 11/9px；exec 扁平→ `.pi/.pi-indent` pipeline 树；meta list→ecard + 分段文本
-- **B3 Inspector + 外围**：去掉 Inspector 滚动层 rounded-md/border/bg；relation-bar 从居中浮卡→全宽底部栏；relation indicator 从单行→ `.ri > .rp*` 竖向堆叠
+- **B3 Inspector + 外围**：去掉 Inspector 滚动层 rounded-md/border/bg；relation-bar 从居中浮卡→全宽底部栏；relation indicator 从单行→ `.ri > .rp`* 竖向堆叠
 - **B4 精修**：header 字号 12px/10px 对齐 Demo；bridge-tip 10px；`.pc` 预览容器；htip 居中定位 + pointer-events:none
 - 验收：`npx tsc -b --noEmit` ✅、`npm run build` ✅、浏览器验证 ✅
 - **设计决策**：不改 BRIDGE_GUTTER_EXTEND（25 是 react-resizable-panels 布局的正确值）；不替换主题 token 为 Demo hardcode hex
@@ -218,7 +222,61 @@ SkillForge — OpenClaw Skill 可视化配置工具
   - 左进度条颜色从 A 类移入 P 类（待产品决策）
   - A 类计数修正为 16 项
 - 最终分类：A 类 16 项 / B 类 1 项 / C 类 12 项 / D 类 6 项 / P 类 1 项 / 已对齐 103 项
-- **下一步**：按 Batch 1-5 执行修复（详见 `backlog.md` → 对齐修复表）
+
+### Batch 1 主题系统对齐（2026-04-07）
+
+- `.dark` 全部 oklch 色值替换为 demo zinc hex 体系
+  - `--background: #09090b`, `--card: #18181b`, `--border: #27272a`
+  - `--foreground: #e4e4e7`, `--muted-foreground: #71717a`
+- 新增 `--dim: #52525b` CSS 变量 + Tailwind `text-dim` 工具类
+  - 替换 `.arch-label`/`.arch-arrow`/`.dh`/`.pi-indent` 和 7 处 sh-txt
+- 统一浮层底色 `#1c1c20`：`.bub`/`.htip`/bridge-pop/bridge-tip
+- 冻结 light 模式：`index.html` 加 `class="dark"`，`use-theme.ts` 冻结，移除 header 主题切换
+- A5-1 上下文栏区块名颜色对齐
+- 验收：tsc ✅ build ✅ 浏览器 ✅ linter ✅
+
+### Batch 2 区块交互对齐（2026-04-07）
+
+- A2-1/A2-2：标题行点击拆分 — 箭头 `.ca` 触发折叠（stopPropagation），标题区 `.sl` 触发 `scrollBothToSection(sectionId)`（双面板跳转 + 高亮 1.2s）
+  - `use-panel-sync.ts`：新增 `scrollBothToSection` API + `highlightTimerRef`
+  - `editor-panel.tsx`：`BridgeSectionBlock` header 拆分
+  - `inspector-panel.tsx`：`PreviewSectionBlock` header 拆分
+- A2-3：折叠动画 — `.bridge-section-content` 增加 `transition: max-height .25s ease, opacity .2s`
+- A2-4：hover 高亮 box-shadow — 7 个 `.bridge-highlight` 增加 `box-shadow: inset 0 0 0 1px rgba(255,255,255,.07)`
+- 验收：tsc ✅ build ✅ linter ✅ 浏览器标题点击不触发折叠 ✅（动画效果和 1.2s 高亮消退待人工复核）
+
+### Batch 3 桥线+气泡对齐（2026-04-07）
+
+- A3-1：桥线点击 → 改用 `api.scrollBothToSection(b.id)`，复用 Batch 2 的双面板跳转 + 1.2s 高亮逻辑；删除独立 `scrollBothTo` 函数
+- A3-2：SVG circle dot — 每个桥线区块增加 `<circle>` 元素（`r=3`，区块色 fill，默认 `opacity:0`，hover 时 `0.85`，带 `transition: opacity 0.15s`）
+- A4-1：气泡弹出位置 — 从"指示器正下方 +6px"改为"实体右侧 +8px"，空间不足翻转到左侧 `-238px`，垂直安全边距 `[8, innerHeight-190]`
+- A4-2：气泡消失延迟 — 新增 `bubTimerRef` + `clearBubTimer` + `scheduleBubHide`；indicator 离开 200ms、bubble 离开 150ms；鼠标进入 bubble/indicator 时清除定时器
+- A4-3：气泡 max-width — 移除 Tailwind `max-w-[min(360px,...)]`，让 CSS `.bub { max-width: 240px }` 生效；`min-w` 对齐 demo `160px`
+- 验收：tsc ✅ build ✅ linter ✅
+
+### Batch 4 B 类决策执行（2026-04-07）
+
+- B1：exec 脚本管道字段前缀 `f-s-*` → `f-x-*`（3 处：editor-panel 1 处 + inspector-panel 2 处）
+- D4-D6：确认为有意差异（basic 增量编辑入口 / Inspector 文件操作 / Tauri 保存），保留不对齐
+- 验收：tsc ✅ build ✅ 无 `f-s-` 残留 ✅
+
+### Batch 5 运行时确认+产品决策（2026-04-07）
+
+- C 类运行时确认：6 项全部在浏览器中验证
+  - C4 scroll-behavior：JS 已用 `behavior:"smooth"`，功能等价 → 不修
+  - C5 tooltip 偏移 2px → 不修
+  - C6 tooltip 文案 → 已修复（"点击跳转" → "点击双面板跳转"）
+  - C7/C8 hover 背景 → 功能等价，不修
+  - C9 bub-i 字号 1px → 不修
+- P1 产品决策：左进度条颜色 → 保留主应用区块跟随色（与上下文栏设计语言一致）
+- Batch 1-4 回归验证：tsc ✅ build ✅ 浏览器验证 ✅
+- **对齐清单 5 个 Batch 全部完成**，Demo 对齐阶段正式收尾
+
+### 小修补（2026-04-07）
+
+- 右侧进度条颜色：从固定 `bg-emerald-500` 改为跟随当前区块色（与左侧一致）
+- 元数据区块默认展开：移除 `defaultCollapsed`，7 个区块统一默认展开
+- 桥线 tooltip 文案："点击跳转" → "点击双面板跳转"（C6）
 
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）
 
