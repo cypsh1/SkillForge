@@ -84,6 +84,16 @@ last_updated: 2026-04-07
 - [ ] 新建 FilesSection 表单组件（编辑 files.read[] 和 files.write[]）
 - [ ] tsc ✅ build ✅ 浏览器验证 ✅
 
+**编辑优化需求**（P2 Demo 优化中发现，F2+F3 实现时纳入）：
+
+| 子项 | 说明 | 方案 |
+|---|---|---|
+| Undo/Redo | 编辑态内可撤销/重做操作（Ctrl+Z / Ctrl+Shift+Z） | `useReducer` + `immer` patches，标题行显示 `↶ N` 步数计数器 |
+| 表单校验 | 字段级即时反馈（version 格式、URL 格式、必填项） | 复用 `frontmatter-schema.ts` 的 zod schema，错误内联显示 |
+| 键盘快捷键 | Ctrl+S 保存当前区块、Escape 取消编辑、Tab 在字段间导航 | 区块级 `onKeyDown` 事件委托 |
+| Dirty 状态追踪 | 编辑中离开区块/切换 Skill 时提示"未保存的更改" | 对比 initialValues vs currentValues，dirty 时阻止导航 |
+| 草稿自动暂存 | 编辑中意外刷新不丢数据 | `localStorage` 按 `skillId:section` 键存草稿，进入编辑态时检测恢复 |
+
 ### T8 文档正文展开
 
 **验收清单**：

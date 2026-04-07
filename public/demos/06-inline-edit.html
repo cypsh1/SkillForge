@@ -203,66 +203,68 @@
   .bool-off{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--dim);display:inline-block;}
   .tg-pill{display:inline-block;padding:1px 7px;border-radius:10px;background:rgba(255,255,255,.08);font-size:10px;margin:1px 2px;}
 
-  /* ===== 编辑按钮 ===== */
-  .eb{margin-left:auto;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.3;transition:all .15s;flex-shrink:0;background:none;border:none;color:var(--muted);}
-  .eb:hover{opacity:.85;background:rgba(255,255,255,.06);}
-  .eb svg{width:12px;height:12px;}
+  /* ===== 编辑按钮（文字版）===== */
+  .eb{margin-left:auto;font-size:10px;color:var(--dim);cursor:pointer;transition:all .15s;background:none;border:1px solid var(--border);padding:1px 7px;border-radius:3px;white-space:nowrap;font-family:inherit;}
+  .eb:hover{color:var(--muted);border-color:var(--dim);}
+
+  /* 编辑态控制组（标题行内） */
+  .eb-group{display:none;align-items:center;gap:4px;margin-left:auto;}
   .sec.editing .eb{display:none;}
+  .sec.editing .eb-group{display:flex;}
+
+  /* 编辑中指示器 */
+  .editing-ind{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--dim);white-space:nowrap;}
+  .editing-ind svg{width:12px;height:12px;flex-shrink:0;}
+
+  /* 标题行操作按钮 */
+  .eb-cancel,.eb-done{font-size:10px;padding:1px 8px;border-radius:3px;cursor:pointer;border:none;font-family:inherit;transition:all .12s;white-space:nowrap;line-height:1.6;}
+  .eb-cancel{background:none;color:var(--dim);border:1px solid var(--border);}
+  .eb-cancel:hover{color:var(--muted);border-color:var(--dim);}
+  .eb-done{background:rgba(255,255,255,.08);color:var(--text);}
+  .eb-done:hover{background:rgba(255,255,255,.14);}
 
   /* ===== 编辑态区块 ===== */
-  .sec.editing{box-shadow:inset 0 0 0 1px rgba(59,130,246,.18);background:rgba(59,130,246,.02);}
+  .sec.editing{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
   .sv{} .sf{display:none;}
   .sec.editing .sv{display:none;}
   .sec.editing .sf{display:block;}
 
-  /* 编辑中提示 */
-  .editing-badge{font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(59,130,246,.12);color:#93c5fd;display:none;align-items:center;gap:3px;margin-left:auto;}
-  .sec.editing .editing-badge{display:inline-flex;}
-  .sec.editing .eb{display:none;}
-
   /* ===== 表单控件 ===== */
-  .ef-card{border-color:rgba(59,130,246,.15);}
-  .fg{margin-bottom:8px;}
-  .fg:last-child{margin-bottom:0;}
-  .fgl{font-size:10px;color:var(--muted);margin-bottom:3px;display:block;}
-  .fg-row{display:flex;gap:8px;}
-  .fg-row > .fg{flex:1;}
+  .ef-card{border-color:var(--border);}
 
-  .fi{width:100%;background:transparent;border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;transition:border-color .15s;}
-  .fi:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+  /* 单行编辑行 */
+  .ef-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .ef-row:last-child{margin-bottom:0;}
+  .ef-lbl{min-width:68px;flex-shrink:0;font-size:10px;color:var(--dim);text-align:right;white-space:nowrap;}
+  .ef-row-top{align-items:flex-start;}
+  .ef-row-top .ef-lbl{padding-top:5px;}
+
+  .fi{flex:1;min-width:0;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;padding:3px 7px;color:var(--text);font-size:11px;font-family:'SF Mono',Monaco,monospace;outline:none;transition:border-color .15s,box-shadow .15s;height:24px;}
+  .fi:focus{border-color:#52525b;box-shadow:0 0 0 3px rgba(82,82,91,.5);}
   .fi::placeholder{color:var(--dim);}
-  .fi-mono{font-family:'SF Mono',Monaco,monospace;font-size:10px;}
-  .ft{resize:vertical;min-height:48px;line-height:1.5;}
+  .ft{resize:vertical;min-height:48px;height:auto;line-height:1.5;font-family:inherit;}
 
   /* Toggle switch */
-  .ftg{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:3px 0;}
-  .ftg-track{width:32px;height:17px;border-radius:9px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0;}
-  .ftg-track::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--dim);transition:all .2s;}
-  .ftg-track.on{background:rgba(59,130,246,.4);}
-  .ftg-track.on::after{left:17px;background:var(--blue);}
+  .ftg{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
+  .ftg-track{width:28px;height:15px;border-radius:8px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0;}
+  .ftg-track::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--dim);transition:all .2s;}
+  .ftg-track.on{background:rgba(82,82,91,.6);}
+  .ftg-track.on::after{left:15px;background:var(--text);}
   .ftg-lbl{font-size:10px;color:var(--muted);}
 
   /* Tag input */
-  .fta{display:flex;flex-wrap:wrap;gap:4px;padding:4px 6px;background:transparent;border:1px solid var(--border);border-radius:4px;min-height:30px;transition:border-color .15s;align-items:center;}
-  .fta:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.1);}
+  .fta{display:flex;flex-wrap:wrap;gap:4px;padding:3px 6px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;min-height:24px;transition:border-color .15s,box-shadow .15s;align-items:center;flex:1;min-width:0;}
+  .fta:focus-within{border-color:#52525b;box-shadow:0 0 0 3px rgba(82,82,91,.5);}
   .ftag{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.08);font-size:10px;color:var(--text);white-space:nowrap;}
   .ftag-x{cursor:pointer;color:var(--dim);font-size:9px;margin-left:2px;line-height:1;border-radius:50%;width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;transition:all .1s;}
   .ftag-x:hover{color:var(--rose);background:rgba(244,63,94,.12);}
-  .fti{border:none;background:transparent;color:var(--text);font-size:10px;outline:none;min-width:60px;flex:1;padding:2px 0;}
+  .fti{border:none;background:transparent;color:var(--text);font-size:10px;outline:none;min-width:60px;flex:1;padding:2px 0;font-family:inherit;}
   .fti::placeholder{color:var(--dim);}
-
-  /* Action buttons */
-  .fac{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;}
-  .fb{padding:4px 14px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:inherit;}
-  .fb-p{background:var(--blue);color:#fff;border-color:var(--blue);}
-  .fb-p:hover{filter:brightness(1.15);}
-  .fb-s{background:transparent;color:var(--muted);border-color:var(--border);}
-  .fb-s:hover{background:rgba(255,255,255,.04);color:var(--text);}
 
   /* Env table edit */
   .et-del{width:18px;height:18px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:11px;transition:all .15s;background:none;border:none;}
   .et-del:hover{background:rgba(244,63,94,.1);color:var(--rose);}
-  .et-add{display:flex;align-items:center;gap:4px;padding:5px 8px;cursor:pointer;color:var(--dim);font-size:10px;transition:all .15s;border-radius:3px;margin-top:4px;}
+  .et-add{display:flex;align-items:center;gap:4px;padding:4px 8px;cursor:pointer;color:var(--dim);font-size:10px;transition:all .15s;border-radius:3px;margin-top:4px;}
   .et-add:hover{background:rgba(255,255,255,.03);color:var(--muted);}
 
   /* Files edit list */
@@ -306,8 +308,12 @@
       <div class="sl" onclick="navTo('basic')">
         <span class="ca" onclick="event.stopPropagation();this.closest('.sec').classList.toggle('col');setTimeout(()=>{rebuildAnchors();scheduleFrame()},280)">▼</span>
         <span class="dt"></span><span class="tt">基本信息</span>
-        <span class="editing-badge">✏️ 编辑中</span>
-        <button class="eb" onclick="event.stopPropagation();toggleEdit('basic')" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg></button>
+        <span class="eb-group">
+          <span class="editing-ind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑中</span>
+          <button class="eb-cancel" onclick="event.stopPropagation();cancelEdit('basic')">取消</button>
+          <button class="eb-done" onclick="event.stopPropagation();saveEdit('basic')">完成</button>
+        </span>
+        <button class="eb" onclick="event.stopPropagation();toggleEdit('basic')">编辑</button>
       </div>
       <div class="clp">
         <div class="sh-txt">frontmatter → name, description, version, emoji, author, homepage</div>
@@ -323,21 +329,13 @@
         </div>
         <div class="sf" id="form-basic">
           <div class="ecard ef-card">
-            <div class="fg-row">
-              <div class="fg" style="flex:1"><label class="fgl">名称</label><input class="fi fi-mono" id="ef-name" value="tech-news-digest-cn"></div>
-              <div class="fg" style="width:60px"><label class="fgl">Emoji</label><input class="fi" id="ef-emoji" value="📰" style="text-align:center;"></div>
-            </div>
-            <div class="fg"><label class="fgl">描述</label><textarea class="fi ft" id="ef-desc">生成科技新闻摘要，具有统一数据源模型、质量评分和多格式输出。</textarea></div>
-            <div class="fg-row">
-              <div class="fg"><label class="fgl">版本</label><input class="fi" id="ef-ver" value="3.16.0"></div>
-              <div class="fg"><label class="fgl">作者</label><input class="fi" id="ef-author" value="draco-agent"></div>
-            </div>
-            <div class="fg"><label class="fgl">主页</label><input class="fi fi-mono" id="ef-home" value="https://github.com/draco-agent/tech-news-digest" type="url"></div>
-            <div class="fg"><label class="fgl">源码</label><input class="fi fi-mono" id="ef-source" value="" placeholder="https://..."></div>
-          </div>
-          <div class="fac">
-            <button class="fb fb-s" onclick="cancelEdit('basic')">取消</button>
-            <button class="fb fb-p" onclick="saveEdit('basic')">完成</button>
+            <div class="ef-row"><span class="ef-lbl">Emoji</span><input class="fi" id="ef-emoji" value="📰" style="max-width:48px;text-align:center;"></div>
+            <div class="ef-row"><span class="ef-lbl">名称</span><input class="fi" id="ef-name" value="tech-news-digest-cn"></div>
+            <div class="ef-row ef-row-top"><span class="ef-lbl">描述</span><textarea class="fi ft" id="ef-desc">生成科技新闻摘要，具有统一数据源模型、质量评分和多格式输出。</textarea></div>
+            <div class="ef-row"><span class="ef-lbl">版本</span><input class="fi" id="ef-ver" value="3.16.0"></div>
+            <div class="ef-row"><span class="ef-lbl">作者</span><input class="fi" id="ef-author" value="draco-agent"></div>
+            <div class="ef-row"><span class="ef-lbl">主页</span><input class="fi" id="ef-home" value="https://github.com/draco-agent/tech-news-digest" type="url"></div>
+            <div class="ef-row"><span class="ef-lbl">源码</span><input class="fi" id="ef-source" value="" placeholder="https://..."></div>
           </div>
         </div>
       </div>
@@ -348,8 +346,12 @@
       <div class="sl" onclick="navTo('trigger')">
         <span class="ca" onclick="event.stopPropagation();this.closest('.sec').classList.toggle('col');setTimeout(()=>{rebuildAnchors();scheduleFrame()},280)">▼</span>
         <span class="dt"></span><span class="tt">触发条件</span><span class="bg">3 触发词</span>
-        <span class="editing-badge">✏️ 编辑中</span>
-        <button class="eb" onclick="event.stopPropagation();toggleEdit('trigger')" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg></button>
+        <span class="eb-group">
+          <span class="editing-ind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑中</span>
+          <button class="eb-cancel" onclick="event.stopPropagation();cancelEdit('trigger')">取消</button>
+          <button class="eb-done" onclick="event.stopPropagation();saveEdit('trigger')">完成</button>
+        </span>
+        <button class="eb" onclick="event.stopPropagation();toggleEdit('trigger')">编辑</button>
       </div>
       <div class="clp">
         <div class="sh-txt">frontmatter → triggers, read_when, auto_trigger, command-*</div>
@@ -367,27 +369,15 @@
         </div>
         <div class="sf" id="form-trigger">
           <div class="ecard ef-card">
-            <div class="fg"><label class="fgl">触发词（triggers）</label>
-              <div class="fta" id="ef-triggers"><span class="ftag">latest news<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">tech digest<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">科技摘要<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div>
-            </div>
-            <div class="fg"><label class="fgl">读取条件（read_when）</label>
-              <div class="fta" id="ef-readwhen"><span class="ftag">news<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">科技<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">摘要<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">digest<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div>
-            </div>
-            <div class="fg-row">
-              <div class="fg"><label class="fgl">自动触发</label><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track" data-key="auto_trigger"></div><span class="ftg-lbl">否</span></div></div>
-              <div class="fg"><label class="fgl">用户可调用</label><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track on" data-key="user-invocable"></div><span class="ftg-lbl">是</span></div></div>
-              <div class="fg"><label class="fgl">禁止模型调用</label><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track" data-key="disable-model"></div><span class="ftg-lbl">否</span></div></div>
-            </div>
-            <div class="fg-row">
-              <div class="fg"><label class="fgl">命令分派</label><input class="fi fi-mono" id="ef-cmddispatch" value="run-digest"></div>
-              <div class="fg"><label class="fgl">命令工具</label><input class="fi fi-mono" id="ef-cmdtool" value="python3"></div>
-            </div>
-            <div class="fg"><label class="fgl">参数模式</label><input class="fi fi-mono" id="ef-cmdargmode" value="positional" placeholder="positional / keyword"></div>
-            <div class="fg"><label class="fgl">允许工具</label><input class="fi fi-mono" id="ef-allowedtools" value="" placeholder="工具名称（可选）"></div>
-          </div>
-          <div class="fac">
-            <button class="fb fb-s" onclick="cancelEdit('trigger')">取消</button>
-            <button class="fb fb-p" onclick="saveEdit('trigger')">完成</button>
+            <div class="ef-row"><span class="ef-lbl">触发词</span><div class="fta" id="ef-triggers"><span class="ftag">latest news<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">tech digest<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">科技摘要<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div></div>
+            <div class="ef-row"><span class="ef-lbl">读取条件</span><div class="fta" id="ef-readwhen"><span class="ftag">news<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">科技<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">摘要<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">digest<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div></div>
+            <div class="ef-row"><span class="ef-lbl">自动触发</span><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track" data-key="auto_trigger"></div><span class="ftg-lbl">否</span></div></div>
+            <div class="ef-row"><span class="ef-lbl">用户可调</span><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track on" data-key="user-invocable"></div><span class="ftg-lbl">是</span></div></div>
+            <div class="ef-row"><span class="ef-lbl">禁止模型</span><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track" data-key="disable-model"></div><span class="ftg-lbl">否</span></div></div>
+            <div class="ef-row"><span class="ef-lbl">命令分派</span><input class="fi" id="ef-cmddispatch" value="run-digest"></div>
+            <div class="ef-row"><span class="ef-lbl">命令工具</span><input class="fi" id="ef-cmdtool" value="python3"></div>
+            <div class="ef-row"><span class="ef-lbl">参数模式</span><input class="fi" id="ef-cmdargmode" value="positional" placeholder="positional / keyword"></div>
+            <div class="ef-row"><span class="ef-lbl">允许工具</span><input class="fi" id="ef-allowedtools" value="" placeholder="工具名称（可选）"></div>
           </div>
         </div>
       </div>
@@ -398,8 +388,12 @@
       <div class="sl" onclick="navTo('meta')">
         <span class="ca" onclick="event.stopPropagation();this.closest('.sec').classList.toggle('col');setTimeout(()=>{rebuildAnchors();scheduleFrame()},280)">▼</span>
         <span class="dt"></span><span class="tt">元数据</span>
-        <span class="editing-badge">✏️ 编辑中</span>
-        <button class="eb" onclick="event.stopPropagation();toggleEdit('meta')" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg></button>
+        <span class="eb-group">
+          <span class="editing-ind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑中</span>
+          <button class="eb-cancel" onclick="event.stopPropagation();cancelEdit('meta')">取消</button>
+          <button class="eb-done" onclick="event.stopPropagation();saveEdit('meta')">完成</button>
+        </span>
+        <button class="eb" onclick="event.stopPropagation();toggleEdit('meta')">编辑</button>
       </div>
       <div class="clp">
         <div class="sh-txt">frontmatter → metadata.openclaw</div>
@@ -415,20 +409,10 @@
         </div>
         <div class="sf" id="form-meta">
           <div class="ecard ef-card">
-            <div class="fg"><label class="fgl">必需依赖（bins）</label>
-              <div class="fta" id="ef-req-bins"><span class="ftag">python3<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div>
-            </div>
-            <div class="fg"><label class="fgl">可选依赖（optionalBins）</label>
-              <div class="fta" id="ef-opt-bins"><span class="ftag">mail<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">msmtp<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">gog<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">gh<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">openssl<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">weasyprint<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div>
-            </div>
-            <div class="fg"><label class="fgl">操作系统</label>
-              <div class="fta" id="ef-os"><span class="ftag">darwin<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">linux<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="darwin / linux / win32" onkeydown="addTag(event,this)"></div>
-            </div>
-            <div class="fg"><label class="fgl">主要环境变量（primaryEnv）</label><input class="fi fi-mono" id="ef-primaryenv" value="TWITTER_API_BACKEND"></div>
-          </div>
-          <div class="fac">
-            <button class="fb fb-s" onclick="cancelEdit('meta')">取消</button>
-            <button class="fb fb-p" onclick="saveEdit('meta')">完成</button>
+            <div class="ef-row"><span class="ef-lbl">必需依赖</span><div class="fta" id="ef-req-bins"><span class="ftag">python3<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div></div>
+            <div class="ef-row"><span class="ef-lbl">可选依赖</span><div class="fta" id="ef-opt-bins"><span class="ftag">mail<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">msmtp<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">gog<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">gh<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">openssl<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">weasyprint<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="输入后回车添加" onkeydown="addTag(event,this)"></div></div>
+            <div class="ef-row"><span class="ef-lbl">操作系统</span><div class="fta" id="ef-os"><span class="ftag">darwin<span class="ftag-x" onclick="removeTag(this)">×</span></span><span class="ftag">linux<span class="ftag-x" onclick="removeTag(this)">×</span></span><input class="fti" placeholder="darwin / linux / win32" onkeydown="addTag(event,this)"></div></div>
+            <div class="ef-row"><span class="ef-lbl">主要环境变量</span><input class="fi" id="ef-primaryenv" value="TWITTER_API_BACKEND"></div>
           </div>
         </div>
       </div>
@@ -439,8 +423,12 @@
       <div class="sl" onclick="navTo('env')">
         <span class="ca" onclick="event.stopPropagation();this.closest('.sec').classList.toggle('col');setTimeout(()=>{rebuildAnchors();scheduleFrame()},280)">▼</span>
         <span class="dt"></span><span class="tt">环境变量</span><span class="bg">11</span>
-        <span class="editing-badge">✏️ 编辑中</span>
-        <button class="eb" onclick="event.stopPropagation();toggleEdit('env')" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg></button>
+        <span class="eb-group">
+          <span class="editing-ind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑中</span>
+          <button class="eb-cancel" onclick="event.stopPropagation();cancelEdit('env')">取消</button>
+          <button class="eb-done" onclick="event.stopPropagation();saveEdit('env')">完成</button>
+        </span>
+        <button class="eb" onclick="event.stopPropagation();toggleEdit('env')">编辑</button>
       </div>
       <div class="clp">
         <div class="sh-txt">frontmatter → env[]</div>
@@ -463,10 +451,6 @@
             <tr><td><input class="fi fi-mono" value="TAVILY_API_KEY" style="font-weight:600;"></td><td><div class="ftg" onclick="toggleBool(this)"><div class="ftg-track"></div></div></td><td><input class="fi" value="Tavily 搜索 API 密钥"></td><td><button class="et-del" onclick="this.closest('tr').remove()">×</button></td></tr>
           </tbody></table>
           <div class="et-add" onclick="addEnvRow()">+ 添加环境变量</div>
-          <div class="fac">
-            <button class="fb fb-s" onclick="cancelEdit('env')">取消</button>
-            <button class="fb fb-p" onclick="saveEdit('env')">完成</button>
-          </div>
         </div>
       </div>
     </div>
@@ -490,8 +474,12 @@
       <div class="sl" onclick="navTo('files')">
         <span class="ca" onclick="event.stopPropagation();this.closest('.sec').classList.toggle('col');setTimeout(()=>{rebuildAnchors();scheduleFrame()},280)">▼</span>
         <span class="dt"></span><span class="tt">文件权限</span>
-        <span class="editing-badge">✏️ 编辑中</span>
-        <button class="eb" onclick="event.stopPropagation();toggleEdit('files')" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.4 2.6a2.17 2.17 0 113.07 3.07L12 15.13l-4 1 1-4 9.4-9.53z"/></svg></button>
+        <span class="eb-group">
+          <span class="editing-ind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg> 编辑中</span>
+          <button class="eb-cancel" onclick="event.stopPropagation();cancelEdit('files')">取消</button>
+          <button class="eb-done" onclick="event.stopPropagation();saveEdit('files')">完成</button>
+        </span>
+        <button class="eb" onclick="event.stopPropagation();toggleEdit('files')">编辑</button>
       </div>
       <div class="clp">
         <div class="sh-txt">frontmatter → files { read[], write[] }</div>
@@ -524,10 +512,6 @@
               <div class="fl-item"><input class="fi fi-mono" value="/tmp/td-digest.pdf"><button class="et-del" onclick="this.closest('.fl-item').remove()">×</button></div>
             </div>
             <div class="fl-add" onclick="addFileItem('ef-files-write')">+ 添加写入路径</div>
-          </div>
-          <div class="fac">
-            <button class="fb fb-s" onclick="cancelEdit('files')">取消</button>
-            <button class="fb fb-p" onclick="saveEdit('files')">完成</button>
           </div>
         </div>
       </div>
@@ -946,7 +930,7 @@ const bub = document.getElementById('bub');
 let bubTmr = null;
 
 document.addEventListener('click', e => {
-  if (e.target.closest('.arch-bar') || e.target.closest('.eb') || e.target.closest('.fb') || e.target.closest('.sf') || e.target.closest('#bridgeSvg') || e.target.closest('.pbar') || e.target.closest('.rel-bar') || e.target.closest('.ri')) return;
+  if (e.target.closest('.arch-bar') || e.target.closest('.eb') || e.target.closest('.eb-group') || e.target.closest('.sf') || e.target.closest('#bridgeSvg') || e.target.closest('.pbar') || e.target.closest('.rel-bar') || e.target.closest('.ri')) return;
   const bubEl = e.target.closest('.bub');
   if (bubEl) { const bid = bubEl.dataset.eid; if (bid) { hideBub(); selByEid(bid); } return; }
   const eidEl = e.target.closest('[data-eid]'), fieldEl = e.target.closest('[data-field]');

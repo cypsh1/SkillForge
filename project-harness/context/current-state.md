@@ -306,6 +306,18 @@ P2 Demo 06（✅ 完成）→ F2+F3 区块编辑 → T8 文档展开 → F4 CRUD
 - 8 个区块全部有桥线同步（SECTIONS 数组从 7 扩展到 8）
 - 验收：浏览器验证 ✅（编辑/保存/取消流程正常、预览更新正确、只读标记可见）
 
+### P2 Demo UI 优化（2026-04-07）
+
+- **编辑按钮文字化**：图标 → "编辑" 文字按钮（`.eb` 10px dim text）
+- **标题行控件上移**：点击"编辑"后标题行显示"编辑中 + 取消 + 完成"，移除底部 `.fac`
+- **编辑中指示器**：线框 SVG pencil + dim 色文字，放在"取消"左侧
+- **单行布局**：表单改为 `.ef-row`（label 右对齐 68px + 控件 flex:1），每行一个字段
+- **Focus 效果对齐**：`border-color:#52525b; box-shadow:0 0 0 3px rgba(82,82,91,.5)` 与主应用 `--ring` 一致
+- **Toggle 缩小**：28×15px（与 bridge-pop 一致），颜色改为中性灰（`rgba(82,82,91,.6)`）
+- **编辑态去蓝化**：section 编辑态从蓝色调改为中性白边框（`rgba(255,255,255,.06)`）
+- **完成按钮灰白高亮**：`background:rgba(255,255,255,.08)` + `color:var(--text)`
+- 验收：浏览器验证 ✅（编辑/保存/取消、focus ring、标题行按钮、单行布局）
+
 ### 前端布局优化（2026-04-07）
 
 - App.tsx 嵌套面板重构：ArchitectureBar/BridgeConnector/RelationBar/ContextBar 移入右栏内部，桥线区缩窄（GUTTER 25→6）
