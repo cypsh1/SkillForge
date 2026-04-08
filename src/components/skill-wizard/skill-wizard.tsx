@@ -12,6 +12,8 @@ import {
   Terminal,
   X,
 } from "lucide-react"
+import i18next from "i18next"
+import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -38,20 +40,6 @@ export interface WizardData {
   tools: Array<{ name: string; description: string }>
   envVars: Array<{ name: string; description: string; required: boolean }>
 }
-
-const STEPS = ["模板", "基本信息", "工具", "环境变量", "预览与创建"]
-
-const TEMPLATES: Array<{
-  id: Exclude<WizardData["template"], null>
-  title: string
-  desc: string
-  icon: typeof FileText
-}> = [
-  { id: "blank", title: "空白技能", desc: "只包含 SKILL.md 的最小结构", icon: FileText },
-  { id: "basic-tool", title: "基础工具", desc: "包含工具定义和环境变量", icon: Terminal },
-  { id: "configurable", title: "配置型技能", desc: "包含 config/ 目录和配置文件", icon: Settings },
-  { id: "clone", title: "克隆现有", desc: "从已有技能复制并修改", icon: Copy },
-]
 
 function buildFrontmatter(data: WizardData): SkillFrontmatter {
   const fm: SkillFrontmatter = {
@@ -98,13 +86,24 @@ function applyTemplateDefaults(
 ): Pick<WizardData, "tools" | "envVars"> {
   if (template === "basic-tool")
     return {
-      tools: [{ name: "hello-tool", description: "示例工具说明，可按需修改。" }],
+      tools: [
+        {
+          name: "hello-tool",
+          description: i18next.t("workspace.wizard.sampleToolDesc"),
+        },
+      ],
       envVars: [],
     }
   if (template === "configurable")
     return {
       tools: [{ name: "", description: "" }],
-      envVars: [{ name: "EXAMPLE_KEY", description: "示例配置项说明", required: true }],
+      envVars: [
+        {
+          name: "EXAMPLE_KEY",
+          description: i18next.t("workspace.wizard.sampleEnvDesc"),
+          required: true,
+        },
+      ],
     }
   return { tools: [{ name: "", description: "" }], envVars: [] }
 }
@@ -115,6 +114,37 @@ export interface SkillWizardProps {
 }
 
 export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
+  const { t } = useTranslation()
+  const steps = t("workspace.wizard.steps", { returnObjects: true }) as string[]
+  const templates = useMemo(
+    () => [
+      {
+        id: "blank" as const,
+        title: t("workspace.wizard.templateBlank"),
+        desc: t("workspace.wizard.templateBlankDesc"),
+        icon: FileText,
+      },
+      {
+        id: "basic-tool" as const,
+        title: t("workspace.wizard.templateBasicTool"),
+        desc: t("workspace.wizard.templateBasicToolDesc"),
+        icon: Terminal,
+      },
+      {
+        id: "configurable" as const,
+        title: t("workspace.wizard.templateConfigurable"),
+        desc: t("workspace.wizard.templateConfigurableDesc"),
+        icon: Settings,
+      },
+      {
+        id: "clone" as const,
+        title: t("workspace.wizard.templateClone"),
+        desc: t("workspace.wizard.templateCloneDesc"),
+        icon: Copy,
+      },
+    ],
+    [t],
+  )
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>({
     template: null,
@@ -170,7 +200,10 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
   }
 
   const patchTool = (i: number, p: Partial<WizardData["tools"][0]>) =>
-    setData((s) => ({ ...s, tools: s.tools.map((t, j) => (j === i ? { ...t, ...p } : t)) }))
+    setData((s) => ({
+      ...s,
+      tools: s.tools.map((tool, j) => (j === i ? { ...tool, ...p } : tool)),
+    }))
   const addTool = () => setData((s) => ({ ...s, tools: [...s.tools, { name: "", description: "" }] }))
   const delTool = (i: number) =>
     setData((s) => ({ ...s, tools: s.tools.length > 1 ? s.tools.filter((_, j) => j !== i) : s.tools }))
@@ -202,14 +235,21 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
   return (
     <div className="flex max-h-[min(85vh,720px)] w-full max-w-xl flex-col rounded-xl border bg-card text-sm shadow-lg">
       <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-        <span className="font-medium">创建新技能</span>
-        <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground" onClick={onClose} aria-label="关闭">
+        <span className="font-medium">{t("workspace.wizard.createNew")}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground"
+          onClick={onClose}
+          aria-label={t("workspace.wizard.close")}
+        >
           <X className="size-4" />
         </Button>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-1 gap-y-1 px-2 py-2">
-        {STEPS.map((label, i) => (
+        {steps.map((label, i) => (
           <span key={label} className="contents">
             {i > 0 ? <span className="text-muted-foreground">───</span> : null}
             <button
@@ -233,22 +273,22 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {step === 0 && (
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.map((t) => {
-              const Icon = t.icon
-              const sel = data.template === t.id
+            {templates.map((tmpl) => {
+              const Icon = tmpl.icon
+              const sel = data.template === tmpl.id
               return (
                 <button
-                  key={t.id}
+                  key={tmpl.id}
                   type="button"
-                  onClick={() => selectTemplate(t.id)}
+                  onClick={() => selectTemplate(tmpl.id)}
                   className={cn(
                     "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors",
                     sel ? "bg-blue-500/10 ring-2 ring-primary dark:bg-blue-500/15" : "hover:bg-muted/50",
                   )}
                 >
                   <Icon className="size-5 text-muted-foreground" />
-                  <span className="font-medium">{t.title}</span>
-                  <span className="text-xs text-muted-foreground">{t.desc}</span>
+                  <span className="font-medium">{tmpl.title}</span>
+                  <span className="text-xs text-muted-foreground">{tmpl.desc}</span>
                 </button>
               )
             })}
@@ -257,21 +297,46 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
 
         {step === 1 && (
           <div className="space-y-3">
-            {field("skill-name", "名称", data.name, (v) => setData((s) => ({ ...s, name: v })), "my-skill-name", "必填，建议使用 kebab-case，如 my-skill-name")}
+            {field(
+              "skill-name",
+              t("workspace.wizard.name"),
+              data.name,
+              (v) => setData((s) => ({ ...s, name: v })),
+              "my-skill-name",
+              t("workspace.wizard.nameHint"),
+            )}
             <div className="space-y-1.5">
-              <Label htmlFor="skill-desc">描述</Label>
+              <Label htmlFor="skill-desc">{t("workspace.wizard.description")}</Label>
               <Textarea
                 id="skill-desc"
                 value={data.description}
                 onChange={(e) => setData((s) => ({ ...s, description: e.target.value }))}
-                placeholder="简要说明技能用途"
+                placeholder={t("workspace.wizard.descPlaceholder")}
                 rows={3}
                 className="min-h-[72px] resize-y"
               />
             </div>
-            {field("skill-version", "版本", data.version, (v) => setData((s) => ({ ...s, version: v })), "1.0.0")}
-            {field("skill-author", "作者", data.author, (v) => setData((s) => ({ ...s, author: v })), "可选")}
-            {field("skill-homepage", "主页", data.homepage, (v) => setData((s) => ({ ...s, homepage: v })), "可选 URL")}
+            {field(
+              "skill-version",
+              t("workspace.wizard.version"),
+              data.version,
+              (v) => setData((s) => ({ ...s, version: v })),
+              "1.0.0",
+            )}
+            {field(
+              "skill-author",
+              t("workspace.wizard.author"),
+              data.author,
+              (v) => setData((s) => ({ ...s, author: v })),
+              t("workspace.wizard.authorPlaceholder"),
+            )}
+            {field(
+              "skill-homepage",
+              t("workspace.wizard.homepage"),
+              data.homepage,
+              (v) => setData((s) => ({ ...s, homepage: v })),
+              t("workspace.wizard.homepagePlaceholder"),
+            )}
           </div>
         )}
 
@@ -282,26 +347,32 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
                 <CardContent className="space-y-2 pt-0">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline" className="text-xs font-normal">
-                      工具 {i + 1}
+                      {t("workspace.wizard.toolN", { n: i + 1 })}
                     </Badge>
                     <div className="flex gap-1">
                       <Button type="button" variant="outline" size="xs" onClick={addTool}>
                         <Plus className="size-3" />
-                        添加
+                        {t("workspace.wizard.addTool")}
                       </Button>
                       <Button type="button" variant="ghost" size="xs" disabled={data.tools.length <= 1} onClick={() => delTool(i)}>
                         <X className="size-3" />
-                        移除
+                        {t("workspace.wizard.removeTool")}
                       </Button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">名称</Label>
+                    <Label className="text-xs">{t("workspace.wizard.toolName")}</Label>
                     <Input value={tool.name} onChange={(e) => patchTool(i, { name: e.target.value })} className="h-8" placeholder="tool-name" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">说明</Label>
-                    <Textarea value={tool.description} onChange={(e) => patchTool(i, { description: e.target.value })} rows={2} className="min-h-[52px] resize-y" placeholder="工具用途与行为" />
+                    <Label className="text-xs">{t("workspace.wizard.toolDesc")}</Label>
+                    <Textarea
+                      value={tool.description}
+                      onChange={(e) => patchTool(i, { description: e.target.value })}
+                      rows={2}
+                      className="min-h-[52px] resize-y"
+                      placeholder={t("workspace.wizard.toolDescPlaceholder")}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -314,7 +385,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
             {data.envVars.length === 0 ? (
               <Button type="button" variant="outline" size="sm" className="w-full" onClick={addEnv}>
                 <Plus className="size-3.5" />
-                添加环境变量
+                {t("workspace.wizard.addEnvVar")}
               </Button>
             ) : null}
             {data.envVars.map((env, i) => (
@@ -322,32 +393,32 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
                 <CardContent className="space-y-2 pt-0">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline" className="text-xs font-normal">
-                      变量 {i + 1}
+                      {t("workspace.wizard.envVarN", { n: i + 1 })}
                     </Badge>
                     <div className="flex gap-1">
                       <Button type="button" variant="outline" size="xs" onClick={addEnv}>
                         <Plus className="size-3" />
-                        添加
+                        {t("workspace.wizard.addTool")}
                       </Button>
                       <Button type="button" variant="ghost" size="xs" onClick={() => delEnv(i)}>
                         <X className="size-3" />
-                        移除
+                        {t("workspace.wizard.removeTool")}
                       </Button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">名称</Label>
+                    <Label className="text-xs">{t("workspace.wizard.envVarName")}</Label>
                     <Input value={env.name} onChange={(e) => patchEnv(i, { name: e.target.value })} className="h-8" placeholder="API_KEY" />
-                    <p className="text-xs text-muted-foreground">建议全大写与下划线，如 API_KEY</p>
+                    <p className="text-xs text-muted-foreground">{t("workspace.wizard.envVarNameHint")}</p>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">说明</Label>
-                    <Input value={env.description} onChange={(e) => patchEnv(i, { description: e.target.value })} className="h-8" placeholder="用途说明" />
+                    <Label className="text-xs">{t("workspace.wizard.envVarDesc")}</Label>
+                    <Input value={env.description} onChange={(e) => patchEnv(i, { description: e.target.value })} className="h-8" placeholder={t("workspace.wizard.envVarDescPlaceholder")} />
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch id={`env-req-${i}`} checked={env.required} onCheckedChange={(v) => patchEnv(i, { required: v })} />
                     <Label htmlFor={`env-req-${i}`} className="text-xs font-normal">
-                      必填
+                      {t("workspace.wizard.envVarRequired")}
                     </Label>
                   </div>
                 </CardContent>
@@ -359,26 +430,26 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
         {step === 4 && (
           <div className="space-y-3">
             <div>
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">目录结构预览</p>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("workspace.wizard.dirPreview")}</p>
               <pre className="whitespace-pre rounded-md border bg-muted/40 p-2 font-mono text-xs leading-relaxed">{dirPreview}</pre>
             </div>
             <div>
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">SKILL.md 预览</p>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("workspace.wizard.skillMdPreview")}</p>
               <ScrollArea className="h-[200px] rounded-md border">
                 <pre className="p-2 font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                  {skillMdPreview || "请先在「基本信息」中填写名称与描述"}
+                  {skillMdPreview || t("workspace.wizard.skillMdEmpty")}
                 </pre>
               </ScrollArea>
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" variant="outline" size="sm" disabled={!skillMdPreview} onClick={exportSkillMd}>
                 <Download className="size-3.5" />
-                导出 SKILL.md
+                {t("workspace.wizard.exportSkillMd")}
               </Button>
               {isTauri() && (
                 <Button type="button" size="sm" disabled={!skillMdPreview || creating || !data.template} onClick={handleCreateLocal}>
                   <FolderPlus className="size-3.5" />
-                  {creating ? "创建中…" : "创建到本地"}
+                  {creating ? t("workspace.wizard.creating") : t("workspace.wizard.createLocal")}
                 </Button>
               )}
             </div>
@@ -392,15 +463,15 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
       <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
         <Button type="button" variant="outline" size="sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
           <ChevronLeft className="size-3.5" />
-          上一步
+          {t("workspace.wizard.prev")}
         </Button>
         {step < 4 ? (
           <Button type="button" size="sm" disabled={!canNext} onClick={() => setStep((s) => Math.min(4, s + 1))}>
-            下一步
+            {t("workspace.wizard.next")}
             <ChevronRight className="size-3.5" />
           </Button>
         ) : (
-          <span className="text-xs text-muted-foreground">使用上方按钮导出或创建</span>
+          <span className="text-xs text-muted-foreground">{t("workspace.wizard.useButtons")}</span>
         )}
       </div>
     </div>

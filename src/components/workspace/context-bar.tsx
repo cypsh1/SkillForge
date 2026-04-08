@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { SECTION_MAP } from "@/lib/bridge-sections"
 
@@ -13,6 +14,7 @@ function Kbd({ children }: { children: ReactNode }) {
 }
 
 export function ContextBar() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   if (!api) return null
 
@@ -36,7 +38,7 @@ export function ContextBar() {
         ·
       </span>
       <div className="flex shrink-0 items-center gap-1 font-mono text-[9px]">
-        <span className="text-[8px]">左</span>
+        <span className="text-[8px]">{t("workspace.contextBar.left")}</span>
         <div className="h-[3px] w-10 overflow-hidden rounded-sm bg-border">
           <div
             className="h-full rounded-sm transition-[width] duration-75"
@@ -45,7 +47,7 @@ export function ContextBar() {
         </div>
         <span className="tabular-nums">{editorScrollPct}%</span>
         <span className="mx-0.5 text-muted-foreground/50" aria-hidden>↔</span>
-        <span className="text-[8px]">右</span>
+        <span className="text-[8px]">{t("workspace.contextBar.right")}</span>
         <div className="h-[3px] w-10 overflow-hidden rounded-sm bg-border">
           <div
             className="h-full rounded-sm transition-[width] duration-75"
@@ -58,13 +60,13 @@ export function ContextBar() {
         ·
       </span>
       {altHeld ? (
-        <span className="shrink-0 text-amber-400">⚡ 独立滚动中</span>
+        <span className="shrink-0 text-amber-400">⚡ {t("workspace.contextBar.independentScroll")}</span>
       ) : (
         <span className="flex min-w-0 flex-wrap items-center gap-0.5 text-muted-foreground/70">
           <Kbd>Alt</Kbd>
           <span>+</span>
-          <Kbd>滚动</Kbd>
-          <span>= 独立滚动</span>
+          <Kbd>{t("workspace.contextBar.scroll")}</Kbd>
+          <span>{t("workspace.contextBar.independentScrollHint")}</span>
         </span>
       )}
     </div>

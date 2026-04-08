@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 
@@ -8,13 +9,14 @@ interface JsonPreviewProps {
 }
 
 export function JsonPreview({ data, className }: JsonPreviewProps) {
+  const { t } = useTranslation()
   const formatted = useMemo(() => {
     try {
       return JSON.stringify(data, null, 2)
     } catch {
-      return "// JSON 序列化失败"
+      return t("workspace.configEditor.jsonSerializeFailed")
     }
-  }, [data])
+  }, [data, t])
 
   return (
     <ScrollArea className={cn("h-[540px] rounded-md border", className)}>

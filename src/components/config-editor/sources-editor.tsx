@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -37,6 +38,7 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
+  const { t } = useTranslation()
   const sources = data.sources
 
   const updateSource = useCallback(
@@ -61,11 +63,15 @@ export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span>{sources.length} 个数据源</span>
+        <span>{t("workspace.configEditor.sourcesCount", { count: sources.length })}</span>
         <span>·</span>
-        <span className="text-green-600">{enabledCount} 已启用</span>
+        <span className="text-green-600">
+          {t("workspace.configEditor.enabledCount", { count: enabledCount })}
+        </span>
         <span>·</span>
-        <span className="text-yellow-600">{priorityCount} 高优先级</span>
+        <span className="text-yellow-600">
+          {t("workspace.configEditor.priorityCount", { count: priorityCount })}
+        </span>
         <span>·</span>
         {Object.entries(typeGroups).map(([type, count]) => (
           <Badge key={type} variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -96,6 +102,7 @@ function SourceCard({
   source: Source
   onUpdate: (updates: Partial<Source>) => void
 }) {
+  const { t } = useTranslation()
   return (
     <Card className={`transition-opacity ${source.enabled ? "" : "opacity-50"}`}>
       <CardHeader className="py-2 px-3">
@@ -114,7 +121,7 @@ function SourceCard({
           <div className="flex items-center gap-3 shrink-0 ml-2">
             <div className="flex items-center gap-1.5">
               <Label htmlFor={`priority-${source.id}`} className="text-[10px] text-muted-foreground">
-                优先
+                {t("workspace.configEditor.priority")}
               </Label>
               <Switch
                 id={`priority-${source.id}`}
@@ -125,7 +132,7 @@ function SourceCard({
             </div>
             <div className="flex items-center gap-1.5">
               <Label htmlFor={`enabled-${source.id}`} className="text-[10px] text-muted-foreground">
-                启用
+                {t("workspace.configEditor.enabled")}
               </Label>
               <Switch
                 id={`enabled-${source.id}`}
@@ -139,7 +146,9 @@ function SourceCard({
       </CardHeader>
       <CardContent className="py-2 px-3 space-y-2">
         <div className="flex items-center gap-2">
-          <Label className="text-[10px] text-muted-foreground w-10 shrink-0">名称</Label>
+          <Label className="text-[10px] text-muted-foreground w-10 shrink-0">
+            {t("workspace.configEditor.name")}
+          </Label>
           <Input
             value={source.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
@@ -158,7 +167,9 @@ function SourceCard({
         )}
         {source.handle && (
           <div className="flex items-center gap-2">
-            <Label className="text-[10px] text-muted-foreground w-10 shrink-0">账号</Label>
+            <Label className="text-[10px] text-muted-foreground w-10 shrink-0">
+              {t("workspace.configEditor.handle")}
+            </Label>
             <Input
               value={source.handle}
               onChange={(e) => onUpdate({ handle: e.target.value })}

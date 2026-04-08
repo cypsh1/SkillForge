@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
 import { highlight } from "sugar-high"
 
@@ -551,6 +552,7 @@ function SectionedPreview({
   relatedEids: string[]
   isSectionDimmed: (sectionId: string) => boolean
 }) {
+  const { t } = useTranslation()
   const parts = useMemo(() => splitPreviewInto8(content), [content])
   const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
   return (
@@ -567,7 +569,7 @@ function SectionedPreview({
           entityRules,
         )
         let badge: string | undefined
-        if (def.id === "meta") badge = "只读"
+        if (def.id === "meta") badge = t("workspace.action.readOnly")
         else if (def.id === "env" && skill) badge = `${skill.frontmatter.env?.length ?? 0}`
         else if (def.id === "tools" && skill) badge = `${skill.tools.length}`
 
@@ -588,6 +590,7 @@ function SectionedPreview({
 }
 
 function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const expandTickRef = useRef(api?.inspectorExpandTick ?? 0)
   const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set())
@@ -613,19 +616,23 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
     <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
       {doc.preamble.length > 0 && (
         <div data-bridge-section="__preamble__" className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
-          <div className="bridge-section-header" onClick={() => toggle("__preamble__")}>
+          <div className="bridge-section-header" onClick={() => api?.scrollBothToSection("__preamble__")}>
             <span
               className="bridge-section-caret text-[8px] text-muted-foreground"
               style={{ transform: collapsedSet.has("__preamble__") ? "rotate(-90deg)" : undefined }}
+              onClick={(e) => { e.stopPropagation(); toggle("__preamble__") }}
             >▼</span>
-            <span className="text-xs font-semibold text-muted-foreground">概述</span>
+            <span className="bridge-section-dot" style={{ backgroundColor: "#64748b" }} />
+            <span className="text-xs font-semibold text-muted-foreground">{t("workspace.file.overview")}</span>
           </div>
           <div className="bridge-section-content">
-            {doc.preamble.map((block, i) => (
-              <div key={i} data-field={`__preamble__-b${i}`}>
-                <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{block.raw}</pre>
-              </div>
-            ))}
+            <div className="pc">
+              {doc.preamble.map((block, i) => (
+                <div key={i} data-field={`__preamble__-b${i}`}>
+                  <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>{block.raw}</pre>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -633,29 +640,27 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
         const isCollapsed = collapsedSet.has(sec.id)
         return (
           <div key={sec.id} data-bridge-section={sec.id} className={isCollapsed ? "bridge-section-collapsed" : undefined}>
-            <div
-              className="bridge-section-header"
-              onClick={() => {
-                api?.scrollBothToSection(sec.id)
-                toggle(sec.id)
-              }}
-            >
+            <div className="bridge-section-header" onClick={() => api?.scrollBothToSection(sec.id)}>
               <span
                 className="bridge-section-caret text-[8px] text-muted-foreground"
                 style={{ transform: isCollapsed ? "rotate(-90deg)" : undefined }}
+                onClick={(e) => { e.stopPropagation(); toggle(sec.id) }}
               >▼</span>
+              <span className="bridge-section-dot" style={{ backgroundColor: "#64748b" }} />
               <span className="text-xs font-semibold">{sec.heading.text}</span>
               {sec.blocks.length > 0 && (
-                <span className="tg-pill">{sec.blocks.length}</span>
+                <span className="bridge-badge">{sec.blocks.length}</span>
               )}
             </div>
             <div className="bridge-section-content">
-              <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{sec.heading.raw}</pre>
-              {sec.blocks.map((block, bi) => (
-                <div key={bi} data-field={`${sec.id}-b${bi}`}>
-                  <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{block.raw}</pre>
-                </div>
-              ))}
+              <div className="pc">
+                <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>{sec.heading.raw}</pre>
+                {sec.blocks.map((block, bi) => (
+                  <div key={bi} data-field={`${sec.id}-b${bi}`}>
+                    <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>{block.raw}</pre>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )
@@ -665,6 +670,7 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
 }
 
 export function InspectorPanel() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const { state, selectedSkill, editState, markSaved } = useWorkspace()
   const selection = state.selection
@@ -732,13 +738,13 @@ export function InspectorPanel() {
         await saveSkillFile(selectedSkill.path, path, content)
       }
       markSaved(selectedSkill.id, skillMdPreview)
-      toast.success("已保存")
+      toast.success(t("workspace.action.saved"))
     } catch (err) {
-      toast.error(`保存失败: ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(`${t("workspace.action.saveFailed")}: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSaving(false)
     }
-  }, [selectedSkill, editState, skillMdPreview, markSaved])
+  }, [selectedSkill, editState, skillMdPreview, markSaved, t])
 
   const showSkillMdChrome = selection?.nodeType === "skill-md"
   const showConfigChrome = selection?.nodeType === "config-file" && Boolean(selection.filePath)
@@ -765,8 +771,8 @@ export function InspectorPanel() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l bg-background">
       <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-1.5">
-          <FileText className="size-3 shrink-0" aria-hidden />
-          <strong className="text-foreground">源码预览</strong>
+          <FileText className="size-3.5 shrink-0" aria-hidden />
+          <strong className="text-foreground">{t("workspace.panelTitle.sourcePreview")}</strong>
           {showSkillMdChrome && (
             <span className="text-[10px] truncate" style={{ marginLeft: 'auto' }}>SKILL.md</span>
           )}
@@ -781,7 +787,7 @@ export function InspectorPanel() {
               variant="outline"
               className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
             >
-              已修改
+              {t("workspace.action.modified")}
             </Badge>
           )}
         </div>
@@ -791,7 +797,7 @@ export function InspectorPanel() {
               type="button"
               className="shrink-0 p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
               onClick={api.toggleAllInspector}
-              title={api.inspectorAllExpanded ? "全部收起" : "全部展开"}
+              title={api.inspectorAllExpanded ? t("workspace.action.collapseAll") : t("workspace.action.expandAll")}
             >
               {api.inspectorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
             </button>
@@ -801,11 +807,11 @@ export function InspectorPanel() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-5 gap-1 px-2 text-[11px]"
+              className="h-6 gap-1 px-2 text-[11px]"
               onClick={exportSkillMd}
             >
-              <Download className="size-3" />
-              导出
+              <Download className="size-3.5" />
+              {t("workspace.action.export")}
             </Button>
           )}
           {showConfigChrome && selectedConfigData !== undefined && selection.filePath && (
@@ -824,7 +830,7 @@ export function InspectorPanel() {
               onClick={handleSaveAll}
             >
               <Save className="size-3.5" />
-              {saving ? "保存中…" : "保存"}
+              {saving ? t("workspace.action.saving") : t("workspace.action.save")}
             </Button>
           )}
         </div>
@@ -832,8 +838,8 @@ export function InspectorPanel() {
 
       {!selectedSkill || !editState ? (
         <div className="p-3 text-sm">
-          {!selection && <p className="text-muted-foreground">选择一个节点以查看详情</p>}
-          {selection && !selectedSkill && <p className="text-muted-foreground">无法加载 Skill</p>}
+          {!selection && <p className="text-muted-foreground">{t("workspace.empty.selectNode")}</p>}
+          {selection && !selectedSkill && <p className="text-muted-foreground">{t("workspace.empty.cannotLoadSkill")}</p>}
         </div>
       ) : (
         <>
@@ -859,7 +865,7 @@ export function InspectorPanel() {
                 {selectedConfigData !== undefined ? (
                   <JsonPreview data={selectedConfigData} className="h-auto min-h-[200px]" />
                 ) : (
-                  <p className="text-sm text-muted-foreground">无此文件数据</p>
+                  <p className="text-sm text-muted-foreground">{t("workspace.empty.noFileData")}</p>
                 )}
               </div>
             )}
@@ -878,7 +884,7 @@ export function InspectorPanel() {
 
             {showEmptyHint && (
               <div className="p-4 text-sm text-muted-foreground">
-                在左侧选择「SKILL.md」或配置文件以查看源码或 JSON 预览。
+                {t("workspace.empty.selectToPreview")}
               </div>
             )}
           </div>

@@ -193,6 +193,16 @@
   transform: translateY(-1px);
 }
 
+.arch-chip.empty {
+  background: transparent;
+  border: 1px dashed currentColor;
+  opacity: 0.4;
+}
+.arch-chip.empty:hover {
+  opacity: 0.65;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .arch-arrow {
   color: var(--dim);
   font-size: 10px;
@@ -204,11 +214,15 @@
   border-left: 3px solid transparent;
   border-radius: 6px;
   padding: 4px 6px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition:
     background 0.2s,
     box-shadow 0.2s,
     border-color 0.2s;
+}
+[data-bridge-section]:last-child {
+  border-bottom: none;
 }
 
 [data-bridge-section="basic"] {
@@ -682,19 +696,6 @@
 .add-skill-menu [data-slot="dropdown-menu-separator"] {
   margin: 3px 4px;
   background: var(--border);
-}
-
-/* ===== Extra-file section containers ===== */
-
-.file-section {
-  border-left: 2px solid var(--border);
-  padding-left: 6px;
-  margin-bottom: 6px;
-}
-.file-section.editing {
-  border-left-color: var(--muted-foreground);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  border-radius: 0 4px 4px 0;
 }
 
 /* ===== Sugar-high syntax highlighting ===== */

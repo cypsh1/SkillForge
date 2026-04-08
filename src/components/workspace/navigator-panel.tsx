@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
+import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import {
   Search,
   ChevronRight,
@@ -58,22 +60,22 @@ function selectionMatches(
   return true
 }
 
-function configFileDescription(filePath: string, data: unknown): string {
+function configFileDescription(filePath: string, data: unknown, t: TFunction): string {
   const base = filePath.split("/").pop() ?? filePath
   if (base === "sources.json" && Array.isArray(data)) {
-    return `${data.length}个数据源`
+    return t("workspace.nav.configSourcesCount", { count: data.length })
   }
   if (base === "topics.json") {
-    return "主题与关键词"
+    return t("workspace.nav.configTopicsHint")
   }
   if (base === "schema.json") {
-    return "结构定义"
+    return t("workspace.nav.configSchemaHint")
   }
   if (Array.isArray(data)) {
-    return `${data.length} 项`
+    return t("workspace.nav.itemsCount", { count: data.length })
   }
   if (data && typeof data === "object") {
-    return `${Object.keys(data as object).length} 项`
+    return t("workspace.nav.itemsCount", { count: Object.keys(data as object).length })
   }
   return ""
 }
@@ -97,31 +99,31 @@ function extraFileIcon(type: ExtraFile["type"]) {
   }
 }
 
-function extraFileDescription(file: ExtraFile): string {
+function extraFileDescription(file: ExtraFile, t: TFunction): string {
   switch (file.path) {
     case "_meta.json":
-      return "技能元数据"
+      return t("workspace.nav.fileMeta")
     case "metadata.json":
-      return "技能元数据"
+      return t("workspace.nav.fileMeta")
     case "CHANGELOG.md":
-      return "版本变更日志"
+      return t("workspace.nav.fileChangelog")
     case "README.md":
-      return "使用说明"
+      return t("workspace.nav.fileReadme")
     case "README_CN.md":
-      return "中文使用说明"
+      return t("workspace.nav.fileReadmeCn")
     case "CONTRIBUTING.md":
-      return "贡献指南"
+      return t("workspace.nav.fileContributing")
     case "requirements.txt":
-      return "Python 依赖"
+      return t("workspace.nav.fileRequirements")
     default:
       break
   }
-  if (file.path.startsWith(".clawhub/")) return "ClawHub 注册信息"
-  if (file.type === "python") return "Python 脚本"
-  if (file.type === "shell") return "Shell 脚本"
-  if (file.type === "json") return "JSON 数据"
-  if (file.type === "markdown") return "Markdown 文档"
-  return "附属文件"
+  if (file.path.startsWith(".clawhub/")) return t("workspace.nav.fileClawhub")
+  if (file.type === "python") return t("workspace.nav.filePythonScript")
+  if (file.type === "shell") return t("workspace.nav.fileShellScript")
+  if (file.type === "json") return t("workspace.nav.fileJsonData")
+  if (file.type === "markdown") return t("workspace.nav.fileMarkdownDoc")
+  return t("workspace.nav.fileAttached")
 }
 
 function deduplicateId(id: string, existingIds: string[]): string {
@@ -132,6 +134,7 @@ function deduplicateId(id: string, existingIds: string[]): string {
 }
 
 export function NavigatorPanel() {
+  const { t } = useTranslation()
   const { state, select, addSkill, removeSkill } = useWorkspace()
   const { skills, selection } = state
 
@@ -179,10 +182,10 @@ export function NavigatorPanel() {
         addSkill(skill)
         return null
       } catch {
-        return "文件解析失败，请确认是有效的 SKILL.md 格式"
+        return t("workspace.nav.parseError")
       }
     },
-    [existingIds, addSkill],
+    [existingIds, addSkill, t],
   )
 
   const handleFileUpload = useCallback(
@@ -191,7 +194,7 @@ export function NavigatorPanel() {
       const file = e.target.files?.[0]
       if (!file) return
       if (!file.name.endsWith(".md")) {
-        setUploadError("请选择 .md 文件")
+        setUploadError(t("workspace.nav.selectMdFile"))
         e.target.value = ""
         return
       }
@@ -200,18 +203,18 @@ export function NavigatorPanel() {
         const err = importSkillFromContent(reader.result as string, file.name)
         if (err) setUploadError(err)
       }
-      reader.onerror = () => setUploadError("文件读取失败")
+      reader.onerror = () => setUploadError(t("workspace.nav.fileReadFailed"))
       reader.readAsText(file)
       e.target.value = ""
     },
-    [importSkillFromContent],
+    [importSkillFromContent, t],
   )
 
   const handlePasteConfirm = useCallback(() => {
     setPasteError("")
     const trimmed = pasteContent.trim()
     if (!trimmed) {
-      setPasteError("内容不能为空")
+      setPasteError(t("workspace.nav.emptyContent"))
       return
     }
     const err = importSkillFromContent(trimmed, "pasted-skill.md")
@@ -221,7 +224,7 @@ export function NavigatorPanel() {
     }
     setPasteContent("")
     setPasteDialogOpen(false)
-  }, [pasteContent, importSkillFromContent])
+  }, [pasteContent, importSkillFromContent, t])
 
   const handleConfirmDelete = useCallback(() => {
     if (deleteTarget) {
@@ -237,33 +240,33 @@ export function NavigatorPanel() {
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-[18px] -translate-y-1/2" />
           <Input
             type="search"
-            placeholder="搜索 Skill…"
+            placeholder={t("workspace.nav.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="h-8 pl-8 text-xs"
-            aria-label="搜索 Skill"
+            aria-label={t("workspace.nav.searchPlaceholder")}
           />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            aria-label="添加技能"
+            aria-label={t("workspace.nav.addSkill")}
           >
             <Plus className="size-[18px]" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={4} className="add-skill-menu">
             <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
               <Upload className="size-3.5" />
-              <span>导入本地技能</span>
+              <span>{t("workspace.nav.importLocal")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setPasteError(""); setPasteDialogOpen(true) }}>
               <ClipboardPaste className="size-3.5" />
-              <span>粘贴导入技能</span>
+              <span>{t("workspace.nav.pasteImport")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setWizardOpen(true)}>
               <Plus className="size-3.5" />
-              <span>创建新技能</span>
+              <span>{t("workspace.nav.createNew")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -285,7 +288,7 @@ export function NavigatorPanel() {
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
-          <DialogTitle className="sr-only">创建新技能</DialogTitle>
+          <DialogTitle className="sr-only">{t("workspace.nav.createNew")}</DialogTitle>
           <SkillWizard
             onClose={() => setWizardOpen(false)}
             onCreated={() => setWizardOpen(false)}
@@ -295,8 +298,8 @@ export function NavigatorPanel() {
 
       <Dialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogTitle>粘贴 SKILL.md 内容</DialogTitle>
-          <p className="text-sm text-muted-foreground">将 SKILL.md 的完整内容粘贴到下方，包含 YAML frontmatter 和 markdown 正文。</p>
+          <DialogTitle>{t("workspace.nav.pasteTitle")}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{t("workspace.nav.pasteDesc")}</p>
           <textarea
             className="fi ft w-full"
             rows={12}
@@ -307,8 +310,8 @@ export function NavigatorPanel() {
           />
           {pasteError && <p className="text-xs text-destructive">{pasteError}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setPasteDialogOpen(false)}>取消</Button>
-            <Button size="sm" onClick={handlePasteConfirm}>导入</Button>
+            <Button variant="ghost" size="sm" onClick={() => setPasteDialogOpen(false)}>{t("workspace.action.cancel")}</Button>
+            <Button size="sm" onClick={handlePasteConfirm}>{t("workspace.nav.import")}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -316,15 +319,15 @@ export function NavigatorPanel() {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>移除技能</AlertDialogTitle>
+            <AlertDialogTitle>{t("workspace.nav.removeSkill")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要从列表中移除「{deleteTarget?.name}」吗？此操作不会删除源文件。
+              {deleteTarget ? t("workspace.nav.removeConfirm", { name: deleteTarget.name }) : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t("workspace.action.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
-              移除
+              {t("workspace.nav.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -374,6 +377,7 @@ function SkillTreeBlock({
   select,
   onDelete,
 }: SkillTreeBlockProps) {
+  const { t } = useTranslation()
   const name = skill.frontmatter.name || skill.id
   const version = skill.frontmatter.version
   const isSelected = selectionMatches(selection, skill.id, "skill-overview")
@@ -406,7 +410,7 @@ function SkillTreeBlock({
                 </Badge>
               ) : null}
               {dirty && (
-                <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="有未保存的修改" />
+                <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title={t("workspace.nav.unsavedChanges")} />
               )}
             </span>
             {skill.description ? (
@@ -421,7 +425,7 @@ function SkillTreeBlock({
             onDelete()
           }}
           className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/skill:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-          aria-label={`移除 ${name}`}
+          aria-label={t("workspace.nav.removeAria", { name })}
         >
           <Trash2 className="size-3.5" />
         </button>
@@ -434,7 +438,7 @@ function SkillTreeBlock({
             onClick={() => select({ skillId: skill.id, nodeType: "skill-md" })}
             icon={<FileText className="size-3.5 shrink-0" />}
             label="SKILL.md"
-            description="身份信息与指令"
+            description={t("workspace.nav.skillIdentity")}
           />
           {skill.hasConfig ? (
             <ConfigSubtree skill={skill} selection={selection} select={select} />
@@ -486,6 +490,7 @@ interface ConfigSubtreeProps {
 }
 
 function ConfigSubtree({ skill, selection, select }: ConfigSubtreeProps) {
+  const { t } = useTranslation()
   const paths = sortConfigPaths(Object.keys(skill.configFiles))
 
   return (
@@ -499,7 +504,7 @@ function ConfigSubtree({ skill, selection, select }: ConfigSubtreeProps) {
           const data = skill.configFiles[filePath]
           const display =
             filePath.startsWith("config/") ? filePath.slice("config/".length) : filePath
-          const desc = configFileDescription(filePath, data)
+          const desc = configFileDescription(filePath, data, t)
           return (
             <TreeNode
               key={filePath}
@@ -527,6 +532,7 @@ function ExtraFilesSubtree({
   selection: NavigatorSelection | null
   select: (sel: NavigatorSelection) => void
 }) {
+  const { t } = useTranslation()
   const entries = Object.values(skill.extraFiles)
   if (entries.length === 0) return null
 
@@ -555,7 +561,7 @@ function ExtraFilesSubtree({
           onClick={() => select({ skillId: skill.id, nodeType: "extra-file", filePath: f.path })}
           icon={extraFileIcon(f.type)}
           label={f.path}
-          description={extraFileDescription(f)}
+          description={extraFileDescription(f, t)}
         />
       ))}
       {sortedDirs.map((dir) => {
@@ -576,7 +582,7 @@ function ExtraFilesSubtree({
                     onClick={() => select({ skillId: skill.id, nodeType: "extra-file", filePath: f.path })}
                     icon={extraFileIcon(f.type)}
                     label={display}
-                    description={extraFileDescription(f)}
+                    description={extraFileDescription(f, t)}
                   />
                 )
               })}

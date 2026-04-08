@@ -5,6 +5,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react"
+import { useTranslation } from "react-i18next"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import {
   BRIDGE_GUTTER_EXTEND,
@@ -27,6 +28,7 @@ interface GapLayout {
 }
 
 export function BridgeConnector() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const [bridges, setBridges] = useState<BridgeItem[]>([])
   const [gapLayout, setGapLayout] = useState<GapLayout | null>(null)
@@ -233,16 +235,16 @@ export function BridgeConnector() {
           <div
             className="pointer-events-auto absolute z-30"
             style={{
-              left: gapLayout.centerX - 14,
-              top: gapLayout.top - 34,
-              width: 28,
-              height: 28,
+              left: gapLayout.centerX - 16,
+              top: gapLayout.top - 36,
+              width: 32,
+              height: 32,
             }}
             onMouseEnter={showPop}
             onMouseLeave={hidePop}
           >
-            <div className="flex h-full w-full items-center justify-center rounded-md text-muted-foreground/30 transition-all hover:text-muted-foreground/80">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-full w-full items-center justify-center rounded-md text-muted-foreground/50 transition-all hover:text-muted-foreground/80">
+              <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 17H7A5 5 0 0 1 7 7h2" />
                 <path d="M15 7h2a5 5 0 1 1 0 10h-2" />
                 <line x1="8" y1="12" x2="16" y2="12" />
@@ -256,23 +258,23 @@ export function BridgeConnector() {
                 onMouseLeave={hidePop}
               >
                 <div className="mb-2 text-[9px] font-medium uppercase tracking-widest text-muted-foreground">
-                  面板联动
+                  {t("workspace.bridge.panelLink")}
                 </div>
                 <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent" onClick={toggleSync}>
                   <Toggle on={syncEnabled} />
-                  <span>滚动同步</span>
+                  <span>{t("workspace.bridge.scrollSync")}</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent" onClick={toggleBridge}>
                   <Toggle on={be} />
-                  <span>桥线连接</span>
+                  <span>{t("workspace.bridge.bridgeLine")}</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent" onClick={api.toggleExpandSync}>
                   <Toggle on={api.expandSyncEnabled} />
-                  <span>折叠联动</span>
+                  <span>{t("workspace.bridge.expandSync")}</span>
                 </label>
                 <div className="mt-2 border-t pt-2 text-[9px] text-muted-foreground">
                   <kbd className="rounded border border-border bg-muted/50 px-1 font-mono text-[9px]">Alt</kbd>
-                  {" "}+ 滚动 = 临时独立滚动
+                  {" "}+ {t("workspace.contextBar.scroll")} = {t("workspace.bridge.altScroll")}
                 </div>
               </div>
             )}
@@ -290,7 +292,7 @@ export function BridgeConnector() {
           display: tooltip.visible ? "block" : "none",
         }}
       >
-        {tooltip.name} — 点击双面板跳转
+        {tooltip.name} — {t("workspace.bridge.clickToJump")}
       </div>
     </>
   )

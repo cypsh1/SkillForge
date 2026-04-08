@@ -9,18 +9,15 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react"
+import { useTranslation } from "react-i18next"
 import {
   ChevronsDownUp,
   ChevronsUpDown,
   ExternalLink,
   FileText,
-  KeyRound,
   Layers,
-  Link2,
-  Pencil,
   Settings,
   ShieldCheck,
-  Terminal,
 } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 
@@ -29,9 +26,7 @@ const TopicsEditor = lazy(() => import("@/components/config-editor/topics-editor
 const SchemaViewer = lazy(() => import("@/components/config-editor/schema-viewer").then(m => ({ default: m.SchemaViewer })))
 const ExtraFileEditor = lazy(() => import("@/components/workspace/extra-file-editors").then(m => ({ default: m.ExtraFileEditor })))
 const ValidationPanel = lazy(() => import("@/components/skill-editor/validation-panel").then(m => ({ default: m.ValidationPanel })))
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent } from "@/components/ui/card"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BRIDGE_SECTIONS } from "@/lib/bridge-sections"
@@ -82,21 +77,6 @@ function headerIcon(nodeType: NavigatorSelection["nodeType"]) {
       return FileText
     default:
       return FileText
-  }
-}
-
-function headerSegment(sel: NavigatorSelection): string {
-  switch (sel.nodeType) {
-    case "skill-overview":
-      return "概览"
-    case "skill-md":
-      return "SKILL.md"
-    case "config-file":
-      return sel.filePath ?? "配置"
-    case "extra-file":
-      return sel.filePath ?? "文件"
-    default:
-      return ""
   }
 }
 
@@ -239,6 +219,7 @@ function BridgeSectionBlock({
   dimmed?: boolean
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
   const api = usePanelSyncApi()
   const expandTickRef = useRef(api?.editorExpandTick ?? 0)
@@ -276,20 +257,20 @@ function BridgeSectionBlock({
         {badge && <span className="bridge-badge">{badge}</span>}
         {readOnly && (
           <span className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted-foreground)' }}>
-            🔒 只读
+            🔒 {t("workspace.action.readOnly")}
           </span>
         )}
         {editable && !editing && (
-          <button type="button" className="eb" onClick={(e) => { e.stopPropagation(); onEdit?.() }}>编辑</button>
+          <button type="button" className="eb" onClick={(e) => { e.stopPropagation(); onEdit?.() }}>{t("workspace.action.edit")}</button>
         )}
         {editing && (
           <span className="eb-group">
             <span className="editing-ind">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
-              编辑中
+              {t("workspace.action.editing")}
             </span>
-            <button type="button" className="eb-cancel" onClick={(e) => { e.stopPropagation(); onCancel?.() }}>取消</button>
-            <button type="button" className="eb-done" onClick={(e) => { e.stopPropagation(); onDone?.() }}>完成</button>
+            <button type="button" className="eb-cancel" onClick={(e) => { e.stopPropagation(); onCancel?.() }}>{t("workspace.action.cancel")}</button>
+            <button type="button" className="eb-done" onClick={(e) => { e.stopPropagation(); onDone?.() }}>{t("workspace.action.done")}</button>
           </span>
         )}
       </div>
@@ -299,8 +280,9 @@ function BridgeSectionBlock({
 }
 
 function ToolsBlock({ tools }: { tools: SkillTool[] }) {
+  const { t } = useTranslation()
   if (tools.length === 0) {
-    return <p className="text-sm text-muted-foreground">未定义工具</p>
+    return <p className="text-sm text-muted-foreground">{t("workspace.empty.noTools")}</p>
   }
   return (
     <div>
@@ -329,10 +311,11 @@ function ToolsBlock({ tools }: { tools: SkillTool[] }) {
 }
 
 function SectionsTree({ skill }: { skill: ParsedSkill }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   if (skill.sections.length === 0) {
-    return <p className="text-sm text-muted-foreground">无章节</p>
+    return <p className="text-sm text-muted-foreground">{t("workspace.empty.noSections")}</p>
   }
 
   const toggle = (index: number) => {
@@ -380,13 +363,14 @@ function SectionsTree({ skill }: { skill: ParsedSkill }) {
 }
 
 function BasicInfoDisplay({ fm }: { fm: SkillFrontmatter }) {
+  const { t } = useTranslation()
   const rows: { label: string; value: string; field: string; isLink?: boolean }[] = [
-    { label: "Emoji", value: fm.emoji || "—", field: "f-emoji" },
-    { label: "名称", value: fm.name || "—", field: "f-name" },
-    { label: "描述", value: fm.description || "—", field: "f-desc" },
-    { label: "版本", value: fm.version || "—", field: "f-ver" },
-    { label: "作者", value: fm.author || "—", field: "f-author" },
-    { label: "主页", value: fm.homepage || "—", field: "f-home", isLink: !!fm.homepage },
+    { label: t("workspace.field.emoji"), value: fm.emoji || "—", field: "f-emoji" },
+    { label: t("workspace.field.name"), value: fm.name || "—", field: "f-name" },
+    { label: t("workspace.field.description"), value: fm.description || "—", field: "f-desc" },
+    { label: t("workspace.field.version"), value: fm.version || "—", field: "f-ver" },
+    { label: t("workspace.field.author"), value: fm.author || "—", field: "f-author" },
+    { label: t("workspace.field.homepage"), value: fm.homepage || "—", field: "f-home", isLink: !!fm.homepage },
   ]
   return (
     <div className="ecard">
@@ -423,6 +407,7 @@ function InlineTagInput({
   onChange: (tags: string[]) => void
   placeholder?: string
 }) {
+  const { t } = useTranslation()
   const [input, setInput] = useState("")
   return (
     <div className="fta">
@@ -446,17 +431,18 @@ function InlineTagInput({
             onChange(tags.slice(0, -1))
           }
         }}
-        placeholder={placeholder ?? "输入后回车添加"}
+        placeholder={placeholder ?? t("workspace.action.inputEnterToAdd")}
       />
     </div>
   )
 }
 
 function InlineToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  const { t } = useTranslation()
   return (
     <div className="ftg" onClick={() => onChange(!value)}>
       <div className={cn("ftg-track", value && "on")} />
-      <span className="ftg-lbl">{value ? "是" : "否"}</span>
+      <span className="ftg-lbl">{value ? t("workspace.bool.yes") : t("workspace.bool.no")}</span>
     </div>
   )
 }
@@ -464,6 +450,7 @@ function InlineToggle({ value, onChange }: { value: boolean; onChange: (v: boole
 /* ===== TriggerDisplay — 展示态 ===== */
 
 function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
+  const { t } = useTranslation()
   const triggers = toStringArray(fm.triggers)
   const readWhen = toStringArray(fm.read_when)
   const autoTrigger = fm.auto_trigger ?? false
@@ -477,47 +464,47 @@ function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
   return (
     <div className="ecard">
       <div className="fr" data-field="f-triggers">
-        <span className="fl">触发词</span>
+        <span className="fl">{t("workspace.field.triggers")}</span>
         <span className="fv">
           {triggers.length > 0
-            ? triggers.map((t, i) => <span key={i} className="tg-pill">{t}</span>)
+            ? triggers.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>)
             : <span className="text-muted-foreground">—</span>}
         </span>
       </div>
       <div className="fr" data-field="f-readwhen">
-        <span className="fl">读取条件</span>
+        <span className="fl">{t("workspace.field.readWhen")}</span>
         <span className="fv">
           {readWhen.length > 0
-            ? readWhen.map((t, i) => <span key={i} className="tg-pill">{t}</span>)
+            ? readWhen.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>)
             : <span className="text-muted-foreground">—</span>}
         </span>
       </div>
       <div className="fr" data-field="f-autotrigger">
-        <span className="fl">自动触发</span>
-        <span className="fv">{autoTrigger ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
+        <span className="fl">{t("workspace.field.autoTrigger")}</span>
+        <span className="fv">{autoTrigger ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
       </div>
       <div className="fr" data-field="f-userinvocable">
-        <span className="fl">用户可调</span>
-        <span className="fv">{userInvocable ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
+        <span className="fl">{t("workspace.field.userInvocable")}</span>
+        <span className="fv">{userInvocable ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
       </div>
       <div className="fr" data-field="f-disablemodel">
-        <span className="fl">禁止模型</span>
-        <span className="fv">{disableModel ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
+        <span className="fl">{t("workspace.field.disableModel")}</span>
+        <span className="fv">{disableModel ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
       </div>
       <div className="fr" data-field="f-cmddispatch">
-        <span className="fl">命令分派</span>
+        <span className="fl">{t("workspace.field.cmdDispatch")}</span>
         <span className="fv font-mono">{cmdDispatch || <span className="text-muted-foreground">—</span>}</span>
       </div>
       <div className="fr" data-field="f-cmdtool">
-        <span className="fl">命令工具</span>
+        <span className="fl">{t("workspace.field.cmdTool")}</span>
         <span className="fv font-mono">{cmdTool || <span className="text-muted-foreground">—</span>}</span>
       </div>
       <div className="fr" data-field="f-cmdargmode">
-        <span className="fl">参数模式</span>
+        <span className="fl">{t("workspace.field.argMode")}</span>
         <span className="fv font-mono">{cmdArgMode || <span className="text-muted-foreground">—</span>}</span>
       </div>
       <div className="fr" data-field="f-allowedtools">
-        <span className="fl">允许工具</span>
+        <span className="fl">{t("workspace.field.allowedTools")}</span>
         <span className="fv font-mono">{allowedTools || <span className="text-muted-foreground">—</span>}</span>
       </div>
     </div>
@@ -529,16 +516,17 @@ function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
 type BasicDraft = { emoji: string; name: string; description: string; version: string; author: string; homepage: string; source: string }
 
 function BasicEditForm({ draft, onChange }: { draft: BasicDraft; onChange: (d: BasicDraft) => void }) {
+  const { t } = useTranslation()
   const set = (key: keyof BasicDraft, value: string) => onChange({ ...draft, [key]: value })
   return (
     <div className="ecard">
-      <div className="ef-row"><span className="ef-lbl">Emoji</span><input className="fi" value={draft.emoji} onChange={(e) => set("emoji", e.target.value)} style={{ maxWidth: 48, textAlign: 'center' }} /></div>
-      <div className="ef-row"><span className="ef-lbl">名称</span><input className="fi" value={draft.name} onChange={(e) => set("name", e.target.value)} /></div>
-      <div className="ef-row ef-row-top"><span className="ef-lbl">描述</span><textarea className="fi ft" value={draft.description} onChange={(e) => set("description", e.target.value)} /></div>
-      <div className="ef-row"><span className="ef-lbl">版本</span><input className="fi" value={draft.version} onChange={(e) => set("version", e.target.value)} /></div>
-      <div className="ef-row"><span className="ef-lbl">作者</span><input className="fi" value={draft.author} onChange={(e) => set("author", e.target.value)} /></div>
-      <div className="ef-row"><span className="ef-lbl">主页</span><input className="fi" value={draft.homepage} onChange={(e) => set("homepage", e.target.value)} type="url" /></div>
-      <div className="ef-row"><span className="ef-lbl">源码</span><input className="fi" value={draft.source} onChange={(e) => set("source", e.target.value)} placeholder="https://..." /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.emoji")}</span><input className="fi" value={draft.emoji} onChange={(e) => set("emoji", e.target.value)} style={{ maxWidth: 48, textAlign: 'center' }} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.name")}</span><input className="fi" value={draft.name} onChange={(e) => set("name", e.target.value)} /></div>
+      <div className="ef-row ef-row-top"><span className="ef-lbl">{t("workspace.field.description")}</span><textarea className="fi ft" value={draft.description} onChange={(e) => set("description", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.version")}</span><input className="fi" value={draft.version} onChange={(e) => set("version", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.author")}</span><input className="fi" value={draft.author} onChange={(e) => set("author", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.homepage")}</span><input className="fi" value={draft.homepage} onChange={(e) => set("homepage", e.target.value)} type="url" /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.source")}</span><input className="fi" value={draft.source} onChange={(e) => set("source", e.target.value)} placeholder="https://..." /></div>
     </div>
   )
 }
@@ -546,18 +534,19 @@ function BasicEditForm({ draft, onChange }: { draft: BasicDraft; onChange: (d: B
 type TriggerDraft = { triggers: string[]; readWhen: string[]; autoTrigger: boolean; userInvocable: boolean; disableModel: boolean; cmdDispatch: string; cmdTool: string; cmdArgMode: string; allowedTools: string }
 
 function TriggerEditForm({ draft, onChange }: { draft: TriggerDraft; onChange: (d: TriggerDraft) => void }) {
+  const { t } = useTranslation()
   const set = <K extends keyof TriggerDraft>(key: K, value: TriggerDraft[K]) => onChange({ ...draft, [key]: value })
   return (
     <div className="ecard">
-      <div className="ef-row"><span className="ef-lbl">触发词</span><InlineTagInput tags={draft.triggers} onChange={(v) => set("triggers", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">读取条件</span><InlineTagInput tags={draft.readWhen} onChange={(v) => set("readWhen", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">自动触发</span><InlineToggle value={draft.autoTrigger} onChange={(v) => set("autoTrigger", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">用户可调</span><InlineToggle value={draft.userInvocable} onChange={(v) => set("userInvocable", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">禁止模型</span><InlineToggle value={draft.disableModel} onChange={(v) => set("disableModel", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">命令分派</span><input className="fi" value={draft.cmdDispatch} onChange={(e) => set("cmdDispatch", e.target.value)} /></div>
-      <div className="ef-row"><span className="ef-lbl">命令工具</span><input className="fi" value={draft.cmdTool} onChange={(e) => set("cmdTool", e.target.value)} /></div>
-      <div className="ef-row"><span className="ef-lbl">参数模式</span><input className="fi" value={draft.cmdArgMode} onChange={(e) => set("cmdArgMode", e.target.value)} placeholder="positional / keyword" /></div>
-      <div className="ef-row"><span className="ef-lbl">允许工具</span><input className="fi" value={draft.allowedTools} onChange={(e) => set("allowedTools", e.target.value)} placeholder="工具名称（可选）" /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.triggers")}</span><InlineTagInput tags={draft.triggers} onChange={(v) => set("triggers", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.readWhen")}</span><InlineTagInput tags={draft.readWhen} onChange={(v) => set("readWhen", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.autoTrigger")}</span><InlineToggle value={draft.autoTrigger} onChange={(v) => set("autoTrigger", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.userInvocable")}</span><InlineToggle value={draft.userInvocable} onChange={(v) => set("userInvocable", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.disableModel")}</span><InlineToggle value={draft.disableModel} onChange={(v) => set("disableModel", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.cmdDispatch")}</span><input className="fi" value={draft.cmdDispatch} onChange={(e) => set("cmdDispatch", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.cmdTool")}</span><input className="fi" value={draft.cmdTool} onChange={(e) => set("cmdTool", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.argMode")}</span><input className="fi" value={draft.cmdArgMode} onChange={(e) => set("cmdArgMode", e.target.value)} placeholder="positional / keyword" /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.allowedTools")}</span><input className="fi" value={draft.allowedTools} onChange={(e) => set("allowedTools", e.target.value)} placeholder={t("workspace.field.allowedToolsPlaceholder")} /></div>
     </div>
   )
 }
@@ -565,18 +554,20 @@ function TriggerEditForm({ draft, onChange }: { draft: TriggerDraft; onChange: (
 type MetaDraft = { requiredBins: string[]; optionalBins: string[]; os: string[]; primaryEnv: string }
 
 function MetaEditForm({ draft, onChange }: { draft: MetaDraft; onChange: (d: MetaDraft) => void }) {
+  const { t } = useTranslation()
   const set = <K extends keyof MetaDraft>(key: K, value: MetaDraft[K]) => onChange({ ...draft, [key]: value })
   return (
     <div className="ecard">
-      <div className="ef-row"><span className="ef-lbl">必需依赖</span><InlineTagInput tags={draft.requiredBins} onChange={(v) => set("requiredBins", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">可选依赖</span><InlineTagInput tags={draft.optionalBins} onChange={(v) => set("optionalBins", v)} /></div>
-      <div className="ef-row"><span className="ef-lbl">操作系统</span><InlineTagInput tags={draft.os} onChange={(v) => set("os", v)} placeholder="darwin / linux / win32" /></div>
-      <div className="ef-row"><span className="ef-lbl">主要环境变量</span><input className="fi" value={draft.primaryEnv} onChange={(e) => set("primaryEnv", e.target.value)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.requiredDeps")}</span><InlineTagInput tags={draft.requiredBins} onChange={(v) => set("requiredBins", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.optionalDeps")}</span><InlineTagInput tags={draft.optionalBins} onChange={(v) => set("optionalBins", v)} /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.os")}</span><InlineTagInput tags={draft.os} onChange={(v) => set("os", v)} placeholder="darwin / linux / win32" /></div>
+      <div className="ef-row"><span className="ef-lbl">{t("workspace.field.primaryEnv")}</span><input className="fi" value={draft.primaryEnv} onChange={(e) => set("primaryEnv", e.target.value)} /></div>
     </div>
   )
 }
 
 function EnvEditForm({ draft, onChange }: { draft: EnvVarDefinition[]; onChange: (d: EnvVarDefinition[]) => void }) {
+  const { t } = useTranslation()
   const updateRow = (i: number, field: keyof EnvVarDefinition, value: string | boolean) => {
     onChange(draft.map((row, j) => j === i ? { ...row, [field]: value } : row))
   }
@@ -586,7 +577,7 @@ function EnvEditForm({ draft, onChange }: { draft: EnvVarDefinition[]; onChange:
   return (
     <div>
       <table className="et w-full">
-        <thead><tr><th>变量名</th><th>必需</th><th>描述</th><th style={{ width: 24 }} /></tr></thead>
+        <thead><tr><th>{t("workspace.field.varName")}</th><th>{t("workspace.field.required")}</th><th>{t("workspace.field.description")}</th><th style={{ width: 24 }} /></tr></thead>
         <tbody>
           {draft.map((row, i) => (
             <tr key={i}>
@@ -598,7 +589,7 @@ function EnvEditForm({ draft, onChange }: { draft: EnvVarDefinition[]; onChange:
           ))}
         </tbody>
       </table>
-      <div className="et-add" onClick={addRow}>+ 添加环境变量</div>
+      <div className="et-add" onClick={addRow}>{t("workspace.action.addEnvVar")}</div>
     </div>
   )
 }
@@ -606,6 +597,7 @@ function EnvEditForm({ draft, onChange }: { draft: EnvVarDefinition[]; onChange:
 type FilesDraft = { read: string[]; write: string[] }
 
 function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: FilesDraft) => void }) {
+  const { t } = useTranslation()
   const updateItem = (key: "read" | "write", index: number, value: string) => {
     onChange({ ...draft, [key]: draft[key].map((v, i) => i === index ? value : v) })
   }
@@ -619,7 +611,7 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
   return (
     <div className="ecard">
       <div className="ef-row" style={{ alignItems: 'flex-start' }}>
-        <span className="ef-lbl" style={{ paddingTop: 5 }}>📖 读取</span>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>📖 {t("workspace.field.read")}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           {draft.read.map((p, i) => (
             <div key={i} className="fl-item">
@@ -627,11 +619,11 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
               <button type="button" className="et-del" onClick={() => removeItem("read", i)}>×</button>
             </div>
           ))}
-          <div className="fl-add" onClick={() => addItem("read")}>+ 添加读取路径</div>
+          <div className="fl-add" onClick={() => addItem("read")}>{t("workspace.action.addReadPath")}</div>
         </div>
       </div>
       <div className="ef-row" style={{ alignItems: 'flex-start' }}>
-        <span className="ef-lbl" style={{ paddingTop: 5 }}>✏️ 写入</span>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>✏️ {t("workspace.field.write")}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           {draft.write.map((p, i) => (
             <div key={i} className="fl-item">
@@ -639,7 +631,7 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
               <button type="button" className="et-del" onClick={() => removeItem("write", i)}>×</button>
             </div>
           ))}
-          <div className="fl-add" onClick={() => addItem("write")}>+ 添加写入路径</div>
+          <div className="fl-add" onClick={() => addItem("write")}>{t("workspace.action.addWritePath")}</div>
         </div>
       </div>
     </div>
@@ -655,6 +647,7 @@ function SkillMdPanel({
   fm: SkillFrontmatter
   onChange: (updated: SkillFrontmatter) => void
 }) {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const execSections = useMemo(
     () => skill.sections.filter((s) => /脚本|script|pipeline/i.test(s.title)),
@@ -772,7 +765,7 @@ function SkillMdPanel({
       {/* ====== basic ====== */}
       <BridgeSectionBlock
         sectionId="basic"
-        title="基本信息"
+        title={t("workspace.section.basicInfo")}
         color={bridgeColor("basic")}
         editable
         editing={editingBasic}
@@ -794,9 +787,9 @@ function SkillMdPanel({
       {/* ====== trigger ====== */}
       <BridgeSectionBlock
         sectionId="trigger"
-        title="触发条件"
+        title={t("workspace.section.trigger")}
         color={bridgeColor("trigger")}
-        badge={triggers.length > 0 ? `${triggers.length} 触发词` : undefined}
+        badge={triggers.length > 0 ? t("workspace.section.triggerCount", { count: triggers.length }) : undefined}
         editable
         editing={editingTrigger}
         onEdit={startEditTrigger}
@@ -817,7 +810,7 @@ function SkillMdPanel({
       {/* ====== meta ====== */}
       <BridgeSectionBlock
         sectionId="meta"
-        title="元数据"
+        title={t("workspace.section.metadata")}
         color={bridgeColor("meta")}
         editable
         editing={editingMeta}
@@ -839,7 +832,7 @@ function SkillMdPanel({
       {/* ====== env ====== */}
       <BridgeSectionBlock
         sectionId="env"
-        title="环境变量"
+        title={t("workspace.section.envVars")}
         color={bridgeColor("env")}
         badge={`${fm.env?.length ?? 0}`}
         editable
@@ -855,18 +848,18 @@ function SkillMdPanel({
         {editingEnv ? (
           <EnvEditForm draft={envDraft} onChange={setEnvDraft} />
         ) : envRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground pl-3">无环境变量</p>
+          <p className="text-sm text-muted-foreground pl-3">{t("workspace.empty.noEnvVars")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="et w-full">
-              <thead><tr><th>变量名</th><th>必需</th><th>描述</th><th /></tr></thead>
+              <thead><tr><th>{t("workspace.field.varName")}</th><th>{t("workspace.field.required")}</th><th>{t("workspace.field.description")}</th><th /></tr></thead>
               <tbody>
                 {envRows.map((row, i) => {
                   const fieldKey = `f-e-${row.name}`
                   return (
                     <tr key={i} data-field={fieldKey}>
                       <td><span className="en font-mono text-[10px] font-semibold"><EidText eid={row.name} fieldKey={fieldKey}>{row.name}</EidText></span></td>
-                      <td>{row.required ? "必需" : "可选"}</td>
+                      <td>{row.required ? t("workspace.field.required") : t("workspace.field.optional")}</td>
                       <td className="ed">{row.description ?? "—"}</td>
                       <td className="rc"><RelationIndicator eid={row.name} fieldKey={fieldKey} /></td>
                     </tr>
@@ -881,7 +874,7 @@ function SkillMdPanel({
       {/* ====== tools (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="tools"
-        title="工具"
+        title={t("workspace.section.tools")}
         color={bridgeColor("tools")}
         badge={`${skill.tools.length}`}
         readOnly
@@ -896,7 +889,7 @@ function SkillMdPanel({
       {/* ====== files ====== */}
       <BridgeSectionBlock
         sectionId="files"
-        title="文件权限"
+        title={t("workspace.section.filePerms")}
         color={bridgeColor("files")}
         editable
         editing={editingFiles}
@@ -913,10 +906,10 @@ function SkillMdPanel({
         ) : (
           <div className="ecard">
             <div className="fr" data-field="f-fr" style={{ alignItems: 'flex-start' }}>
-              <span className="fl">📖 读取</span>
+              <span className="fl">📖 {t("workspace.field.read")}</span>
               <span className="fv" style={{ fontSize: 10 }}>
                 {readList.length === 0 ? (
-                  <span className="text-muted-foreground">无</span>
+                  <span className="text-muted-foreground">{t("workspace.field.none")}</span>
                 ) : (
                   readList.map((p, i) => {
                     const fileEid = pathToFileEid(p)
@@ -934,10 +927,10 @@ function SkillMdPanel({
               </span>
             </div>
             <div className="fr" data-field="f-fw" style={{ alignItems: 'flex-start' }}>
-              <span className="fl">✏️ 写入</span>
+              <span className="fl">✏️ {t("workspace.field.write")}</span>
               <span className="fv" style={{ fontSize: 10 }}>
                 {writeList.length === 0 ? (
-                  <span className="text-muted-foreground">无</span>
+                  <span className="text-muted-foreground">{t("workspace.field.none")}</span>
                 ) : (
                   writeList.map((p, i) => {
                     const fileEid = pathToFileEid(p)
@@ -961,17 +954,17 @@ function SkillMdPanel({
       {/* ====== exec (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="exec"
-        title="脚本管道"
+        title={t("workspace.section.scriptPipeline")}
         color={bridgeColor("exec")}
-        badge="执行层"
+        badge={t("workspace.section.execLayer")}
         readOnly
         dimmed={api?.isSectionDimmed("exec")}
       >
         <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
-          markdown body → 脚本相关章节
+          {t("workspace.hint.execFromBody")}
         </p>
         {execSections.length === 0 ? (
-          <p className="text-sm text-muted-foreground pl-1">无脚本管道章节</p>
+          <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noExecSections")}</p>
         ) : (
           <div className="ecard" style={{ padding: '6px 8px' }}>
             {execSections.map((s, i) => {
@@ -995,9 +988,9 @@ function SkillMdPanel({
       {/* ====== doc (readonly) ====== */}
       <BridgeSectionBlock
         sectionId="doc"
-        title="文档结构"
+        title={t("workspace.section.docStructure")}
         color={bridgeColor("doc")}
-        badge={`${skill.sections.length} 节`}
+        badge={t("workspace.section.sectionCount", { count: skill.sections.length })}
         readOnly
         dimmed={api?.isSectionDimmed("doc")}
       >
@@ -1011,21 +1004,22 @@ function SkillMdPanel({
 }
 
 function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
+  const { t } = useTranslation()
   const oc = getOpenclawMetadata(fm.metadata)
   if (!oc) {
-    return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
+    return <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noMetadata")}</p>
   }
   const bins = oc.requires?.bins ?? []
   const optionalBins = oc.optionalBins ?? []
   const os = oc.os ?? []
   const hasAny = bins.length > 0 || optionalBins.length > 0 || os.length > 0
   if (!hasAny) {
-    return <p className="text-sm text-muted-foreground pl-1">无元数据</p>
+    return <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noMetadata")}</p>
   }
   return (
     <div className="ecard">
       <div className="fr" data-field="f-meta-bins">
-        <span className="fl">必需依赖</span>
+        <span className="fl">{t("workspace.field.requiredDeps")}</span>
         <span className="fv">
           {bins.length > 0
             ? bins.map((b, i) => <span key={i}><EidText eid={b}>{b}</EidText>{i < bins.length - 1 && <br />}</span>)
@@ -1033,7 +1027,7 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
         </span>
       </div>
       <div className="fr" data-field="f-meta-optbins">
-        <span className="fl">可选依赖</span>
+        <span className="fl">{t("workspace.field.optionalDeps")}</span>
         <span className="fv text-muted-foreground">
           {optionalBins.length > 0
             ? optionalBins.map((b, i) => <span key={i}>{i > 0 && " · "}<EidText eid={b}>{b}</EidText></span>)
@@ -1042,7 +1036,7 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
       </div>
       {os.length > 0 && (
         <div className="fr" data-field="f-meta-os">
-          <span className="fl">操作系统</span>
+          <span className="fl">{t("workspace.field.os")}</span>
           <span className="fv">
             {os.map((o, i) => <span key={i} className="tg-pill">{o}</span>)}
           </span>
@@ -1065,147 +1059,133 @@ function SkillOverviewPanel({
   configPaths: string[]
   onSelect: (sel: NavigatorSelection) => void
 }) {
+  const { t } = useTranslation()
   const { state } = useWorkspace()
   const selection = state.selection
-
-  const configCount = Object.keys(skill.configFiles).length
   const skillId = skill.id
+  const configCount = Object.keys(skill.configFiles).length
 
   return (
-    <div className="space-y-3">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1 min-w-0">
-              <CardTitle className="text-2xl font-bold font-mono tracking-tight break-words">
-                {fm.name || "—"}
-              </CardTitle>
-              <p className="text-muted-foreground max-w-2xl text-sm">
-                {skill.description || fm.description || "—"}
-              </p>
-            </div>
-            {fm.version ? (
-              <Badge variant="secondary" className="text-sm shrink-0">
-                v{fm.version}
-              </Badge>
-            ) : null}
+    <div className="space-y-2">
+      <div className="ecard">
+        <div className="fr" data-field="ov-emoji">
+          <span className="fl">{t("workspace.field.emoji")}</span>
+          <span className="fv">{fm.emoji || "—"}</span>
+        </div>
+        <div className="fr" data-field="ov-name">
+          <span className="fl">{t("workspace.field.name")}</span>
+          <span className="fv font-semibold">{fm.name || "—"}</span>
+        </div>
+        <div className="fr" data-field="ov-desc">
+          <span className="fl">{t("workspace.field.description")}</span>
+          <span className="fv">{skill.description || fm.description || "—"}</span>
+        </div>
+        <div className="fr" data-field="ov-ver">
+          <span className="fl">{t("workspace.field.version")}</span>
+          <span className="fv">{fm.version ? `v${fm.version}` : "—"}</span>
+        </div>
+        <div className="fr" data-field="ov-author">
+          <span className="fl">{t("workspace.field.author")}</span>
+          <span className="fv">{fm.author || "—"}</span>
+        </div>
+        {fm.homepage ? (
+          <div className="fr" data-field="ov-home">
+            <span className="fl">{t("workspace.field.homepage")}</span>
+            <a
+              href={fm.homepage}
+              target="_blank"
+              rel="noreferrer"
+              className="fv"
+              style={{ color: "#3b82f6" }}
+            >
+              {fm.homepage}
+            </a>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground pt-1.5">
-            {skill.path ? (
-              <span className="flex items-center gap-1 min-w-0">
-                <Layers className="h-3.5 w-3.5 shrink-0" />
-                <code className="text-xs truncate">{skill.path}</code>
-              </span>
-            ) : null}
-            {fm.homepage ? (
-              <a
-                href={fm.homepage}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                主页
-              </a>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1.5">
-            <Badge variant="outline">
-              <Terminal className="mr-1 h-3 w-3" />
-              {skill.tools.length} 个工具
-            </Badge>
-            <Badge variant="outline">
-              <KeyRound className="mr-1 h-3 w-3" />
-              {skill.envVars.length} 个环境变量
-            </Badge>
-            {configCount > 0 ? (
-              <Badge variant="outline">
-                <Pencil className="mr-1 h-3 w-3" />
-                {configCount} 个配置文件
-              </Badge>
-            ) : null}
-            <Badge variant="outline">{skill.sections.length} 个文档章节</Badge>
-          </div>
-        </CardHeader>
-      </Card>
+        ) : null}
+      </div>
 
-      <section className="space-y-2">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          文件信息
-        </h3>
-        <dl className="space-y-1.5 text-sm">
-          <div className="flex gap-2">
-            <dt className="shrink-0 text-muted-foreground">路径</dt>
-            <dd className="truncate font-mono">{skill.path || "—"}</dd>
+      <div className="ecard">
+        <div className="fr">
+          <span className="fl">{t("workspace.field.toolCount")}</span>
+          <span className="fv">{skill.tools.length}</span>
+        </div>
+        <div className="fr">
+          <span className="fl">{t("workspace.field.envVarCount")}</span>
+          <span className="fv">{skill.envVars.length}</span>
+        </div>
+        {configCount > 0 ? (
+          <div className="fr">
+            <span className="fl">{t("workspace.field.configCount")}</span>
+            <span className="fv">{configCount}</span>
           </div>
-          <div className="flex gap-2">
-            <dt className="shrink-0 text-muted-foreground">版本</dt>
-            <dd>{fm.version ?? "—"}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="shrink-0 text-muted-foreground">文件数</dt>
-            <dd>{1 + configPaths.length}</dd>
-          </div>
-        </dl>
-      </section>
+        ) : null}
+        <div className="fr">
+          <span className="fl">{t("workspace.field.docCount")}</span>
+          <span className="fv">{skill.sections.length}</span>
+        </div>
+      </div>
 
-      <Separator />
+      <div className="ecard">
+        <div className="fr">
+          <span className="fl">{t("workspace.field.path")}</span>
+          <span className="fv font-mono text-[10px]">{skill.path || "—"}</span>
+        </div>
+        <div className="fr">
+          <span className="fl">{t("workspace.field.fileCount")}</span>
+          <span className="fv">{1 + configPaths.length + Object.keys(skill.extraFiles).length}</span>
+        </div>
+      </div>
 
-      <section className="space-y-2">
-        <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          <Link2 className="size-3.5" aria-hidden />
-          关联文件
-        </h3>
-        <ul className="space-y-1">
-          <li>
+      <div>
+        <h3 className="text-xs font-medium text-muted-foreground mb-1.5 pl-1">{t("workspace.file.relatedFiles")}</h3>
+        <div className="space-y-0.5">
+          <button
+            type="button"
+            className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-primary hover:bg-muted/50 transition-colors"
+            onClick={() => onSelect({ skillId, nodeType: "skill-md" })}
+          >
+            <FileText className="size-3.5 shrink-0" aria-hidden />
+            <span>SKILL.md</span>
+            {selection?.nodeType === "skill-md" && selection.skillId === skillId && (
+              <ExternalLink className="ml-auto size-3 shrink-0 opacity-70" aria-hidden />
+            )}
+          </button>
+          {configPaths.map((path) => (
             <button
+              key={path}
               type="button"
-              className="inline-flex items-center gap-1 text-left text-sm text-primary underline-offset-4 hover:underline"
-              onClick={() => onSelect({ skillId, nodeType: "skill-md" })}
+              className="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-xs text-primary hover:bg-muted/50 transition-colors truncate"
+              onClick={() => onSelect({ skillId, nodeType: "config-file", filePath: path })}
             >
               <FileText className="size-3.5 shrink-0" aria-hidden />
-              SKILL.md
-              {selection?.nodeType === "skill-md" && selection.skillId === skillId && (
-                <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-              )}
+              <span className="min-w-0 truncate">{path}</span>
+              {selection?.nodeType === "config-file" &&
+                selection.skillId === skillId &&
+                selection.filePath === path && (
+                  <ExternalLink className="ml-auto size-3 shrink-0 opacity-70" aria-hidden />
+                )}
             </button>
-          </li>
-          {configPaths.map((path) => (
-            <li key={path}>
-              <button
-                type="button"
-                className="inline-flex max-w-full items-center gap-1 truncate text-left text-sm text-primary underline-offset-4 hover:underline"
-                onClick={() => onSelect({ skillId, nodeType: "config-file", filePath: path })}
-              >
-                <FileText className="size-3.5 shrink-0" aria-hidden />
-                <span className="truncate">{path}</span>
-                {selection?.nodeType === "config-file" &&
-                  selection.skillId === skillId &&
-                  selection.filePath === path && (
-                    <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                  )}
-              </button>
-            </li>
           ))}
-        </ul>
-      </section>
+        </div>
+      </div>
 
-      {validationResult && (
-        <div className="space-y-2">
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <ShieldCheck className="h-5 w-5" />
-            配置验证
+      {validationResult ? (
+        <div>
+          <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5 pl-1">
+            <ShieldCheck className="size-5" />
+            {t("workspace.file.configValidation")}
           </h3>
-          <Suspense fallback={<div className="text-sm text-muted-foreground">加载验证…</div>}>
+          <Suspense fallback={<div className="text-sm text-muted-foreground">{t("workspace.file.loadingValidation")}</div>}>
             <ValidationPanel result={validationResult} />
           </Suspense>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
 
 export function EditorPanel() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const { state, selectedSkill, editState, updateFrontmatter, updateConfig, updateExtraFile, select } = useWorkspace()
 
@@ -1258,16 +1238,31 @@ export function EditorPanel() {
   const titleName =
     selectedSkill?.frontmatter.name ??
     (selection ? selection.skillId : "")
-  const segment = selection ? headerSegment(selection) : ""
+  const segmentLabel = !selection
+    ? ""
+    : selection.nodeType === "skill-overview"
+      ? t("workspace.panelTitle.overview")
+      : selection.nodeType === "skill-md"
+        ? "SKILL.md"
+        : selection.filePath ??
+          (selection.nodeType === "config-file"
+            ? t("workspace.panelTitle.config")
+            : selection.nodeType === "extra-file"
+              ? t("workspace.panelTitle.fileViewer")
+              : "")
 
   return (
     <div className="h-full flex flex-col min-h-0 min-w-0 overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-1.5">
-          <HeaderIcon className="size-3 shrink-0" aria-hidden />
-          <strong className="text-foreground">可视化编辑</strong>
+          <HeaderIcon className="size-3.5 shrink-0" aria-hidden />
+          <strong className="text-foreground">
+            {selection?.nodeType === "skill-overview"
+              ? t("workspace.panelTitle.overview")
+              : t("workspace.panelTitle.editor")}
+          </strong>
           <span className="text-[10px] truncate" style={{ color: 'var(--muted-foreground)' }}>
-            {titleName || "—"}{segment ? ` / ${segment}` : ""}
+            {titleName || "—"}{segmentLabel ? ` / ${segmentLabel}` : ""}
           </span>
         </div>
         {api && (
@@ -1275,7 +1270,7 @@ export function EditorPanel() {
             type="button"
             className="shrink-0 p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
             onClick={api.toggleAllEditor}
-            title={api.editorAllExpanded ? "全部收起" : "全部展开"}
+            title={api.editorAllExpanded ? t("workspace.action.collapseAll") : t("workspace.action.expandAll")}
           >
             {api.editorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
           </button>
@@ -1289,11 +1284,11 @@ export function EditorPanel() {
       >
         <div className="min-h-full p-2 pr-1.5" style={{ paddingBottom: 32 }}>
           {!selection ? (
-            <EmptyState title="从左侧导航选择一个 Skill 或文件" />
+            <EmptyState title={t("workspace.empty.selectSkill")} />
           ) : !selectedSkill || !editState ? (
             <Card>
               <CardContent className="py-6 text-sm text-muted-foreground">
-                Skill 未找到或数据未就绪
+                {t("workspace.empty.skillNotFound")}
               </CardContent>
             </Card>
           ) : selection.nodeType === "skill-overview" ? (
@@ -1311,7 +1306,7 @@ export function EditorPanel() {
               onChange={(updated) => updateFrontmatter(selectedSkill.id, updated)}
             />
           ) : selection.nodeType === "config-file" ? (
-            <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">加载编辑器…</div>}>
+            <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">{t("workspace.file.loadingEditor")}</div>}>
               <ConfigFileEditor
                 selection={selection}
                 skill={selectedSkill}
@@ -1322,10 +1317,10 @@ export function EditorPanel() {
           ) : selection.nodeType === "extra-file" && selection.filePath ? (
             (() => {
               const file = selectedSkill.extraFiles[selection.filePath]
-              if (!file) return <EmptyState title={`未找到文件 ${selection.filePath}`} />
+              if (!file) return <EmptyState title={t("workspace.empty.fileNotFound", { path: selection.filePath })} />
               const editContent = editState.extraFiles[selection.filePath] ?? file.content
               return (
-                <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">加载编辑器…</div>}>
+                <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">{t("workspace.file.loadingEditor")}</div>}>
                   <ExtraFileEditor
                     key={selection.filePath}
                     file={file}
@@ -1353,12 +1348,13 @@ function ConfigFileEditor({
   editState: { configFiles: Record<string, unknown>; frontmatter: ParsedSkill["frontmatter"]; dirty: boolean }
   updateConfig: (skillId: string, path: string, data: unknown) => void
 }) {
+  const { t } = useTranslation()
   const filePath = selection.filePath
   if (!filePath) {
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground">
-          未指定配置文件路径
+          {t("workspace.empty.configPathMissing")}
         </CardContent>
       </Card>
     )
@@ -1369,7 +1365,7 @@ function ConfigFileEditor({
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground">
-          未找到「{filePath}」的配置数据
+          {t("workspace.empty.configDataMissing", { path: filePath })}
         </CardContent>
       </Card>
     )
@@ -1380,7 +1376,7 @@ function ConfigFileEditor({
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground">
-          暂不支持编辑「{filePath}」
+          {t("workspace.empty.configUnsupported", { path: filePath })}
         </CardContent>
       </Card>
     )
@@ -1391,7 +1387,7 @@ function ConfigFileEditor({
       return (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            sources.json 格式无效，缺少 sources 数组
+            {t("workspace.empty.sourcesInvalid")}
           </CardContent>
         </Card>
       )
@@ -1409,7 +1405,7 @@ function ConfigFileEditor({
       return (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            topics.json 格式无效，缺少 topics 数组
+            {t("workspace.empty.topicsInvalid")}
           </CardContent>
         </Card>
       )
@@ -1426,7 +1422,7 @@ function ConfigFileEditor({
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground">
-          schema.json 应为 JSON 对象
+          {t("workspace.empty.schemaInvalid")}
         </CardContent>
       </Card>
     )

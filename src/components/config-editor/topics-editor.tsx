@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { GripVertical, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,7 @@ export interface TopicsEditorProps {
 }
 
 export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
+  const { t } = useTranslation()
   const topics = data.topics
 
   const updateTopic = useCallback(
@@ -55,8 +57,8 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const updateSearch = useCallback(
     (index: number, updates: Partial<TopicSearch>) => {
-      const t = topics[index]
-      const nextSearch = { ...t.search, ...updates }
+      const topicRow = topics[index]
+      const nextSearch = { ...topicRow.search, ...updates }
       updateTopic(index, { search: nextSearch })
     },
     [topics, updateTopic],
@@ -64,8 +66,8 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const setQueryAt = useCallback(
     (topicIndex: number, queryIndex: number, value: string) => {
-      const t = topics[topicIndex]
-      const queries = [...(t.search.queries ?? [])]
+      const topicRow = topics[topicIndex]
+      const queries = [...(topicRow.search.queries ?? [])]
       queries[queryIndex] = value
       updateSearch(topicIndex, { queries })
     },
@@ -74,8 +76,8 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const addQuery = useCallback(
     (topicIndex: number) => {
-      const t = topics[topicIndex]
-      const queries = [...(t.search.queries ?? []), ""]
+      const topicRow = topics[topicIndex]
+      const queries = [...(topicRow.search.queries ?? []), ""]
       updateSearch(topicIndex, { queries })
     },
     [topics, updateSearch],
@@ -83,8 +85,8 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const removeQuery = useCallback(
     (topicIndex: number, queryIndex: number) => {
-      const t = topics[topicIndex]
-      const queries = (t.search.queries ?? []).filter((_, i) => i !== queryIndex)
+      const topicRow = topics[topicIndex]
+      const queries = (topicRow.search.queries ?? []).filter((_, i) => i !== queryIndex)
       updateSearch(topicIndex, { queries })
     },
     [topics, updateSearch],
@@ -92,8 +94,8 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const updateDisplay = useCallback(
     (index: number, updates: Partial<TopicDisplay>) => {
-      const t = topics[index]
-      updateTopic(index, { display: { ...t.display, ...updates } })
+      const topicRow = topics[index]
+      updateTopic(index, { display: { ...topicRow.display, ...updates } })
     },
     [topics, updateTopic],
   )
@@ -101,7 +103,7 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span>{topics.length} 个主题</span>
+        <span>{t("workspace.configEditor.topicsCount", { count: topics.length })}</span>
       </div>
 
       <div className="rounded-md border p-2">
@@ -138,6 +140,7 @@ function TopicCard({
   onRemoveQuery: (queryIndex: number) => void
   onUpdateDisplay: (updates: Partial<TopicDisplay>) => void
 }) {
+  const { t } = useTranslation()
   const queries = topic.search.queries ?? []
 
   return (
@@ -150,7 +153,9 @@ function TopicCard({
           />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="space-y-1.5">
-              <CardTitle className="text-[10px] font-medium text-muted-foreground">主题标签</CardTitle>
+              <CardTitle className="text-[10px] font-medium text-muted-foreground">
+                {t("workspace.configEditor.topicLabel")}
+              </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={topic.emoji}
@@ -174,7 +179,7 @@ function TopicCard({
       <CardContent className="py-2 px-3 space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor={`desc-${topic.id}`} className="text-[10px] text-muted-foreground">
-            描述
+            {t("workspace.configEditor.description")}
           </Label>
           <Textarea
             id={`desc-${topic.id}`}
@@ -188,7 +193,9 @@ function TopicCard({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <Label className="text-[10px] text-muted-foreground">搜索关键词</Label>
+            <Label className="text-[10px] text-muted-foreground">
+              {t("workspace.configEditor.searchKeywords")}
+            </Label>
             <Button
               type="button"
               variant="outline"
@@ -197,12 +204,12 @@ function TopicCard({
               onClick={onAddQuery}
             >
               <Plus className="size-3.5" />
-              添加
+              {t("workspace.configEditor.add")}
             </Button>
           </div>
           <div className="space-y-1.5">
             {queries.length === 0 ? (
-              <p className="text-[10px] text-muted-foreground">暂无关键词，点击「添加」。</p>
+              <p className="text-[10px] text-muted-foreground">{t("workspace.configEditor.noKeywords")}</p>
             ) : (
               queries.map((q, qi) => (
                 <div key={`${topic.id}-q-${qi}`} className="flex items-center gap-1.5">
@@ -217,7 +224,7 @@ function TopicCard({
                     size="icon"
                     className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
                     onClick={() => onRemoveQuery(qi)}
-                    aria-label="移除关键词"
+                    aria-label={t("workspace.configEditor.removeKeyword")}
                   >
                     <X className="size-3.5" />
                   </Button>
@@ -230,7 +237,9 @@ function TopicCard({
         <Separator />
 
         <div className="space-y-2">
-          <Label className="text-[10px] text-muted-foreground">显示设置</Label>
+          <Label className="text-[10px] text-muted-foreground">
+            {t("workspace.configEditor.displaySettings")}
+          </Label>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <Label htmlFor={`max-${topic.id}`} className="text-[10px] text-muted-foreground whitespace-nowrap">

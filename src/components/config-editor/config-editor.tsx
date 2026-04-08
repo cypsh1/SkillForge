@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SourcesEditor } from "./sources-editor"
 import { TopicsEditor, type TopicsConfig } from "./topics-editor"
@@ -10,6 +11,7 @@ interface ConfigEditorProps {
 }
 
 export function ConfigEditor({ configFiles }: ConfigEditorProps) {
+  const { t } = useTranslation()
   const entries = Object.entries(configFiles)
   const [editedConfigs, setEditedConfigs] = useState<Record<string, unknown>>(
     () => structuredClone(configFiles),
@@ -42,7 +44,7 @@ export function ConfigEditor({ configFiles }: ConfigEditorProps) {
           <TabsContent key={path} value={path}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <h4 className="text-sm font-medium">表单编辑</h4>
+                <h4 className="text-sm font-medium">{t("workspace.configEditor.formEdit")}</h4>
                 <ConfigFormRouter
                   path={path}
                   data={editedConfigs[path]}
@@ -50,7 +52,7 @@ export function ConfigEditor({ configFiles }: ConfigEditorProps) {
                 />
               </div>
               <div className="space-y-2">
-                <h4 className="text-sm font-medium">JSON 预览</h4>
+                <h4 className="text-sm font-medium">{t("workspace.configEditor.jsonPreview")}</h4>
                 <JsonPreview data={editedConfigs[path]} />
               </div>
             </div>
@@ -70,6 +72,7 @@ function ConfigFormRouter({
   data: unknown
   onChange: (newData: unknown) => void
 }) {
+  const { t } = useTranslation()
   const filename = path.split("/").pop() ?? ""
 
   if (filename === "sources.json" && isSourcesConfig(data)) {
@@ -91,8 +94,10 @@ function ConfigFormRouter({
 
   return (
     <div className="text-sm text-muted-foreground p-4 border rounded-md">
-      <p>此配置文件暂不支持表单编辑。</p>
-      <p className="mt-1 text-xs">文件: {path}</p>
+      <p>{t("workspace.configEditor.unsupportedForm")}</p>
+      <p className="mt-1 text-xs">
+        {t("workspace.configEditor.filePath")} {path}
+      </p>
     </div>
   )
 }

@@ -15,14 +15,14 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图执行中，V1-5 代码分割已完成。**
+**V1.0 路线图执行完成。V1-UX 发布前 UX 优化已完成。**
 
-当前任务：V1-UX — 发布前 UX 优化。V1-5 已完成。
+V1.0 全部任务已完成，可以进入发布准备阶段。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存（✅ 完成）→ V1-5 代码分割（✅ 完成）→ V1-UX 发布前优化
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存（✅ 完成）→ V1-5 代码分割（✅ 完成）→ V1-UX 发布前优化（✅ 完成）
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -615,6 +615,45 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 - 效果：到标签起点 31px → 23px（-26%），到值列起点 99px → 79px（-20%）
 - 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
+### V1-UX 发布前 UX 优化（2026-04-08）
+
+- **B1 #18+#19 图标统一+区块分隔增强**：
+  - `ShieldCheck` h-5→size-4，桥线联动 SVG h-4→h-5 + 透明度 50%
+  - `Download` size-3→size-3.5，导出按钮 h-5→h-6
+  - `[data-bridge-section]` 添加 `border-bottom: 1px solid rgba(255,255,255,.04)`
+- **B2 #4+ 根节点标题+概览面板风格对齐**：
+  - 标题动态切换：skill-md→"技能概览"，extra-file→"文件查看"
+  - `SkillOverviewPanel` 从 Card 组件重写为 `.ecard + .fr` 风格
+- **B3 #22 代码文件样式对齐**：
+  - FileSection 删除 `.file-section` class，改用 `[data-bridge-section]` + 中性色 `#64748b`
+  - 补齐 `bridge-section-dot` + `bridge-badge` + `scrollBothToSection`
+  - ExtraFileSourcePreview 同步对齐（圆点 + `.pc` 包裹）
+- **B4 #1 架构条动态适配**：
+  - `hasLayerContent` 检查 skill.frontmatter + skill.sections，空层不显示
+  - 非 skill-md 页面返回 null
+- **B5 #8 i18n 补全**：
+  - 7 个 workspace 组件 + 5 个 config-editor + 1 个 validation-panel + 1 个 skill-wizard = 14 个组件
+  - zh.json 91→330 行（+239），en.json 同步
+  - 新增 key 命名空间：`workspace.{section,field,action,empty,bridge,contextBar,file,nav,configEditor,validation,wizard}`
+  - ErrorBoundary 保持不变（类组件 + 错误边界不应依赖 i18n）
+  - skill-wizard `buildMarkdownBody` 中 2 处生成文件内容的中文保留（非 UI 文本）
+- **#15/#16 推迟到 V1.1**：子区块标题编辑、编辑后校验涉及核心解析/序列化系统，风险过高
+- 验收：tsc ✅ build ✅
+
+### V1-UX 用户反馈修正（2026-04-08）
+
+- **图标大小修正**：V1-UX B1 将 ShieldCheck 缩小为 size-4 方向错误
+  - ShieldCheck + 4 个校验图标（CheckCircle2/AlertCircle/AlertTriangle/Info）统一为 `size-5`（20px）
+  - 桥线区"链接"图标 SVG `h-5 w-5` → `h-[22px] w-[22px]`，容器 28→32
+  - 图标三档方案：S 12px / M 14px（标准，面板标题等）/ L 20px（强调，校验/状态）
+- **区块分隔线增强**：`margin-bottom` 4px→8px（对齐 demo 05），`border-bottom` opacity 0.04→0.08
+- **标题逻辑简化**：去掉 extra-file/config-file 特殊标题，非概览页统一显示"可视化编辑"
+- **架构条行为调整**：
+  - 始终显示 6 个层级按钮，不再根据数据过滤隐藏
+  - 无数据层级：虚线轮廓（`border: 1px dashed` + 透明底色 + `opacity: 0.4`），可点击
+  - 选中层级后自动滚动到对应首个区块（复用 `scrollBothToSection`）
+- 验收：tsc ✅ build ✅
+
 ### V1-5 代码分割（2026-04-08）
 
 - 提取 `WorkspaceShell` 到独立文件 `workspace-shell.tsx`，React.lazy 加载
@@ -644,7 +683,7 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 ## 当前环境状态
 
 - 本地开发：`npm run dev` → [http://localhost:5173/](http://localhost:5173/)
-- 生产构建：`npm run build` → dist/（首屏 243KB JS + 109KB CSS，总 22 chunks）
+- 生产构建：`npm run build` → dist/（首屏 248KB JS + 109KB CSS，总 22 chunks）
 - Tauri 开发：`npm run tauri:dev`（需 Rust 工具链）
 - Tauri 构建：`npm run tauri:build`
 - Node.js v22.22.1, npm 10.9.4, Rust 1.94.1
@@ -665,7 +704,7 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 | 独立功能模块      | 高   | 导出按钮、暗色模式、Schema 查看器、错误边界                   |
 | 创建向导（多步表单）  | 高   | 还主动扩展了 tauri-fs.ts                          |
 | 表单组件体系（多文件） | 高   | 8 个文件一次完成，规格详细时 fast 模型质量好                  |
-| i18n 批量替换   | 高   | 10+ 文件的 t() 替换，提供完整映射表后一次通过                 |
+| i18n 批量替换   | 高   | 10+ 文件的 t() 替换，提供完整映射表后一次通过。大文件（400+ 行）可能遗漏后半段 |
 | 数据采集/调研     | 高   | git clone + 文件分析、GitHub API 批量查询（注意 API 限速） |
 
 
