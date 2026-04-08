@@ -47,6 +47,7 @@ V1-4 已完成。当前推进 V1-5。
 | V1-3 | 其他文件类型适配 | 2026-04-07 |
 | V1-BUG | Bug 修复批次（#5 #9 #10 #14） | 2026-04-08 |
 | V1-4 | 保存流程闭环 | 2026-04-08 |
+| V1-LAYOUT | 布局间距全面优化 | 2026-04-08 |
 
 ---
 
@@ -161,6 +162,7 @@ V1-4/V1-5 完成后、发布前执行。
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
 | V1-4 | 保存流程闭环 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-4-save-flow.md` |
+| V1-LAYOUT | 布局间距全面优化 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-layout-optimization.md` |
 | Phase 1 | 技术选型 + 骨架 + SKILL.md 解析器 + 配置编辑器 MVP | 2026-04-03 | `evidence/task-logs/2026-04-03-phase1.md` |
 | Phase 2 | Frontmatter 编辑器、Topics 编辑器、导出、验证器、暗色模式 | 2026-04-03 | `evidence/task-logs/2026-04-03-phase2-3.md` |
 | Phase 3 | 扩展 8 个 Skill、Schema 查看器、错误边界、README | 2026-04-03 | `evidence/task-logs/2026-04-03-phase2-3.md` |

@@ -599,6 +599,21 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 - **#5 Trigger 展示/编辑不一致**：TriggerDisplay 始终渲染全部 9 个字段（与 TriggerEditForm 一致），空值显示"—"，补齐 `allowed-tools` 字段
 - 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
+### 布局间距全面优化（2026-04-08）
+
+- **CSS 间距压缩**：7 个选择器 padding/width/gap 值调整
+  - `[data-bridge-section]` padding `6px 8px` → `4px 6px`
+  - `.file-section` padding-left `8px` → `6px`
+  - `.ecard` padding `6px 8px` → `4px 4px`
+  - `.fr` / `.ef-row` padding `3px 4px` → `2px 2px`，gap `8px` → `6px`
+  - `.fl` / `.ef-lbl` width `60px` → `50px`
+- **行高一致化**：`.fr` 和 `.ef-row` 添加 `min-height: 24px`，消除展示/编辑切换时的高度跳动
+- **JSON 编辑器修复**：编辑态从裸 `div` 改为 `.ecard` 包裹，消除切换时的左移
+- **Markdown list 对齐**：编辑态容器添加 `pl-4`，与展示态 `pl-4` 缩进对齐
+- **ENV 表格对齐**：`.et` 添加 `margin-left: 4px`，对齐 `.ecard` 内容起始位置
+- 效果：到标签起点 31px → 23px（-26%），到值列起点 99px → 79px（-20%）
+- 验收：tsc ✅ build ✅ 浏览器验证 ✅
+
 ### V1-4 保存流程闭环（2026-04-08）
 
 - 安装 sonner（shadcn/ui toast 组件），添加 `<Toaster>` 到 App.tsx

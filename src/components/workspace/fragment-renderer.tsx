@@ -143,7 +143,7 @@ function ListFragment({
 
   if (editing) {
     return (
-      <div className="space-y-0.5">
+      <div className="space-y-0.5 pl-4">
         {block.items.map((item, i) => (
           <div key={i} className="fl-item">
             <span className="text-[9px] text-muted-foreground w-4 shrink-0 text-right mr-1">

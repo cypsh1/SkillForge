@@ -203,7 +203,7 @@
 [data-bridge-section] {
   border-left: 3px solid transparent;
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   margin-bottom: 4px;
   transition:
     background 0.2s,
@@ -688,7 +688,7 @@
 
 .file-section {
   border-left: 2px solid var(--border);
-  padding-left: 8px;
+  padding-left: 6px;
   margin-bottom: 6px;
 }
 .file-section.editing {
@@ -775,6 +775,7 @@
 .et {
   font-size: 11px;
   border-collapse: collapse;
+  margin-left: 4px;
 }
 
 .et td .fi,
@@ -791,6 +792,10 @@
   font-weight: 500;
   border-bottom: 1px solid var(--border);
   font-size: 10px;
+  white-space: nowrap;
+}
+.et td:nth-child(2) {
+  white-space: nowrap;
 }
 
 .et td {
@@ -825,13 +830,15 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 6px 8px;
+  padding: 4px 4px;
 }
 
 .fr {
   display: flex;
+  align-items: center;
   gap: 6px;
-  padding: 3px 4px;
+  padding: 2px 2px;
+  min-height: 24px;
   font-size: 11px;
   cursor: pointer;
   border-radius: 3px;
@@ -843,11 +850,12 @@
 }
 
 .fl {
-  width: 38px;
+  width: 50px;
   flex-shrink: 0;
   color: var(--muted-foreground);
   text-align: right;
-  font-size: 11px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .fv {
@@ -855,6 +863,8 @@
   font-size: 11px;
   color: #c4c4c7;
   word-break: break-all;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Thin scrollbar utility — used on panel scroll containers */
@@ -1003,18 +1013,17 @@
 
 /* ===== Inline edit form controls ===== */
 
-/* Single-line edit row */
+/* Single-line edit row — aligned with display row (.fr) */
 .ef-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-.ef-row:last-child {
+  gap: 6px;
+  padding: 2px 2px;
+  min-height: 24px;
   margin-bottom: 0;
 }
 .ef-lbl {
-  min-width: 68px;
+  width: 50px;
   flex-shrink: 0;
   font-size: 10px;
   color: var(--dim);

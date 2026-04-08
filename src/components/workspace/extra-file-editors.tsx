@@ -195,7 +195,7 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
       onDone={handleDone}
     >
       {editing ? (
-        <div className="space-y-0.5">
+        <div className="ecard">
           {entries.map(([key, value]) => (
             <div key={key} className="ef-row">
               <label className="ef-lbl">{key}</label>

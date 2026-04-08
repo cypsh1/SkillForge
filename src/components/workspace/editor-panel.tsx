@@ -615,26 +615,30 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
 
   return (
     <div className="ecard">
-      <div className="text-[10px] text-muted-foreground mb-1">📖 读取</div>
-      <div>
-        {draft.read.map((p, i) => (
-          <div key={i} className="fl-item">
-            <input className="fi" value={p} onChange={(e) => updateItem("read", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
-            <button type="button" className="et-del" onClick={() => removeItem("read", i)}>×</button>
-          </div>
-        ))}
+      <div className="ef-row" style={{ alignItems: 'flex-start' }}>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>📖 读取</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {draft.read.map((p, i) => (
+            <div key={i} className="fl-item">
+              <input className="fi" value={p} onChange={(e) => updateItem("read", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
+              <button type="button" className="et-del" onClick={() => removeItem("read", i)}>×</button>
+            </div>
+          ))}
+          <div className="fl-add" onClick={() => addItem("read")}>+ 添加读取路径</div>
+        </div>
       </div>
-      <div className="fl-add" onClick={() => addItem("read")}>+ 添加读取路径</div>
-      <div className="text-[10px] text-muted-foreground mt-2.5 mb-1">✏️ 写入</div>
-      <div>
-        {draft.write.map((p, i) => (
-          <div key={i} className="fl-item">
-            <input className="fi" value={p} onChange={(e) => updateItem("write", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
-            <button type="button" className="et-del" onClick={() => removeItem("write", i)}>×</button>
-          </div>
-        ))}
+      <div className="ef-row" style={{ alignItems: 'flex-start' }}>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>✏️ 写入</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {draft.write.map((p, i) => (
+            <div key={i} className="fl-item">
+              <input className="fi" value={p} onChange={(e) => updateItem("write", i, e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
+              <button type="button" className="et-del" onClick={() => removeItem("write", i)}>×</button>
+            </div>
+          ))}
+          <div className="fl-add" onClick={() => addItem("write")}>+ 添加写入路径</div>
+        </div>
       </div>
-      <div className="fl-add" onClick={() => addItem("write")}>+ 添加写入路径</div>
     </div>
   )
 }
@@ -710,7 +714,7 @@ function SkillMdPanel({
   }, [fm])
 
   const startEditFiles = useCallback(() => {
-    setFilesDraft({ read: [...(fm.files?.read ?? [])], write: [...(fm.files?.write ?? [])] })
+    setFilesDraft({ read: normalizeFileList(fm.files?.read), write: normalizeFileList(fm.files?.write) })
     setEditingFiles(true)
   }, [fm])
 
@@ -905,43 +909,47 @@ function SkillMdPanel({
           <FilesEditForm draft={filesDraft} onChange={setFilesDraft} />
         ) : (
           <div className="ecard">
-            <div className="text-[10px] text-muted-foreground mb-0.5">📖 读取</div>
-            <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fr">
-              {readList.length === 0 ? (
-                <span className="text-muted-foreground">无</span>
-              ) : (
-                readList.map((p, i) => {
-                  const fileEid = pathToFileEid(p)
-                  const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
-                  return (
-                    <span key={i}>
-                      {i > 0 && <br />}
-                      <span data-field={fieldKey}>
-                        {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+            <div className="fr" data-field="f-fr" style={{ alignItems: 'flex-start' }}>
+              <span className="fl">📖 读取</span>
+              <span className="fv" style={{ fontSize: 10 }}>
+                {readList.length === 0 ? (
+                  <span className="text-muted-foreground">无</span>
+                ) : (
+                  readList.map((p, i) => {
+                    const fileEid = pathToFileEid(p)
+                    const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                    return (
+                      <span key={i}>
+                        {i > 0 && <br />}
+                        <span data-field={fieldKey}>
+                          {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+                        </span>
                       </span>
-                    </span>
-                  )
-                })
-              )}
+                    )
+                  })
+                )}
+              </span>
             </div>
-            <div className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">✏️ 写入</div>
-            <div className="text-[10px] font-mono leading-[1.6] pl-1.5" data-field="f-fw">
-              {writeList.length === 0 ? (
-                <span className="text-muted-foreground">无</span>
-              ) : (
-                writeList.map((p, i) => {
-                  const fileEid = pathToFileEid(p)
-                  const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
-                  return (
-                    <span key={i}>
-                      {i > 0 && <br />}
-                      <span data-field={fieldKey}>
-                        {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+            <div className="fr" data-field="f-fw" style={{ alignItems: 'flex-start' }}>
+              <span className="fl">✏️ 写入</span>
+              <span className="fv" style={{ fontSize: 10 }}>
+                {writeList.length === 0 ? (
+                  <span className="text-muted-foreground">无</span>
+                ) : (
+                  writeList.map((p, i) => {
+                    const fileEid = pathToFileEid(p)
+                    const fieldKey = fileEid ? `f-p-${fileEid}` : `f-p-${p}`
+                    return (
+                      <span key={i}>
+                        {i > 0 && <br />}
+                        <span data-field={fieldKey}>
+                          {fileEid ? <EidText eid={fileEid} fieldKey={fieldKey}>{p}</EidText> : p}
+                        </span>
                       </span>
-                    </span>
-                  )
-                })
-              )}
+                    )
+                  })
+                )}
+              </span>
             </div>
           </div>
         )}
@@ -1013,39 +1021,29 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
   }
   return (
     <div className="ecard">
-      {bins.length > 0 && (
-        <>
-          <div className="text-[10px] text-muted-foreground mb-1">必需依赖</div>
-          <div className="text-[10px] font-mono pl-1.5 leading-[1.6]">
-            {bins.map((b, i) => (
-              <span key={i}>
-                {i > 0 && <br />}
-                <EidText eid={b}>{b}</EidText>
-              </span>
-            ))}
-          </div>
-        </>
-      )}
-      {optionalBins.length > 0 && (
-        <>
-          <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">可选依赖</div>
-          <div className="text-[10px] font-mono pl-1.5 leading-[1.6] text-muted-foreground">
-            {optionalBins.map((b, i) => (
-              <span key={i}>
-                {i > 0 && " · "}
-                <EidText eid={b}>{b}</EidText>
-              </span>
-            ))}
-          </div>
-        </>
-      )}
+      <div className="fr" data-field="f-meta-bins">
+        <span className="fl">必需依赖</span>
+        <span className="fv">
+          {bins.length > 0
+            ? bins.map((b, i) => <span key={i}><EidText eid={b}>{b}</EidText>{i < bins.length - 1 && <br />}</span>)
+            : <span className="text-muted-foreground">—</span>}
+        </span>
+      </div>
+      <div className="fr" data-field="f-meta-optbins">
+        <span className="fl">可选依赖</span>
+        <span className="fv text-muted-foreground">
+          {optionalBins.length > 0
+            ? optionalBins.map((b, i) => <span key={i}>{i > 0 && " · "}<EidText eid={b}>{b}</EidText></span>)
+            : <span className="text-muted-foreground">—</span>}
+        </span>
+      </div>
       {os.length > 0 && (
-        <>
-          <div className="text-[10px] text-muted-foreground mt-1.5 mb-1">操作系统</div>
-          <div className="text-[10px] font-mono pl-1.5">
+        <div className="fr" data-field="f-meta-os">
+          <span className="fl">操作系统</span>
+          <span className="fv">
             {os.map((o, i) => <span key={i} className="tg-pill">{o}</span>)}
-          </div>
-        </>
+          </span>
+        </div>
       )}
     </div>
   )
