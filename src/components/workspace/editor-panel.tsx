@@ -469,21 +469,26 @@ function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
   const cmdDispatch = fm["command-dispatch"] ?? ""
   const cmdTool = fm["command-tool"] ?? ""
   const cmdArgMode = fm["command-arg-mode"] ?? ""
+  const allowedTools = fm["allowed-tools"] ?? ""
 
   return (
     <div className="ecard">
-      {triggers.length > 0 && (
-        <div className="fr" data-field="f-triggers">
-          <span className="fl">触发词</span>
-          <span className="fv">{triggers.map((t, i) => <span key={i} className="tg-pill">{t}</span>)}</span>
-        </div>
-      )}
-      {readWhen.length > 0 && (
-        <div className="fr" data-field="f-readwhen">
-          <span className="fl">读取条件</span>
-          <span className="fv">{readWhen.map((t, i) => <span key={i} className="tg-pill">{t}</span>)}</span>
-        </div>
-      )}
+      <div className="fr" data-field="f-triggers">
+        <span className="fl">触发词</span>
+        <span className="fv">
+          {triggers.length > 0
+            ? triggers.map((t, i) => <span key={i} className="tg-pill">{t}</span>)
+            : <span className="text-muted-foreground">—</span>}
+        </span>
+      </div>
+      <div className="fr" data-field="f-readwhen">
+        <span className="fl">读取条件</span>
+        <span className="fv">
+          {readWhen.length > 0
+            ? readWhen.map((t, i) => <span key={i} className="tg-pill">{t}</span>)
+            : <span className="text-muted-foreground">—</span>}
+        </span>
+      </div>
       <div className="fr" data-field="f-autotrigger">
         <span className="fl">自动触发</span>
         <span className="fv">{autoTrigger ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
@@ -496,24 +501,22 @@ function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
         <span className="fl">禁止模型</span>
         <span className="fv">{disableModel ? <span className="bool-on">是</span> : <span className="bool-off">否</span>}</span>
       </div>
-      {cmdDispatch && (
-        <div className="fr" data-field="f-cmddispatch">
-          <span className="fl">命令分派</span>
-          <span className="fv font-mono">{cmdDispatch}</span>
-        </div>
-      )}
-      {cmdTool && (
-        <div className="fr" data-field="f-cmdtool">
-          <span className="fl">命令工具</span>
-          <span className="fv font-mono">{cmdTool}</span>
-        </div>
-      )}
-      {cmdArgMode && (
-        <div className="fr" data-field="f-cmdargmode">
-          <span className="fl">参数模式</span>
-          <span className="fv font-mono">{cmdArgMode}</span>
-        </div>
-      )}
+      <div className="fr" data-field="f-cmddispatch">
+        <span className="fl">命令分派</span>
+        <span className="fv font-mono">{cmdDispatch || <span className="text-muted-foreground">—</span>}</span>
+      </div>
+      <div className="fr" data-field="f-cmdtool">
+        <span className="fl">命令工具</span>
+        <span className="fv font-mono">{cmdTool || <span className="text-muted-foreground">—</span>}</span>
+      </div>
+      <div className="fr" data-field="f-cmdargmode">
+        <span className="fl">参数模式</span>
+        <span className="fv font-mono">{cmdArgMode || <span className="text-muted-foreground">—</span>}</span>
+      </div>
+      <div className="fr" data-field="f-allowedtools">
+        <span className="fl">允许工具</span>
+        <span className="fv font-mono">{allowedTools || <span className="text-muted-foreground">—</span>}</span>
+      </div>
     </div>
   )
 }
@@ -1281,7 +1284,7 @@ export function EditorPanel() {
         className="flex-1 min-h-0 overflow-y-auto thin-scroll"
         onClick={api ? handleEditorClick : undefined}
       >
-        <div className="min-h-full p-2 pr-1.5">
+        <div className="min-h-full p-2 pr-1.5" style={{ paddingBottom: 32 }}>
           {!selection ? (
             <EmptyState title="从左侧导航选择一个 Skill 或文件" />
           ) : !selectedSkill || !editState ? (

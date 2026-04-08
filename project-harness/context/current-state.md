@@ -17,12 +17,12 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 **V1.0 路线图执行中，V1-3 其他文件类型适配已完成。**
 
-当前任务：V1-4 — 保存流程闭环。
+当前任务：V1-4 — 保存流程闭环。V1-BUG 已完成。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-4 保存 → V1-5 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存 → V1-5 代码分割
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -589,6 +589,14 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 19a3926 feat: 搭建项目骨架 + 基础 UI 框架 (Phase 1.1)
 73ee389 feat: initial commit
 ```
+
+### V1-BUG 修复批次（2026-04-08）
+
+- **#14 底部状态栏遮挡**：ContextBar 添加 `shrink-0`；RelationBar 添加 `flex-shrink: 0`；编辑/预览面板滚动内容添加 32px 底部 padding
+- **#9 环境变量输入框宽度定死**：`.et td .fi, .et td .fta { width: 100% }` 使输入框自适应填满单元格
+- **#10 工具区块行高偏大**：`.tc` padding 从 `6px 10px` → `4px 8px`，margin 从 `4px` → `3px`
+- **#5 Trigger 展示/编辑不一致**：TriggerDisplay 始终渲染全部 9 个字段（与 TriggerEditForm 一致），空值显示"—"，补齐 `allowed-tools` 字段
+- 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
 ## 当前环境状态
 

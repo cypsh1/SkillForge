@@ -420,6 +420,7 @@
   background: rgba(24, 24, 27, 0.9);
   max-height: 140px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .rel-bar-hd {
@@ -747,8 +748,8 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 5px;
-  padding: 6px 10px;
-  margin-bottom: 4px;
+  padding: 4px 8px;
+  margin-bottom: 3px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -774,6 +775,12 @@
 .et {
   font-size: 11px;
   border-collapse: collapse;
+}
+
+.et td .fi,
+.et td .fta {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .et th {

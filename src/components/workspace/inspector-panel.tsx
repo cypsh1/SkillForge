@@ -553,7 +553,7 @@ function SectionedPreview({
   const parts = useMemo(() => splitPreviewInto8(content), [content])
   const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
   return (
-    <div className="p-2 pl-1.5">
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
       {BRIDGE_SECTIONS.map((def) => {
         const key = def.id as keyof PreviewParts
         const raw = parts[key] ?? ""
@@ -609,7 +609,7 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
   }, [])
 
   return (
-    <div className="p-2 pl-1.5">
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
       {doc.preamble.length > 0 && (
         <div data-bridge-section="__preamble__" className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
           <div className="bridge-section-header" onClick={() => toggle("__preamble__")}>
@@ -855,7 +855,7 @@ export function InspectorPanel() {
             )}
 
             {selection?.nodeType === "config-file" && selection.filePath && (
-              <div className="flex min-h-0 flex-col gap-1.5 p-2">
+              <div className="flex min-h-0 flex-col gap-1.5 p-2" style={{ paddingBottom: 32 }}>
                 <p className="shrink-0 truncate text-xs text-muted-foreground">{selection.filePath}</p>
                 {selectedConfigData !== undefined ? (
                   <JsonPreview data={selectedConfigData} className="h-auto min-h-[200px]" />
@@ -869,7 +869,7 @@ export function InspectorPanel() {
               extraDoc ? (
                 <ExtraFileSourcePreview doc={extraDoc} />
               ) : (
-                <div className="p-2 pl-1.5">
+                <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
                   <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>
                     <code dangerouslySetInnerHTML={{ __html: highlight(extraContent) }} />
                   </pre>
