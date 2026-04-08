@@ -31,5 +31,6 @@ export type WorkspaceAction =
   | { type: "UPDATE_CONFIG"; payload: { skillId: string; path: string; data: unknown } }
   | { type: "UPDATE_EXTRA_FILE"; payload: { skillId: string; path: string; content: string } }
   | { type: "RESET_EDITS"; payload: { skillId: string } }
+  | { type: "SAVE_SKILL"; payload: { skillId: string; serializedContent: string } }
   | { type: "ADD_SKILL"; payload: ParsedSkill }
   | { type: "REMOVE_SKILL"; payload: { skillId: string } }

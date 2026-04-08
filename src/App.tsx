@@ -6,6 +6,7 @@ import {
   type PanelImperativeHandle,
 } from "react-resizable-panels"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { AppHeader } from "@/components/layout/app-header"
 import { ArchitectureBar } from "@/components/workspace/architecture-bar"
@@ -154,6 +155,7 @@ export default function App() {
         ) : (
           <WorkspaceShell skills={skills} />
         )}
+        <Toaster position="bottom-right" duration={2000} />
       </TooltipProvider>
     </ErrorBoundary>
   )

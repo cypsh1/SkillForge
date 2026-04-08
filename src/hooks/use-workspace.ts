@@ -74,6 +74,29 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       return { ...state, editStates: next }
     }
 
+    case "SAVE_SKILL": {
+      const { skillId, serializedContent } = action.payload
+      const es = state.editStates[skillId]
+      if (!es) return state
+      const skills = state.skills.map((s) => {
+        if (s.id !== skillId) return s
+        const extraFiles = { ...s.extraFiles }
+        for (const [p, content] of Object.entries(es.extraFiles)) {
+          if (extraFiles[p]) extraFiles[p] = { ...extraFiles[p], content }
+        }
+        return {
+          ...s,
+          frontmatter: structuredClone(es.frontmatter),
+          configFiles: structuredClone(es.configFiles),
+          extraFiles,
+          rawContent: serializedContent,
+        }
+      })
+      const nextEdits = { ...state.editStates }
+      delete nextEdits[skillId]
+      return { ...state, skills, editStates: nextEdits }
+    }
+
     case "ADD_SKILL": {
       const skill = action.payload
       if (state.skills.some((s) => s.id === skill.id)) return state
@@ -112,6 +135,7 @@ interface WorkspaceContextValue {
   updateFrontmatter: (skillId: string, fm: SkillFrontmatter) => void
   updateConfig: (skillId: string, path: string, data: unknown) => void
   updateExtraFile: (skillId: string, path: string, content: string) => void
+  markSaved: (skillId: string, serializedContent: string) => void
   addSkill: (skill: ParsedSkill) => void
   removeSkill: (skillId: string) => void
 }
@@ -144,13 +168,15 @@ export function useWorkspaceReducer(skills: ParsedSkill[]) {
     dispatch({ type: "UPDATE_CONFIG", payload: { skillId, path, data } })
   const updateExtraFile = (skillId: string, path: string, content: string) =>
     dispatch({ type: "UPDATE_EXTRA_FILE", payload: { skillId, path, content } })
+  const markSaved = (skillId: string, serializedContent: string) =>
+    dispatch({ type: "SAVE_SKILL", payload: { skillId, serializedContent } })
   const addSkill = (skill: ParsedSkill) =>
     dispatch({ type: "ADD_SKILL", payload: skill })
   const removeSkill = (skillId: string) =>
     dispatch({ type: "REMOVE_SKILL", payload: { skillId } })
 
   return useMemo<WorkspaceContextValue>(
-    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, addSkill, removeSkill }),
+    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, markSaved, addSkill, removeSkill }),
     [state, dispatch, selectedSkill, editState],
   )
 }

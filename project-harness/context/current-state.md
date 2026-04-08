@@ -17,12 +17,12 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 **V1.0 路线图执行中，V1-3 其他文件类型适配已完成。**
 
-当前任务：V1-4 — 保存流程闭环。V1-BUG 已完成。
+当前任务：V1-5 — 代码分割。V1-4 已完成。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存 → V1-5 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存（✅ 完成）→ V1-5 代码分割
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -567,6 +567,7 @@ public/demos/
 ## Git 历史
 
 ```
+e0321f6 feat: V1-4 保存流程闭环 — toast 通知 + dirty 状态管理 + extra files 保存
 568432b feat: 前端布局优化 — 嵌套面板 + 字段高亮集中化 + 视觉紧凑化
 92c7b16 docs: harness 更新 — Demo 05 对齐全批次记录 + backlog 同步
 62b37bf feat: Demo 05 对齐 + 字体/颜色统一（Batch 1-5）
@@ -596,6 +597,20 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 - **#9 环境变量输入框宽度定死**：`.et td .fi, .et td .fta { width: 100% }` 使输入框自适应填满单元格
 - **#10 工具区块行高偏大**：`.tc` padding 从 `6px 10px` → `4px 8px`，margin 从 `4px` → `3px`
 - **#5 Trigger 展示/编辑不一致**：TriggerDisplay 始终渲染全部 9 个字段（与 TriggerEditForm 一致），空值显示"—"，补齐 `allowed-tools` 字段
+- 验收：tsc ✅ build ✅ 浏览器验证 ✅
+
+### V1-4 保存流程闭环（2026-04-08）
+
+- 安装 sonner（shadcn/ui toast 组件），添加 `<Toaster>` 到 App.tsx
+- `workspace.ts`：新增 `SAVE_SKILL` action 类型
+- `use-workspace.ts`：reducer 处理 `SAVE_SKILL`（更新 skills[] + 清除 editState），暴露 `markSaved` 方法
+- `inspector-panel.tsx`：`handleSaveAll` 增强
+  - 新增 extra files 保存（遍历 editState.extraFiles 调用 saveSkillFile）
+  - 成功后调用 `markSaved()` → dirty 清零 + skills 数据同步
+  - `toast.success("已保存")` 替换 inline 消息
+  - `toast.error()` 处理失败，按钮自动恢复
+- `navigator-panel.tsx`：技能名旁新增琥珀色 dirty 圆点（6px，保存后消失）
+- `sonner.tsx`：shadcn 生成后修改为暗色硬编码（移除 next-themes 依赖）
 - 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
 ## 当前环境状态

@@ -336,6 +336,7 @@ export function NavigatorPanel() {
             <SkillTreeBlock
               key={skill.id}
               skill={skill}
+              dirty={state.editStates[skill.id]?.dirty ?? false}
               expanded={expandedIds.has(skill.id)}
               onToggleExpand={() => toggleExpand(skill.id)}
               selection={selection}
@@ -356,6 +357,7 @@ export function NavigatorPanel() {
 
 interface SkillTreeBlockProps {
   skill: ParsedSkill
+  dirty: boolean
   expanded: boolean
   onToggleExpand: () => void
   selection: NavigatorSelection | null
@@ -365,6 +367,7 @@ interface SkillTreeBlockProps {
 
 function SkillTreeBlock({
   skill,
+  dirty,
   expanded,
   onToggleExpand,
   selection,
@@ -402,6 +405,9 @@ function SkillTreeBlock({
                   v{version}
                 </Badge>
               ) : null}
+              {dirty && (
+                <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="有未保存的修改" />
+              )}
             </span>
             {skill.description ? (
               <p className="text-muted-foreground mt-0.5 truncate text-[11px]">{skill.description}</p>

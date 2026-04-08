@@ -14,6 +14,7 @@ import { downloadFile } from "@/lib/download"
 import { getRelationCountSummary } from "@/lib/bridge-relations"
 import { BRIDGE_SECTIONS, SECTION_MAP } from "@/lib/bridge-sections"
 import { serializeSkillMd } from "@/lib/skill-serializer"
+import { toast } from "sonner"
 import { isTauri, saveSkillFile, saveSkillConfig } from "@/lib/tauri-fs"
 import { cn } from "@/lib/utils"
 import type { ParsedSkill, SkillFrontmatter } from "@/types/skill"
@@ -665,7 +666,7 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
 
 export function InspectorPanel() {
   const api = usePanelSyncApi()
-  const { state, selectedSkill, editState } = useWorkspace()
+  const { state, selectedSkill, editState, markSaved } = useWorkspace()
   const selection = state.selection
   const selectedEid = api?.selectedEid ?? null
   const relatedEids = api?.relatedEids ?? []
@@ -714,7 +715,6 @@ export function InspectorPanel() {
   }, [selection, editState])
 
   const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
   const exportSkillMd = () => {
     downloadFile("SKILL.md", skillMdPreview, "text/markdown;charset=utf-8")
@@ -723,20 +723,22 @@ export function InspectorPanel() {
   const handleSaveAll = useCallback(async () => {
     if (!selectedSkill || !editState?.dirty) return
     setSaving(true)
-    setSaveMsg(null)
     try {
       await saveSkillFile(selectedSkill.path, "SKILL.md", skillMdPreview)
       for (const [path, data] of Object.entries(editState.configFiles)) {
         await saveSkillConfig(selectedSkill.path, path, data)
       }
-      setSaveMsg("已保存")
-      setTimeout(() => setSaveMsg(null), 2000)
+      for (const [path, content] of Object.entries(editState.extraFiles)) {
+        await saveSkillFile(selectedSkill.path, path, content)
+      }
+      markSaved(selectedSkill.id, skillMdPreview)
+      toast.success("已保存")
     } catch (err) {
-      setSaveMsg(`保存失败: ${err instanceof Error ? err.message : String(err)}`)
+      toast.error(`保存失败: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSaving(false)
     }
-  }, [selectedSkill, editState, skillMdPreview])
+  }, [selectedSkill, editState, skillMdPreview, markSaved])
 
   const showSkillMdChrome = selection?.nodeType === "skill-md"
   const showConfigChrome = selection?.nodeType === "config-file" && Boolean(selection.filePath)
@@ -824,9 +826,6 @@ export function InspectorPanel() {
               <Save className="size-3.5" />
               {saving ? "保存中…" : "保存"}
             </Button>
-          )}
-          {saveMsg && (
-            <span className="text-xs text-muted-foreground">{saveMsg}</span>
           )}
         </div>
       </div>
