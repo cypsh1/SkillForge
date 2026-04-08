@@ -20,9 +20,9 @@ last_updated: 2026-04-08
 
 ## 当前任务
 
-**V1-5 — 代码分割**
+**V1-UX — 发布前 UX 优化**
 
-V1-4 已完成。当前推进 V1-5。
+V1-5 已完成。当前推进 V1-UX。
 
 ## V1.0 路线图
 
@@ -34,8 +34,8 @@ V1-4 已完成。当前推进 V1-5。
 | 序号 | ID | 名称 | 状态 |
 |---|---|---|---|
 | 4 | **V1-4** | 保存流程闭环 | ✅ 完成 |
-| 5 | **V1-5** | 代码分割 | 待办 |
-| — | **V1-UX** | 发布前 UX 优化（#1 #4 #8） | 待办 |
+| 5 | **V1-5** | 代码分割 | ✅ 完成 |
+| — | **V1-UX** | 发布前 UX 优化（P1: #18 #19 / P2: #4+ #22 / P3: #1 #8 #15 #16 #17） | 待办 |
 
 ### V1.0 已完成
 
@@ -47,6 +47,7 @@ V1-4 已完成。当前推进 V1-5。
 | V1-3 | 其他文件类型适配 | 2026-04-07 |
 | V1-BUG | Bug 修复批次（#5 #9 #10 #14） | 2026-04-08 |
 | V1-4 | 保存流程闭环 | 2026-04-08 |
+| V1-5 | 代码分割 | 2026-04-08 |
 | V1-LAYOUT | 布局间距全面优化 | 2026-04-08 |
 
 ---
@@ -68,36 +69,76 @@ V1-4 已完成。当前推进 V1-5。
 
 V1-4/V1-5 完成后、发布前执行。
 
-| # | 问题 | 方案 | 验收 |
-|---|---|---|---|
-| 1 | 架构条需适配不同页面/Skill | 根据当前 Skill 实际数据动态生成层级，空层不显示（已有 `buildBridgeRelations` 基础）；非 SKILL.md 页面隐藏或简化架构条 | 切换不同 Skill 时架构条层级正确；概览/config 页面无异常 |
-| 4 | 根节点详情页布局/UI 优化 | 优化 SkillOverviewPanel 布局和 UI 样式，保持与已有面板风格一致 | 视觉风格与可视化编辑面板一致 |
-| 8 | i18n 不完整 | 排查 F2+F3 后新增组件（TriggerDisplay、编辑表单、FilesEditForm、V1-1~V1-3 新组件等），补齐 `t()` 调用 | 切换语言后所有功能标签切换正确 |
-| 15 | 子区块标题编辑 + 预览同步 | 点击编辑时子区块标题也进入可编辑状态，修改后右侧源码预览同步更新 | 编辑态下标题可修改；保存后预览区标题同步变化 |
-| 16 | SKILL.md 编辑后校验 | (a) SKILL.md frontmatter 编辑后触发 Zod 校验 + 提示；(b) 其他 MD 文件编辑后基础格式校验 | 编辑无效值时显示行内校验错误；保存前整体校验通过 |
-| 17 | 文档结构区块体验优化 | doc 区块各章节增加展开/收起切换按钮，方便快速浏览和定位 | 每个章节标题旁有展开/收起按钮；点击切换内容显隐；状态独立互不影响 |
+| # | 优先级 | 问题 | 方案 | 验收 |
+|---|---|---|---|---|
+| 18 | **P1** | 图标尺寸/位置统一优化 | 统一梳理 4 处图标问题：(a) 根节点校验 `ShieldCheck` h-5→size-4 对齐 severity 图标；(b) 桥线区面板联动 SVG 从 h-4→h-5 + 透明度 30%→50%；(c) 源码预览导出按钮 `Download` size-3→size-3.5 + 按钮 h-5→h-6；(d) 全局图标 size 审计，统一为 size-3.5/size-4 两档 | 所有图标视觉一致，可点击图标 ≥ 20px 热区 |
+| 19 | **P1** | 区块边界分隔增强 | 为 `[data-bridge-section]` 添加轻量 `box-shadow: 0 1px 2px rgba(0,0,0,.12)` 或底部 `border-bottom: 1px solid rgba(255,255,255,.04)`；预览侧同步。纯 CSS 修改 | 编辑区和预览区的区块之间有清晰但不突兀的视觉分隔 |
+| 4+ | **P2** | 根节点内容与标题优化 | (a) 标题从"可视化编辑"改为"技能概览"（`headerSegment` 已返回"概览"，但标题栏仍用通用标题）；(b) 合并原 #4：优化 SkillOverviewPanel 布局/样式；(c) 根节点内容深度重设计留 V1.1 | 根节点标题显示"技能概览"；概览卡片风格与编辑面板一致 |
+| 22 | **P2** | 代码文件样式对齐 | 让 json/py/md 的展示/编辑态视觉接近 SKILL.md。**详细方案见下方验收标准** | 6 项改动点全部通过验收 |
+| 1 | P3 | 架构条需适配不同页面/Skill | 根据当前 Skill 实际数据动态生成层级，空层不显示（已有 `buildBridgeRelations` 基础）；非 SKILL.md 页面隐藏或简化架构条 | 切换不同 Skill 时架构条层级正确；概览/config 页面无异常 |
+| 8 | P3 | i18n 不完整 | 排查 F2+F3 后新增组件（TriggerDisplay、编辑表单、FilesEditForm、V1-1~V1-3 新组件等），补齐 `t()` 调用 | 切换语言后所有功能标签切换正确 |
+| 15 | P3 | 子区块标题编辑 + 预览同步 | 点击编辑时子区块标题也进入可编辑状态，修改后右侧源码预览同步更新 | 编辑态下标题可修改；保存后预览区标题同步变化 |
+| 16 | P3 | SKILL.md 编辑后校验 | (a) SKILL.md frontmatter 编辑后触发 Zod 校验 + 提示；(b) 其他 MD 文件编辑后基础格式校验 | 编辑无效值时显示行内校验错误；保存前整体校验通过 |
+| 17 | P3 | 文档结构区块体验优化 | doc 区块各章节增加展开/收起切换按钮，方便快速浏览和定位 | 每个章节标题旁有展开/收起按钮；点击切换内容显隐；状态独立互不影响 |
 
 ---
 
 ## 各任务验收标准
 
-### V1-4 保存流程闭环
+### V1-UX #22 代码文件样式对齐
 
-**验收清单**：
-- [ ] 编辑后自动出现琥珀色"已修改"徽章
-- [ ] Tauri 端：保存按钮可见，点击写回文件系统
-- [ ] 保存成功：toast 提示（2s）+ 徽章消失 + 按钮状态恢复
-- [ ] 保存失败：红色 toast + 按钮恢复可点击
-- [ ] Web 端：保存按钮不可见或降级为"导出"
+> 分析对话：[代码文件样式分析](f60dbb04-e291-41fd-b2a2-e9e5f2ced978)
+
+**差异根因**：SKILL.md 使用 `BridgeSectionBlock` + `PreviewSectionBlock`（彩色左边框、圆点、bridge-badge、scrollBothToSection、`.pc` 包裹），而 extra-file 使用独立的 `FileSection` + `ExtraFileSourcePreview`（灰色边框、无圆点、tg-pill、无联动、裸 pre）。
+
+**层 1：编辑面板 FileSection 视觉对齐**（extra-file-editors.tsx + index.css）
+
+- [ ] **1a** 删除 `.file-section` 独立 CSS 规则，FileSection 组件改为输出与 BridgeSectionBlock 相同的 className 结构（不再输出 `file-section` class）
+- [ ] **1b** 为 extra-file 区块分配中性主题色 `#64748b`（slate），FileSection 新增 `color` prop，渲染 `[data-bridge-section]` 时设置 `border-left-color`
+- [ ] **1c** FileSection 标题行补齐 `<span className="bridge-section-dot" style={{ backgroundColor: color }} />`
+- [ ] **1d** 徽章从 `tg-pill` 改为 `bridge-badge`
+- [ ] **1e** FileSection header 的 `onClick` 加上 `api?.scrollBothToSection(sectionId)`
+
+**层 2：预览面板对齐**（inspector-panel.tsx）
+
+- [ ] **2a** ExtraFileSourcePreview 每个 section 补齐 `bridge-section-dot`（中性色）
+- [ ] **2b** 每个 section 内容用 `.pc` 包裹（获得与 SKILL.md 预览一致的字号/行高/间距）
+- [ ] **2c** section header 的 `onClick` 添加 `scrollBothToSection`（caret 单独 stopPropagation 切折叠）
+- [ ] **2d** 徽章从 `tg-pill` 改为 `bridge-badge`
+
+**涉及文件**：
+- `src/components/workspace/extra-file-editors.tsx` — FileSection 组件
+- `src/components/workspace/inspector-panel.tsx` — ExtraFileSourcePreview 组件
+- `src/index.css` — 删除 `.file-section` 规则
+
+**不在范围**（V1.1）：
+- 实体注入（data-eid、关系指示器）
+- 架构层暗化（dimmed）
+- 字段级精确联动（左侧字段 hover 高亮右侧代码行）
+
+**最终验收**：
+- [ ] extra-file 编辑面板区块有中性色左边框 + 圆点 + bridge-badge，视觉上与 SKILL.md 区块风格统一
+- [ ] extra-file 预览面板区块有圆点 + `.pc` 包裹 + bridge-badge，与 SKILL.md 预览风格统一
+- [ ] 标题点击触发双面板跳转，caret 点击触发折叠
 - [ ] tsc ✅ build ✅
 
-### V1-5 代码分割
+### V1-4 保存流程闭环（已完成）
 
 **验收清单**：
-- [ ] React.lazy + Suspense 拆分路由级组件
-- [ ] 首屏 JS < 300KB
-- [ ] 所有功能正常（切换 Skill、编辑、保存）
-- [ ] tsc ✅ build ✅
+- [x] 编辑后自动出现琥珀色"已修改"徽章
+- [x] Tauri 端：保存按钮可见，点击写回文件系统
+- [x] 保存成功：toast 提示（2s）+ 徽章消失 + 按钮状态恢复
+- [x] 保存失败：红色 toast + 按钮恢复可点击
+- [x] Web 端：保存按钮不可见或降级为"导出"
+- [x] tsc ✅ build ✅
+
+### V1-5 代码分割（已完成）
+
+**验收清单**：
+- [x] React.lazy + Suspense 拆分路由级组件
+- [x] 首屏 JS < 300KB
+- [x] 所有功能正常（切换 Skill、编辑、保存）
+- [x] tsc ✅ build ✅
 
 ---
 
@@ -118,6 +159,8 @@ V1-4/V1-5 完成后、发布前执行。
 | V1.1-批量 | 批量操作 | — | 多 Skill 批量导出/验证 |
 | V1.1-更新 | Tauri 自动更新 | — | 桌面应用自动更新 |
 | V1.1-跨文件校验 | 跨文件联动校验 | #3b | 文件之间的依赖/引用关系校验（如 SKILL.md 中引用的脚本文件是否存在） |
+| V1.1-代码联动 | 代码文件桥连/联动增强 | #23 | 为 extra-file 扩展 `usePanelSync` 字段映射逻辑，实现左侧字段 hover 高亮右侧对应代码行（需要为 extra-file 定义实体模型） |
+| V1.1-统一解析 | 统一解析/展示/编辑架构 | #24 | 提取 `BridgeSectionBlock` 和 `FileSection` 的公共抽象层，统一 SKILL.md 和 extra-file 的解析→展示→编辑→预览→联动管线 |
 
 ## V2.0 待办
 
@@ -161,6 +204,7 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
+| V1-5 | 代码分割 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-5-code-splitting.md` |
 | V1-4 | 保存流程闭环 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-4-save-flow.md` |
 | V1-LAYOUT | 布局间距全面优化 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-layout-optimization.md` |
 | Phase 1 | 技术选型 + 骨架 + SKILL.md 解析器 + 配置编辑器 MVP | 2026-04-03 | `evidence/task-logs/2026-04-03-phase1.md` |

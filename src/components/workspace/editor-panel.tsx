@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -20,12 +22,13 @@ import {
   ShieldCheck,
   Terminal,
 } from "lucide-react"
-import { SourcesEditor } from "@/components/config-editor/sources-editor"
-import { TopicsEditor } from "@/components/config-editor/topics-editor"
-import { SchemaViewer } from "@/components/config-editor/schema-viewer"
-import { ExtraFileEditor } from "@/components/workspace/extra-file-editors"
 import { EmptyState } from "@/components/empty-state"
-import { ValidationPanel } from "@/components/skill-editor/validation-panel"
+
+const SourcesEditor = lazy(() => import("@/components/config-editor/sources-editor").then(m => ({ default: m.SourcesEditor })))
+const TopicsEditor = lazy(() => import("@/components/config-editor/topics-editor").then(m => ({ default: m.TopicsEditor })))
+const SchemaViewer = lazy(() => import("@/components/config-editor/schema-viewer").then(m => ({ default: m.SchemaViewer })))
+const ExtraFileEditor = lazy(() => import("@/components/workspace/extra-file-editors").then(m => ({ default: m.ExtraFileEditor })))
+const ValidationPanel = lazy(() => import("@/components/skill-editor/validation-panel").then(m => ({ default: m.ValidationPanel })))
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -1193,7 +1196,9 @@ function SkillOverviewPanel({
             <ShieldCheck className="h-5 w-5" />
             配置验证
           </h3>
-          <ValidationPanel result={validationResult} />
+          <Suspense fallback={<div className="text-sm text-muted-foreground">加载验证…</div>}>
+            <ValidationPanel result={validationResult} />
+          </Suspense>
         </div>
       )}
     </div>
@@ -1306,24 +1311,28 @@ export function EditorPanel() {
               onChange={(updated) => updateFrontmatter(selectedSkill.id, updated)}
             />
           ) : selection.nodeType === "config-file" ? (
-            <ConfigFileEditor
-              selection={selection}
-              skill={selectedSkill}
-              editState={editState}
-              updateConfig={updateConfig}
-            />
+            <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">加载编辑器…</div>}>
+              <ConfigFileEditor
+                selection={selection}
+                skill={selectedSkill}
+                editState={editState}
+                updateConfig={updateConfig}
+              />
+            </Suspense>
           ) : selection.nodeType === "extra-file" && selection.filePath ? (
             (() => {
               const file = selectedSkill.extraFiles[selection.filePath]
               if (!file) return <EmptyState title={`未找到文件 ${selection.filePath}`} />
               const editContent = editState.extraFiles[selection.filePath] ?? file.content
               return (
-                <ExtraFileEditor
-                  key={selection.filePath}
-                  file={file}
-                  editContent={editContent}
-                  onUpdate={(content) => updateExtraFile(selectedSkill.id, selection.filePath!, content)}
-                />
+                <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">加载编辑器…</div>}>
+                  <ExtraFileEditor
+                    key={selection.filePath}
+                    file={file}
+                    editContent={editContent}
+                    onUpdate={(content) => updateExtraFile(selectedSkill.id, selection.filePath!, content)}
+                  />
+                </Suspense>
               )
             })()
           ) : null}

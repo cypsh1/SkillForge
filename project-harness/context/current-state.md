@@ -15,14 +15,14 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图执行中，V1-3 其他文件类型适配已完成。**
+**V1.0 路线图执行中，V1-5 代码分割已完成。**
 
-当前任务：V1-5 — 代码分割。V1-4 已完成。
+当前任务：V1-UX — 发布前 UX 优化。V1-5 已完成。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存（✅ 完成）→ V1-5 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-BUG（✅ 完成）→ V1-4 保存（✅ 完成）→ V1-5 代码分割（✅ 完成）→ V1-UX 发布前优化
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -494,6 +494,7 @@ src/
 │   ├── ui/                     # shadcn/ui 组件
 │   │   └── tag-input.tsx       # 标签输入（Frontmatter 表单）
 │   ├── layout/                 # 布局（Header）
+│   ├── workspace-shell.tsx      # 主工作区壳层（React.lazy 加载）
 │   ├── workspace/              # 三栏布局面板
 │   │   ├── navigator-panel.tsx # 左栏：两级导航树
 │   │   ├── editor-panel.tsx    # 中栏：上下文编辑器
@@ -614,6 +615,18 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 - 效果：到标签起点 31px → 23px（-26%），到值列起点 99px → 79px（-20%）
 - 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
+### V1-5 代码分割（2026-04-08）
+
+- 提取 `WorkspaceShell` 到独立文件 `workspace-shell.tsx`，React.lazy 加载
+- 测试数据（`skill-loader.ts`）改为 dynamic import 异步加载
+- editor-panel 子视图 lazy 加载：SourcesEditor、TopicsEditor、SchemaViewer、ExtraFileEditor、ValidationPanel
+- App.tsx 精简为薄壳：ErrorBoundary + Suspense + LoadingScreen
+- ErrorBoundary 去除 shadcn/ui 依赖，改用内联样式
+- TooltipProvider 和 Toaster 移入 WorkspaceShell
+- 首屏 JS：1,235 KB → 243 KB（-80%），gzip 371 KB → 78 KB（-79%）
+- 总 chunk 数：3 → 22（按需加载）
+- 验收：tsc ✅ build ✅
+
 ### V1-4 保存流程闭环（2026-04-08）
 
 - 安装 sonner（shadcn/ui toast 组件），添加 `<Toaster>` 到 App.tsx
@@ -631,7 +644,7 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
 ## 当前环境状态
 
 - 本地开发：`npm run dev` → [http://localhost:5173/](http://localhost:5173/)
-- 生产构建：`npm run build` → dist/（908KB JS + 83KB CSS）
+- 生产构建：`npm run build` → dist/（首屏 243KB JS + 109KB CSS，总 22 chunks）
 - Tauri 开发：`npm run tauri:dev`（需 Rust 工具链）
 - Tauri 构建：`npm run tauri:build`
 - Node.js v22.22.1, npm 10.9.4, Rust 1.94.1
