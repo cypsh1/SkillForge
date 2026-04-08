@@ -15,14 +15,14 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图执行中，F2+F3 区块编辑已完成。**
+**V1.0 路线图执行中，V1-3 其他文件类型适配已完成。**
 
-当前任务：T8 — 文档正文展开（下一步）。
+当前任务：V1-4 — 保存流程闭环。
 
 ### V1.0 执行顺序
 
 ```
-P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ T8 文档展开 → F4 CRUD → F5 多文件 → UX-2+3 保存 → T2 代码分割
+P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ V1-1 文档展开（✅ 完成）→ V1-2 CRUD（✅ 完成）→ V1-3 多文件（✅ 完成）→ V1-4 保存 → V1-5 代码分割
 ```
 
 ### 关键决策（2026-04-07 规划会话）
@@ -359,6 +359,53 @@ P2 Demo 06（✅ 完成）→ F2+F3 区块编辑（✅ 完成）→ T8 文档展
   - `basicKeysExtended` 加入 emoji/author
   - `BASIC_FIELD_MAP` 加入 f-emoji/f-author
 - **移除 FrontmatterForm import**：旧全字段编辑器不再在 SkillMdPanel 中使用
+
+**验收：tsc ✅ build ✅ linter ✅ 浏览器验证 ✅**
+
+### V1-3 其他文件类型适配（2026-04-07）
+
+- **types/skill.ts**：新增 `ExtraFile` 类型（path + content + type），`ParsedSkill` 增加 `extraFiles`
+- **types/workspace.ts**：`NavigatorNodeType` 增加 `"extra-file"`，`SkillEditState` 增加 `extraFiles`，新增 `UPDATE_EXTRA_FILE` action
+- **use-workspace.ts**：reducer 处理 `UPDATE_EXTRA_FILE`，context 暴露 `updateExtraFile`
+- **skill-loader.ts**：为 tech-news-digest（7 文件）、url-reader（3 文件）、image-ocr（1 文件）加载 extraFiles
+- **navigator-panel.tsx**：`ExtraFilesSubtree` 组件，按目录分组显示（root 文件 + scripts/ + references/ + .clawhub/）
+- **extra-file-editors.tsx**（新文件）：4 种编辑器
+  - `JsonFormEditor`：`_meta.json` 表单编辑（key-value 输入框）
+  - `JsonViewer`：通用 JSON 只读（sugar-high 语法高亮）
+  - `MarkdownFileEditor`：预览/编辑切换（textarea + 完成/取消）
+  - `CodeViewer`：Python/Shell 只读（sugar-high + presets）
+- **editor-panel.tsx**：新增 `extra-file` 路由分支
+- **index.css**：sugar-high CSS 变量（暗色主题配色）
+- 安装 sugar-high@1.1.0（1KB gzip，0 依赖）
+- 验收：tsc ✅ build ✅ linter ✅ 浏览器验证 ✅
+- **V1-3 优化轮（同日）**：重写 extra-file-editors.tsx
+  - 新增 `FileSection` 通用容器（复用 bridge-section CSS：折叠/展开 + 编辑/取消/完成按钮组）
+  - `JsonFileEditor`：展示态 `.fr` 行 → 编辑态 `.ef-row` 表单（取代原来直接进入编辑态）
+  - `MarkdownFileEditor`：按 `##` 解析分段，每段独立 FileSection + 展示/编辑切换（取代原来全文 textarea）
+  - `CodeFileViewer`：FileSection 容器包装（"源代码"标题 + 语言标签 + 🔒 只读）
+  - Navigator 节点描述占位符（技能元数据/版本变更日志/Python 脚本等）
+  - `.file-section` CSS（中性左边框 + editing 高亮）
+
+### V1-2 技能 CRUD 入口（2026-04-07）
+
+- **workspace.ts**：新增 `ADD_SKILL` / `REMOVE_SKILL` action 类型
+- **use-workspace.ts**：reducer 新增 `ADD_SKILL`（重名跳过 + 自动选中）/ `REMOVE_SKILL`（清理 editStates + 选中回退）；context 暴露 `addSkill`/`removeSkill`
+- **navigator-panel.tsx**：
+  - `+` 按钮改为 DropdownMenu（3 入口：创建新技能/导入 SKILL.md/粘贴内容）
+  - `<input type="file" accept=".md">` 隐藏文件选择器 + FileReader 解析
+  - "粘贴内容" Dialog：textarea 输入 SKILL.md 全文 → 解析并加入列表
+  - SkillTreeBlock hover 显示 Trash2 删除按钮 → AlertDialog 确认 → 从列表移除
+  - `deduplicateId()` 处理重名；非法文件/解析失败显示 error banner
+- 安装 shadcn/ui `dropdown-menu` + `alert-dialog`
+- 验收：tsc ✅ build ✅ linter ✅ 浏览器验证 ✅
+
+### V1-1 文档正文展开（2026-04-07）
+
+- **editor-panel.tsx**：`SectionsTree` 组件重写，支持按章节展开/折叠
+  - `useState<Set<number>>` 管理多章节独立展开状态
+  - 有 content 的标题显示 `▼/▶` 箭头 + hover 高亮（`.di-toggle`）
+  - 展开内容包裹在 `.ecard` + `<pre>` 中，monospace 10px，`white-space: pre-wrap`
+- **index.css**：新增 `.di-toggle/.di-arrow/.dc/.dc-pre` 样式
 - 验收：tsc ✅ build ✅ linter ✅ 浏览器验证 ✅
 
 ### Demo 交互方案验证（2026-04-04 ~ 04-05）

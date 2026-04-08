@@ -23,6 +23,14 @@ export interface MarkdownSection {
   content: string
 }
 
+export type ExtraFileType = "json" | "markdown" | "python" | "shell" | "text"
+
+export interface ExtraFile {
+  path: string
+  content: string
+  type: ExtraFileType
+}
+
 export interface ParsedSkill {
   id: string
   path: string
@@ -34,4 +42,5 @@ export interface ParsedSkill {
   rawContent: string
   configFiles: Record<string, unknown>
   hasConfig: boolean
+  extraFiles: Record<string, ExtraFile>
 }

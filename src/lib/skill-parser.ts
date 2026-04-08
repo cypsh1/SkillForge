@@ -27,6 +27,7 @@ export function parseSkillMd(
     rawContent: content,
     hasConfig: false,
     configFiles: {},
+    extraFiles: {},
   }
 }
 

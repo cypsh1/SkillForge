@@ -19,6 +19,7 @@ import {
 import { SourcesEditor } from "@/components/config-editor/sources-editor"
 import { TopicsEditor } from "@/components/config-editor/topics-editor"
 import { SchemaViewer } from "@/components/config-editor/schema-viewer"
+import { ExtraFileEditor } from "@/components/workspace/extra-file-editors"
 import { EmptyState } from "@/components/empty-state"
 import { ValidationPanel } from "@/components/skill-editor/validation-panel"
 import { Badge } from "@/components/ui/badge"
@@ -70,6 +71,8 @@ function headerIcon(nodeType: NavigatorSelection["nodeType"]) {
       return FileText
     case "config-file":
       return Settings
+    case "extra-file":
+      return FileText
     default:
       return FileText
   }
@@ -83,6 +86,8 @@ function headerSegment(sel: NavigatorSelection): string {
       return "SKILL.md"
     case "config-file":
       return sel.filePath ?? "配置"
+    case "extra-file":
+      return sel.filePath ?? "文件"
     default:
       return ""
   }
@@ -311,22 +316,49 @@ function ToolsBlock({ tools }: { tools: SkillTool[] }) {
 }
 
 function SectionsTree({ skill }: { skill: ParsedSkill }) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+
   if (skill.sections.length === 0) {
     return <p className="text-sm text-muted-foreground">无章节</p>
   }
+
+  const toggle = (index: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }
+
   return (
     <div>
       {skill.sections.map((section, i) => {
         const fieldKey = `f-d-${section.title.slice(0, 8).replace(/\s+/g, '-').toLowerCase()}`
+        const hasContent = section.content.trim().length > 0
+        const isOpen = expanded.has(i)
+        const indent = section.level > 1 ? (section.level - 1) * 12 : 0
         return (
-          <div
-            key={i}
-            className="di"
-            data-field={fieldKey}
-            style={{ paddingLeft: section.level > 1 ? `${(section.level - 1) * 12}px` : undefined }}
-          >
-            <span className="dh">{"#".repeat(section.level)}</span>
-            <span>{section.title}</span>
+          <div key={i} data-field={fieldKey}>
+            <div
+              className={cn("di", hasContent && "di-toggle")}
+              style={{ paddingLeft: indent || undefined }}
+              onClick={hasContent ? () => toggle(i) : undefined}
+            >
+              {hasContent && (
+                <span
+                  className="di-arrow"
+                  style={{ transform: isOpen ? undefined : "rotate(-90deg)" }}
+                >▼</span>
+              )}
+              <span className="dh">{"#".repeat(section.level)}</span>
+              <span>{section.title}</span>
+            </div>
+            {isOpen && hasContent && (
+              <div className="ecard dc" style={{ marginLeft: indent || undefined }}>
+                <pre className="dc-pre">{section.content}</pre>
+              </div>
+            )}
           </div>
         )
       })}
@@ -1159,7 +1191,7 @@ function SkillOverviewPanel({
 
 export function EditorPanel() {
   const api = usePanelSyncApi()
-  const { state, selectedSkill, editState, updateFrontmatter, updateConfig, select } = useWorkspace()
+  const { state, selectedSkill, editState, updateFrontmatter, updateConfig, updateExtraFile, select } = useWorkspace()
 
   const handleEditorClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -1257,6 +1289,20 @@ export function EditorPanel() {
               editState={editState}
               updateConfig={updateConfig}
             />
+          ) : selection.nodeType === "extra-file" && selection.filePath ? (
+            (() => {
+              const file = selectedSkill.extraFiles[selection.filePath]
+              if (!file) return <EmptyState title={`未找到文件 ${selection.filePath}`} />
+              const editContent = editState.extraFiles[selection.filePath] ?? file.content
+              return (
+                <ExtraFileEditor
+                  key={selection.filePath}
+                  file={file}
+                  editContent={editContent}
+                  onUpdate={(content) => updateExtraFile(selectedSkill.id, selection.filePath!, content)}
+                />
+              )
+            })()
           ) : null}
         </div>
       </div>

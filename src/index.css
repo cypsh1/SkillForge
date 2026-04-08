@@ -617,6 +617,108 @@
   min-width: 16px;
 }
 
+.di-toggle {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+.di-toggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.di-arrow {
+  font-size: 7px;
+  color: var(--dim);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.dc {
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+.dc-pre {
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* ===== Navigator add-skill dropdown ===== */
+
+.add-skill-menu {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  padding: 4px;
+  min-width: 152px;
+}
+.add-skill-menu [data-slot="dropdown-menu-item"] {
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  color: var(--muted-foreground);
+  transition: background 0.12s, color 0.12s;
+}
+.add-skill-menu [data-slot="dropdown-menu-item"]:focus,
+.add-skill-menu [data-slot="dropdown-menu-item"]:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--foreground);
+}
+.add-skill-menu [data-slot="dropdown-menu-item"] svg {
+  color: var(--dim);
+  flex-shrink: 0;
+}
+.add-skill-menu [data-slot="dropdown-menu-item"]:focus svg,
+.add-skill-menu [data-slot="dropdown-menu-item"]:hover svg {
+  color: var(--muted-foreground);
+}
+.add-skill-menu [data-slot="dropdown-menu-separator"] {
+  margin: 3px 4px;
+  background: var(--border);
+}
+
+/* ===== Extra-file section containers ===== */
+
+.file-section {
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+  margin-bottom: 6px;
+}
+.file-section.editing {
+  border-left-color: var(--muted-foreground);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ===== Sugar-high syntax highlighting ===== */
+
+:root {
+  --sh-class: #60a5fa;
+  --sh-identifier: #e4e4e7;
+  --sh-sign: #71717a;
+  --sh-property: #7dd3fc;
+  --sh-entity: #c084fc;
+  --sh-jsxliterals: #fbbf24;
+  --sh-string: #86efac;
+  --sh-keyword: #f472b6;
+  --sh-comment: #52525b;
+}
+
+.sh-code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-x: auto;
+  tab-size: 4;
+  color: var(--foreground);
+}
+
 /* ===== Demo-aligned pipeline (pi / pi-indent) ===== */
 
 .pi {
