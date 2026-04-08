@@ -1,11 +1,15 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type MouseEvent,
   type ReactNode,
 } from "react"
 import {
+  ChevronsDownUp,
+  ChevronsUpDown,
   ExternalLink,
   FileText,
   KeyRound,
@@ -234,6 +238,12 @@ function BridgeSectionBlock({
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
   const api = usePanelSyncApi()
+  const expandTickRef = useRef(api?.editorExpandTick ?? 0)
+  useEffect(() => {
+    if (!api || api.editorExpandTick === expandTickRef.current) return
+    expandTickRef.current = api.editorExpandTick
+    setCollapsed(!api.editorAllExpanded)
+  }, [api?.editorExpandTick, api?.editorAllExpanded])
   return (
     <div
       data-bridge-section={sectionId}
@@ -1246,12 +1256,24 @@ export function EditorPanel() {
 
   return (
     <div className="h-full flex flex-col min-h-0 min-w-0 overflow-hidden">
-      <div className="flex shrink-0 items-center gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
-        <HeaderIcon className="size-3 shrink-0" aria-hidden />
-        <strong className="text-foreground">可视化编辑</strong>
-        <span className="text-[10px] truncate" style={{ color: 'var(--muted-foreground)' }}>
-          {titleName || "—"}{segment ? ` / ${segment}` : ""}
-        </span>
+      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <HeaderIcon className="size-3 shrink-0" aria-hidden />
+          <strong className="text-foreground">可视化编辑</strong>
+          <span className="text-[10px] truncate" style={{ color: 'var(--muted-foreground)' }}>
+            {titleName || "—"}{segment ? ` / ${segment}` : ""}
+          </span>
+        </div>
+        {api && (
+          <button
+            type="button"
+            className="shrink-0 p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={api.toggleAllEditor}
+            title={api.editorAllExpanded ? "全部收起" : "全部展开"}
+          >
+            {api.editorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
+          </button>
+        )}
       </div>
 
       <div

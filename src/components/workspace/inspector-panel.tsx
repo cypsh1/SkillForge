@@ -1,7 +1,10 @@
-import { useCallback, useMemo, useState, type MouseEvent } from "react"
-import { Download, FileText, Save } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
+import { highlight } from "sugar-high"
 
 import { ExportButton } from "@/components/config-editor/export-button"
+import { parseDocument } from "@/lib/markdown-engine"
+import type { ParsedDocument } from "@/types/content-fragment"
 import { JsonPreview } from "@/components/config-editor/json-preview"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -470,6 +473,12 @@ function PreviewSectionBlock({
 }) {
   const [open, setOpen] = useState(true)
   const api = usePanelSyncApi()
+  const expandTickRef = useRef(api?.inspectorExpandTick ?? 0)
+  useEffect(() => {
+    if (!api || api.inspectorExpandTick === expandTickRef.current) return
+    expandTickRef.current = api.inspectorExpandTick
+    setOpen(api.inspectorAllExpanded)
+  }, [api?.inspectorExpandTick, api?.inspectorAllExpanded])
   return (
     <div
       data-bridge-section={sectionId}
@@ -577,6 +586,83 @@ function SectionedPreview({
   )
 }
 
+function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
+  const api = usePanelSyncApi()
+  const expandTickRef = useRef(api?.inspectorExpandTick ?? 0)
+  const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!api || api.inspectorExpandTick === expandTickRef.current) return
+    expandTickRef.current = api.inspectorExpandTick
+    setCollapsedSet(api.inspectorAllExpanded ? new Set() : new Set(
+      ["__preamble__", ...doc.sections.map((s) => s.id)]
+    ))
+  }, [api?.inspectorExpandTick, api?.inspectorAllExpanded, doc.sections])
+
+  const toggle = useCallback((id: string) => {
+    setCollapsedSet((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  return (
+    <div className="p-2 pl-1.5">
+      {doc.preamble.length > 0 && (
+        <div data-bridge-section="__preamble__" className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
+          <div className="bridge-section-header" onClick={() => toggle("__preamble__")}>
+            <span
+              className="bridge-section-caret text-[8px] text-muted-foreground"
+              style={{ transform: collapsedSet.has("__preamble__") ? "rotate(-90deg)" : undefined }}
+            >▼</span>
+            <span className="text-xs font-semibold text-muted-foreground">概述</span>
+          </div>
+          <div className="bridge-section-content">
+            {doc.preamble.map((block, i) => (
+              <div key={i} data-field={`__preamble__-b${i}`}>
+                <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{block.raw}</pre>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {doc.sections.map((sec) => {
+        const isCollapsed = collapsedSet.has(sec.id)
+        return (
+          <div key={sec.id} data-bridge-section={sec.id} className={isCollapsed ? "bridge-section-collapsed" : undefined}>
+            <div
+              className="bridge-section-header"
+              onClick={() => {
+                api?.scrollBothToSection(sec.id)
+                toggle(sec.id)
+              }}
+            >
+              <span
+                className="bridge-section-caret text-[8px] text-muted-foreground"
+                style={{ transform: isCollapsed ? "rotate(-90deg)" : undefined }}
+              >▼</span>
+              <span className="text-xs font-semibold">{sec.heading.text}</span>
+              {sec.blocks.length > 0 && (
+                <span className="tg-pill">{sec.blocks.length}</span>
+              )}
+            </div>
+            <div className="bridge-section-content">
+              <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{sec.heading.raw}</pre>
+              {sec.blocks.map((block, bi) => (
+                <div key={bi} data-field={`${sec.id}-b${bi}`}>
+                  <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>{block.raw}</pre>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function InspectorPanel() {
   const api = usePanelSyncApi()
   const { state, selectedSkill, editState } = useWorkspace()
@@ -654,10 +740,24 @@ export function InspectorPanel() {
 
   const showSkillMdChrome = selection?.nodeType === "skill-md"
   const showConfigChrome = selection?.nodeType === "config-file" && Boolean(selection.filePath)
+  const showExtraChrome = selection?.nodeType === "extra-file" && Boolean(selection.filePath)
+
+  const extraFile = showExtraChrome && selection.filePath
+    ? selectedSkill?.extraFiles[selection.filePath]
+    : null
+  const extraContent = showExtraChrome && selection.filePath && editState
+    ? (editState.extraFiles[selection.filePath] ?? extraFile?.content ?? "")
+    : ""
+  const extraDoc = useMemo<ParsedDocument | null>(() => {
+    if (!extraContent || extraFile?.type !== "markdown") return null
+    return parseDocument(extraContent)
+  }, [extraContent, extraFile?.type])
+
   const showEmptyHint =
     selection &&
     selection.nodeType !== "skill-md" &&
-    selection.nodeType !== "config-file"
+    selection.nodeType !== "config-file" &&
+    selection.nodeType !== "extra-file"
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l bg-background">
@@ -671,6 +771,9 @@ export function InspectorPanel() {
           {showConfigChrome && selection.filePath && (
             <span className="text-[10px] truncate">{selection.filePath.split("/").pop()}</span>
           )}
+          {showExtraChrome && selection.filePath && (
+            <span className="text-[10px] truncate">{selection.filePath.split("/").pop()}</span>
+          )}
           {editState?.dirty && (
             <Badge
               variant="outline"
@@ -681,6 +784,16 @@ export function InspectorPanel() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {api && (
+            <button
+              type="button"
+              className="shrink-0 p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={api.toggleAllInspector}
+              title={api.inspectorAllExpanded ? "全部收起" : "全部展开"}
+            >
+              {api.inspectorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
+            </button>
+          )}
           {showSkillMdChrome && (
             <Button
               type="button"
@@ -750,6 +863,18 @@ export function InspectorPanel() {
                   <p className="text-sm text-muted-foreground">无此文件数据</p>
                 )}
               </div>
+            )}
+
+            {showExtraChrome && extraContent && (
+              extraDoc ? (
+                <ExtraFileSourcePreview doc={extraDoc} />
+              ) : (
+                <div className="p-2 pl-1.5">
+                  <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>
+                    <code dangerouslySetInnerHTML={{ __html: highlight(extraContent) }} />
+                  </pre>
+                </div>
+              )
             )}
 
             {showEmptyHint && (

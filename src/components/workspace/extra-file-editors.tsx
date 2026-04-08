@@ -1,7 +1,11 @@
-import { useState, useMemo, useCallback, type ReactNode } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react"
 import { highlight } from "sugar-high"
 import { python } from "sugar-high/presets"
 import { cn } from "@/lib/utils"
+import { usePanelSyncApi } from "@/hooks/use-panel-sync"
+import { parseDocument, serializeDocument } from "@/lib/markdown-engine"
+import { FragmentBlock } from "@/components/workspace/fragment-renderer"
+import type { ContentBlock, ParsedDocument } from "@/types/content-fragment"
 import type { ExtraFile, ExtraFileType } from "@/types/skill"
 
 const SHELL_PRESET = {
@@ -37,6 +41,7 @@ function FileSection({
   onCancel,
   onDone,
   defaultCollapsed,
+  sectionId,
   children,
 }: {
   title: string
@@ -48,11 +53,20 @@ function FileSection({
   onCancel?: () => void
   onDone?: () => void
   defaultCollapsed?: boolean
+  sectionId?: string
   children: ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
+  const api = usePanelSyncApi()
+  const expandTickRef = useRef(api?.editorExpandTick ?? 0)
+  useEffect(() => {
+    if (!api || api.editorExpandTick === expandTickRef.current) return
+    expandTickRef.current = api.editorExpandTick
+    setCollapsed(!api.editorAllExpanded)
+  }, [api?.editorExpandTick, api?.editorAllExpanded])
   return (
     <div
+      data-bridge-section={sectionId}
       className={cn(
         "file-section",
         collapsed && "bridge-section-collapsed",
@@ -218,139 +232,114 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
   )
 }
 
-/* ─── Markdown 编辑器：按 ## 解析分段 ─── */
-
-interface MdSection {
-  heading: string
-  body: string
-  isH1: boolean
-}
-
-function parseMdFile(content: string): { preamble: string; sections: MdSection[] } {
-  const lines = content.split("\n")
-  const sections: MdSection[] = []
-  let preambleLines: string[] = []
-  let current: MdSection | null = null
-
-  for (const line of lines) {
-    const h2 = line.match(/^##\s+(.+)$/)
-    if (h2 && !line.startsWith("###")) {
-      if (current) {
-        sections.push({ ...current, body: current.body.trimEnd() })
-      } else {
-        const pre = preambleLines.join("\n").trim()
-        const h1 = pre.match(/^#\s+(.+)/)
-        const bodyAfterH1 = h1 ? pre.split("\n").slice(1).join("\n").trim() : pre
-        if (bodyAfterH1) {
-          sections.push({ heading: h1 ? h1[1] : "概述", body: bodyAfterH1, isH1: true })
-        }
-      }
-      current = { heading: h2[1].trim(), body: "", isH1: false }
-    } else if (current) {
-      current.body += line + "\n"
-    } else {
-      preambleLines.push(line)
-    }
-  }
-
-  if (current) {
-    sections.push({ ...current, body: current.body.trimEnd() })
-  } else if (preambleLines.length > 0) {
-    const text = preambleLines.join("\n").trim()
-    if (text) {
-      const h1 = text.match(/^#\s+(.+)/)
-      sections.push({
-        heading: h1 ? h1[1] : "内容",
-        body: h1 ? text.split("\n").slice(1).join("\n").trim() : text,
-        isH1: true,
-      })
-    }
-  }
-
-  const preamble = preambleLines.join("\n")
-  return { preamble, sections }
-}
-
-function rebuildMdFile(preamble: string, sections: MdSection[]): string {
-  let out = ""
-  const preambleTrimmed = preamble.trim()
-
-  if (sections.length > 0 && sections[0].isH1) {
-    out = `# ${sections[0].heading}\n\n${sections[0].body}`
-    for (let i = 1; i < sections.length; i++) {
-      out += `\n\n## ${sections[i].heading}\n\n${sections[i].body}`
-    }
-  } else {
-    if (preambleTrimmed && !sections.some((s) => s.isH1)) {
-      out = preambleTrimmed
-    }
-    for (const sec of sections) {
-      const prefix = sec.isH1 ? "#" : "##"
-      if (out) out += "\n\n"
-      out += `${prefix} ${sec.heading}\n\n${sec.body}`
-    }
-  }
-
-  return out.trimEnd() + "\n"
-}
+/* ─── Markdown 编辑器：remark AST → 内容片段 → 类型化组件 ─── */
 
 function MarkdownFileEditor({ content, onChange }: { content: string; onChange: (c: string) => void }) {
-  const { preamble, sections } = useMemo(() => parseMdFile(content), [content])
-  const [editingIdx, setEditingIdx] = useState<number | null>(null)
-  const [draft, setDraft] = useState("")
+  const doc = useMemo(() => parseDocument(content), [content])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draftBlocks, setDraftBlocks] = useState<ContentBlock[]>([])
 
-  const handleEdit = useCallback((idx: number) => {
-    setDraft(sections[idx].body)
-    setEditingIdx(idx)
-  }, [sections])
+  const startEdit = useCallback((id: string, blocks: ContentBlock[]) => {
+    setDraftBlocks(blocks.map((b) => ({ ...b })))
+    setEditingId(id)
+  }, [])
+
+  const updateBlock = useCallback((index: number, updated: ContentBlock) => {
+    setDraftBlocks((prev) => prev.map((b, i) => (i === index ? updated : b)))
+  }, [])
 
   const handleDone = useCallback(() => {
-    if (editingIdx === null) return
-    const updated = sections.map((s, i) => (i === editingIdx ? { ...s, body: draft } : s))
-    onChange(rebuildMdFile(preamble, updated))
-    setEditingIdx(null)
-  }, [editingIdx, draft, sections, preamble, onChange])
+    if (!editingId) return
+    const updatedDoc: ParsedDocument = {
+      ...doc,
+      preamble: editingId === "__preamble__" ? draftBlocks : doc.preamble,
+      sections: doc.sections.map((sec) =>
+        sec.id === editingId ? { ...sec, blocks: draftBlocks } : sec,
+      ),
+    }
+    onChange(serializeDocument(updatedDoc))
+    setEditingId(null)
+  }, [editingId, draftBlocks, doc, onChange])
 
-  const handleCancel = useCallback(() => setEditingIdx(null), [])
+  const handleCancel = useCallback(() => setEditingId(null), [])
 
-  if (sections.length === 0) {
+  const hasPreamble = doc.preamble.length > 0
+  const hasSections = doc.sections.length > 0
+
+  if (!hasPreamble && !hasSections) {
     return (
       <FileSection title="内容" readOnly>
         <div className="ecard">
-          <pre className="sh-code whitespace-pre-wrap">{content}</pre>
+          <pre className="sh-code whitespace-pre-wrap">{content || "（空）"}</pre>
         </div>
       </FileSection>
     )
   }
 
+  const isPreambleEditing = editingId === "__preamble__"
+  const preambleBlocks = isPreambleEditing ? draftBlocks : doc.preamble
+
   return (
     <div className="space-y-1">
-      {sections.map((sec, i) => (
+      {hasPreamble && (
         <FileSection
-          key={`${sec.heading}-${i}`}
-          title={sec.heading}
+          title="概述"
+          sectionId="__preamble__"
           editable
-          editing={editingIdx === i}
-          onEdit={() => handleEdit(i)}
+          editing={isPreambleEditing}
+          onEdit={() => startEdit("__preamble__", doc.preamble)}
           onCancel={handleCancel}
           onDone={handleDone}
-          defaultCollapsed={i > 3}
         >
-          {editingIdx === i ? (
-            <textarea
-              className="fi ft w-full"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={Math.min(Math.max(draft.split("\n").length + 2, 6), 30)}
-              style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}
-            />
-          ) : (
-            <div className="ecard">
-              <pre className="sh-code whitespace-pre-wrap">{sec.body || "（空）"}</pre>
-            </div>
-          )}
+          <div className="space-y-2">
+            {preambleBlocks.map((block, i) => (
+              <FragmentBlock
+                key={i}
+                block={block}
+                editing={isPreambleEditing}
+                onUpdate={(updated) => updateBlock(i, updated)}
+                fieldId={`__preamble__-b${i}`}
+              />
+            ))}
+          </div>
         </FileSection>
-      ))}
+      )}
+      {doc.sections.map((sec, si) => {
+        const isEditing = editingId === sec.id
+        const blocks = isEditing ? draftBlocks : sec.blocks
+        const blockCount = sec.blocks.length
+        const badge = blockCount > 0 ? `${blockCount}` : undefined
+        return (
+          <FileSection
+            key={sec.id}
+            title={sec.heading.text}
+            sectionId={sec.id}
+            badge={badge}
+            editable={blockCount > 0}
+            editing={isEditing}
+            onEdit={() => startEdit(sec.id, sec.blocks)}
+            onCancel={handleCancel}
+            onDone={handleDone}
+            defaultCollapsed={si > 4}
+          >
+            {blocks.length > 0 ? (
+              <div className="space-y-2">
+                {blocks.map((block, bi) => (
+                  <FragmentBlock
+                    key={bi}
+                    block={block}
+                    editing={isEditing}
+                    onUpdate={(updated) => updateBlock(bi, updated)}
+                    fieldId={`${sec.id}-b${bi}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">（空章节）</p>
+            )}
+          </FileSection>
+        )
+      })}
     </div>
   )
 }

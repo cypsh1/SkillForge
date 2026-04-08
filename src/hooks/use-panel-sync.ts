@@ -49,6 +49,15 @@ export interface PanelSyncApi {
   isSectionDimmed: (sectionId: string) => boolean
   scrollBothToSection: (sectionId: string) => void
 
+  editorAllExpanded: boolean
+  inspectorAllExpanded: boolean
+  expandSyncEnabled: boolean
+  editorExpandTick: number
+  inspectorExpandTick: number
+  toggleAllEditor: () => void
+  toggleAllInspector: () => void
+  toggleExpandSync: () => void
+
   requestRedraw: () => void
   drawTick: number
 }
@@ -140,6 +149,11 @@ export function usePanelSync(
   const [selectedField, setSelectedField] = useState<string | null>(null)
   const [hoveredField, setHoveredField] = useState<string | null>(null)
   const [currentLayer, setCurrentLayer] = useState<BridgeLayerId | null>(null)
+  const [editorAllExpanded, setEditorAllExpanded] = useState(true)
+  const [inspectorAllExpanded, setInspectorAllExpanded] = useState(true)
+  const [expandSyncEnabled, setExpandSyncEnabled] = useState(false)
+  const [editorExpandTick, setEditorExpandTick] = useState(0)
+  const [inspectorExpandTick, setInspectorExpandTick] = useState(0)
 
   const relationStoreVersion = useMemo(() => {
     const relations = buildBridgeRelations(skill ?? null, fm ?? null)
@@ -449,6 +463,34 @@ export function usePanelSync(
     clearLayer,
     isSectionDimmed,
     scrollBothToSection,
+    editorAllExpanded,
+    inspectorAllExpanded,
+    expandSyncEnabled,
+    editorExpandTick,
+    inspectorExpandTick,
+    toggleAllEditor: useCallback(() => {
+      setEditorAllExpanded((v) => {
+        const next = !v
+        setEditorExpandTick((t) => t + 1)
+        if (expandSyncEnabled) {
+          setInspectorAllExpanded(next)
+          setInspectorExpandTick((t) => t + 1)
+        }
+        return next
+      })
+    }, [expandSyncEnabled]),
+    toggleAllInspector: useCallback(() => {
+      setInspectorAllExpanded((v) => {
+        const next = !v
+        setInspectorExpandTick((t) => t + 1)
+        if (expandSyncEnabled) {
+          setEditorAllExpanded(next)
+          setEditorExpandTick((t) => t + 1)
+        }
+        return next
+      })
+    }, [expandSyncEnabled]),
+    toggleExpandSync: useCallback(() => setExpandSyncEnabled((v) => !v), []),
     requestRedraw,
     drawTick,
   }

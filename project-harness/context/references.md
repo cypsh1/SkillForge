@@ -1,7 +1,7 @@
 ---
 description: 调研过程中发现的有价值的参考资料（含对比决策）
 status: active
-last_updated: 2026-04-05
+last_updated: 2026-04-08
 ---
 # 参考资料
 
@@ -64,6 +64,12 @@ last_updated: 2026-04-05
 - **策略 B（不选）**：两者都动态化，自动推断语义关系
   - 不选原因：语义关系（"GITHUB_TOKEN 被 fetch-github.py 使用"、"mail 和 gog 互为替代"）无法从纯数据结构推断，需要人工标注或 AI 辅助；虚假的自动推断比没有关系更差
   - 未来可考虑：用 LLM 分析 SKILL.md 自动生成关系数据，作为增量功能
+
+### Markdown 解析引擎选型（2026-04-08）
+- [remark-parse (unified 生态)](https://github.com/remarkjs/remark) — 选定，AST 导向，支持双向操作（parse + stringify），300+ 插件，TypeScript 原生
+  - 对比过：[markdown-it](https://github.com/markdown-it/markdown-it) — 不选原因：token 是扁平流式结构非树形，不内置 Markdown 反序列化（只做 MD→HTML），需额外实现 raw round-trip
+  - 对比过：[marked](https://github.com/markedjs/marked) — 不选原因：无 AST 访问，只做 Markdown→HTML 单向转换，无法拆分为可编辑的结构化片段
+- 安装包：unified@11, remark-parse@11, remark-stringify@11, remark-frontmatter@5, remark-gfm@4, @types/mdast
 
 ## 竞品/同类工具
 - [Butlerclaw](https://github.com/metahuan/butlerclaw) — OpenClaw GUI，只做安装管理，不做 Skill 配置

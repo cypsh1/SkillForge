@@ -73,10 +73,16 @@ export function BridgeConnector() {
     const xRight = inspectorRect.left - layoutRect.left + BRIDGE_GUTTER_EXTEND
 
     const matched: { def: (typeof BRIDGE_SECTIONS)[number]; eEl: Element; iEl: Element }[] = []
-    for (const def of BRIDGE_SECTIONS) {
-      const eEl = editor.querySelector(`[data-bridge-section="${def.id}"]`)
-      const iEl = inspector.querySelector(`[data-bridge-section="${def.id}"]`)
-      if (eEl && iEl) matched.push({ def, eEl, iEl })
+    const seen = new Set<string>()
+    const editorSections = editor.querySelectorAll<HTMLElement>("[data-bridge-section]")
+    for (const eEl of editorSections) {
+      const id = eEl.getAttribute("data-bridge-section")
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      const iEl = inspector.querySelector(`[data-bridge-section="${id}"]`)
+      if (!iEl) continue
+      const def = SECTION_MAP[id] ?? { id, name: id, color: "#64748b", layer: "ops" as const }
+      matched.push({ def, eEl, iEl })
     }
 
     const paired = matched.map(({ def, eEl, iEl }) => ({
@@ -259,6 +265,10 @@ export function BridgeConnector() {
                 <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent" onClick={toggleBridge}>
                   <Toggle on={be} />
                   <span>桥线连接</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent" onClick={api.toggleExpandSync}>
+                  <Toggle on={api.expandSyncEnabled} />
+                  <span>折叠联动</span>
                 </label>
                 <div className="mt-2 border-t pt-2 text-[9px] text-muted-foreground">
                   <kbd className="rounded border border-border bg-muted/50 px-1 font-mono text-[9px]">Alt</kbd>
