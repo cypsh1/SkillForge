@@ -165,7 +165,9 @@
       "allowedToolsPlaceholder": "工具名称（可选）"
     },
     "hint": {
-      "execFromBody": "markdown body → 脚本相关章节"
+      "execFromBody": "markdown body → 脚本相关章节",
+      "noFrontmatter": "此 SKILL.md 无结构化配置（frontmatter），以文档模式展示",
+      "brokenFrontmatter": "Frontmatter 格式异常，无法解析为结构化配置"
     },
     "empty": {
       "noTools": "未定义工具",

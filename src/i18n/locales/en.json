@@ -165,7 +165,9 @@
       "allowedToolsPlaceholder": "Tool name (optional)"
     },
     "hint": {
-      "execFromBody": "markdown body → script-related sections"
+      "execFromBody": "markdown body → script-related sections",
+      "noFrontmatter": "This SKILL.md has no structured config (frontmatter), displayed in document mode",
+      "brokenFrontmatter": "Frontmatter format is invalid, cannot parse as structured config"
     },
     "empty": {
       "noTools": "No tools defined",

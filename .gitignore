@@ -31,3 +31,6 @@ lerna-debug.log*
 # Chat history (from other tools)
 .llm-chat-history
 .specstory
+
+# Local OpenClaw / MCP debug (not project source)
+.openclaw/

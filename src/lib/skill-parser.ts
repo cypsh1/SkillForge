@@ -1,5 +1,6 @@
 import { parse as parseYaml } from "yaml"
-import type { ParsedSkill, SkillFrontmatter, SkillTool, ToolParameter, MarkdownSection } from "@/types/skill"
+import { parseDocument } from "@/lib/markdown-engine"
+import type { ParsedSkill, SkillFrontmatter, SkillTool, ToolParameter, MarkdownSection, FrontmatterStatus } from "@/types/skill"
 
 const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/
 
@@ -11,15 +12,19 @@ export function parseSkillMd(
   skillId: string,
   skillPath: string = "",
 ): ParsedSkill {
-  const { frontmatter, body } = extractFrontmatter(content)
+  const { frontmatter, body, status, rawFrontmatter } = extractFrontmatter(content)
   const sections = extractSections(body)
   const tools = extractTools(frontmatter, sections)
   const envVars = extractEnvVars(frontmatter)
+  const bodyDocument = parseDocument(body)
 
   return {
     id: skillId,
     path: skillPath,
     frontmatter,
+    frontmatterStatus: status,
+    rawFrontmatter,
+    bodyDocument,
     description: frontmatter.description ?? extractLeadParagraph(body),
     tools,
     envVars,
@@ -37,20 +42,31 @@ export function parseSkillMd(
 export function extractFrontmatter(content: string): {
   frontmatter: SkillFrontmatter
   body: string
+  status: FrontmatterStatus
+  rawFrontmatter: string | null
 } {
   const match = content.match(FRONTMATTER_REGEX)
   if (!match) {
     return {
       frontmatter: { name: "unknown" },
       body: content,
+      status: "missing",
+      rawFrontmatter: null,
     }
   }
 
   let frontmatter: SkillFrontmatter
   try {
-    frontmatter = parseYaml(match[1]) as SkillFrontmatter
+    const parsed = parseYaml(match[1])
+    if (!parsed || typeof parsed !== "object") throw new Error("not an object")
+    frontmatter = parsed as SkillFrontmatter
   } catch {
-    frontmatter = { name: "unknown" }
+    return {
+      frontmatter: { name: "unknown" },
+      body: match[2].trim(),
+      status: "invalid",
+      rawFrontmatter: match[1],
+    }
   }
 
   if (!frontmatter.name) {
@@ -60,6 +76,8 @@ export function extractFrontmatter(content: string): {
   return {
     frontmatter,
     body: match[2].trim(),
+    status: "valid",
+    rawFrontmatter: match[1],
   }
 }
 

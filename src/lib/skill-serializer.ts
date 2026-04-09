@@ -1,5 +1,5 @@
 import { stringify } from "yaml"
-import type { EnvVarDefinition, SkillFrontmatter } from "@/types/skill"
+import type { EnvVarDefinition, SkillFrontmatter, FrontmatterStatus } from "@/types/skill"
 
 const KNOWN_KEYS = new Set([
   "name",
@@ -79,7 +79,14 @@ function buildFrontmatterPayload(frontmatter: SkillFrontmatter): Record<string, 
 /**
  * Serialize edited frontmatter and markdown body back into SKILL.md text.
  */
-export function serializeSkillMd(frontmatter: SkillFrontmatter, markdownBody: string): string {
+export function serializeSkillMd(
+  frontmatter: SkillFrontmatter,
+  markdownBody: string,
+  status?: FrontmatterStatus,
+): string {
+  if (status === "missing") {
+    return markdownBody
+  }
   const payload = buildFrontmatterPayload(frontmatter)
   const yamlText = stringify(payload, {
     lineWidth: 0,

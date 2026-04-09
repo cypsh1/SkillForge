@@ -1,7 +1,7 @@
 ---
 description: 调研过程中发现的有价值的参考资料（含对比决策）
 status: active
-last_updated: 2026-04-08
+last_updated: 2026-04-09
 ---
 # 参考资料
 
@@ -20,6 +20,8 @@ last_updated: 2026-04-08
 ### 构建工具
 - [Vite v8](https://vite.dev/) — 选定，快速 HMR，轻量无 SSR
   - 对比过：Next.js — 不选，MVP 不需要 SSR，增加复杂度
+- [Vite — `import.meta.glob`](https://vite.dev/guide/features.html#glob-import) — 用途：`src/data/test-skills/` 下 SKILL/config/extra 自动发现，避免手工 import；2026-04-09 用于 V1.1-DATA
+  - 对比过：构建时 Node 脚本生成 `files.json` — 不选原因：增加构建步骤与缓存失效心智负担，glob 与 Vite 原生集成更简单
 
 ### 前端框架
 - [React 19](https://react.dev/) — 选定，生态最大，shadcn/ui 原生支持

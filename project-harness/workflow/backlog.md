@@ -3,7 +3,7 @@
 ## description: 任务待办清单（唯一的任务管理文件）
 
 status: active
-last_updated: 2026-04-08
+last_updated: 2026-04-09
 
 # Backlog
 
@@ -20,9 +20,62 @@ last_updated: 2026-04-08
 
 ## 当前任务
 
-**无活跃任务。V1.0 路线图全部完成。**
+**（无）** — 请从下方「V1.1 待办」或产品路线图中选择下一项，并将本段标题改为所选任务 ID + 名称。
 
-下一步：发布准备（Tauri 构建、版本号、README 更新）或从 V1.1 待办中选择任务。
+---
+
+## 最近完成
+
+**V1.1-DATA：测试数据全量同步 + 文件加载器重构** ✅ 2026-04-09
+
+来源：V1.1-UNIFIED 验收后发现大部分 Skill 测试数据不完整（多数只有 SKILL.md），导致编辑/预览内容不一致。
+
+### 批次计划
+
+| 批次 | 内容 | 涉及文件 | 状态 |
+|---|---|---|---|
+| S1 | rsync 从服务器全量同步测试数据（排除 \_\_pycache\_\_/\*.pyc/\*.bak） | src/data/test-skills/ | ✅ |
+| S2 | 重构 skill-loader.ts：手动 import → import.meta.glob 自动发现 | src/data/skill-loader.ts | ✅ |
+| S3 | 补齐 tauri-fs.ts：loadLocalSkills() 加载 extra files | src/lib/tauri-fs.ts | ✅ |
+| S4 | 全流程验证（tsc + build；浏览器由人工或后续会话补验） | — | ✅ |
+
+### 验收标准
+
+- [x] 本地 test-skills 包含服务器全部 18 个 Skill 的完整文件（另保留本地-only：`tech-news-digest-cn`，共 19 个目录）
+- [x] skill-loader.ts 使用 import.meta.glob，新增/删除文件零代码改动
+- [x] 开发模式下 `loadTestSkills()` 覆盖全部 Skill 目录与 glob 命中文件（与磁盘一致）
+- [x] tauri-fs.ts `loadLocalSkills()` 加载 extra files（扩展名与 skill-loader 一致：md/json/py/sh/js/txt/toml；跳过 SKILL.md 与 `config/`）
+- [x] `npx tsc -b --noEmit` ✅
+- [x] `npm run build` ✅
+
+**说明**：`skill-loader` 打包 chunk 因嵌入全部测试资源增至约 922KB（gzip ~254KB），属预期 trade-off。
+
+---
+
+**V1.1-UNIFIED：Markdown 正文统一 + 文件渲染对齐（第 1-2 期）** ✅ 2026-04-09
+
+来源：[文件处理优化方案](c1ad2ae3-97a7-4f15-acf4-ecaf11131b03) + [评审细化](bedbb61a-3268-4076-a7b2-a0fccdb79a06)
+
+### 批次计划
+
+| 批次 | 内容 | 涉及文件 | 状态 |
+|---|---|---|---|
+| B1 | 底座：类型 + 解析器 + 状态管理 + 序列化 | types/skill.ts, types/workspace.ts, skill-parser.ts, use-workspace.ts, skill-serializer.ts | ✅ |
+| B2 | 编辑面板 doc/exec 替换为 FragmentBlock | editor-panel.tsx | ✅ |
+| B3 | 预览面板 + 保存链路修复 | inspector-panel.tsx | ✅ |
+| B4 | 区块容器合并 + 非 .md 预览补齐 (2a+2b) | 新 section-block.tsx, extra-file-editors.tsx, editor-panel.tsx, inspector-panel.tsx | ✅ |
+| B5 | SKILL.md 四分类路由 (2c) | editor-panel.tsx, inspector-panel.tsx, zh.json, en.json | ✅ |
+
+### 验收标准
+
+- [x] SKILL.md doc/exec 区块显示富文本（表格/代码/列表），可逐段编辑
+- [x] 编辑 doc 段落后，预览实时同步，保存包含修改
+- [x] 前 6 个 frontmatter 区块完全不受影响
+- [x] .py/.sh 预览侧有区块容器
+- [x] 无 frontmatter 的 SKILL.md 不显示空区块（蓝色信息横幅 + 纯正文渲染）
+- [x] 损坏 frontmatter 的 SKILL.md 显示错误提示 + 正文正常（红色警告横幅 + 原始 frontmatter + 正文渲染）
+- [x] `npx tsc -b --noEmit` ✅
+- [x] `npm run build` ✅
 
 ## V1.0 路线图
 
@@ -162,7 +215,7 @@ V1-4/V1-5 完成后、发布前执行。
 | V1.1-更新 | Tauri 自动更新 | — | 桌面应用自动更新 |
 | V1.1-跨文件校验 | 跨文件联动校验 | #3b | 文件之间的依赖/引用关系校验（如 SKILL.md 中引用的脚本文件是否存在） |
 | V1.1-代码联动 | 代码文件桥连/联动增强 | #23 | 为 extra-file 扩展 `usePanelSync` 字段映射逻辑，实现左侧字段 hover 高亮右侧对应代码行（需要为 extra-file 定义实体模型） |
-| V1.1-统一解析 | 统一解析/展示/编辑架构 | #24 | 提取 `BridgeSectionBlock` 和 `FileSection` 的公共抽象层，统一 SKILL.md 和 extra-file 的解析→展示→编辑→预览→联动管线 |
+| ~~V1.1-统一解析~~ | ~~统一解析/展示/编辑架构~~ | #24 | ✅ 已在 V1.1-UNIFIED 中完成（SectionBlock 公共组件 + FragmentBlock 统一渲染 + 四分类路由） |
 | V1.1-标题编辑 | 子区块标题编辑+预览同步 | #15 | 点击编辑时子区块标题进入可编辑状态，修改后右侧源码预览同步更新 |
 | V1.1-编辑校验 | SKILL.md 编辑后校验 | #16 | frontmatter 编辑后触发 Zod 校验 + 提示；其他 MD 文件编辑后基础格式校验 |
 
@@ -235,3 +288,5 @@ V1-4/V1-5 完成后、发布前执行。
 | V1-3 | 其他文件类型适配 | 2026-04-07 | `evidence/task-logs/2026-04-07-v1-3-extra-files.md` |
 | V1-UX | 发布前 UX 优化 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-ux-pre-release.md` |
 | V1-UX-FIX | V1-UX 用户反馈修正 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-ux-fix.md` |
+| V1.1-UNIFIED | Markdown 正文统一 + 文件渲染对齐（B1-B5） | 2026-04-09 | `evidence/task-logs/2026-04-09-v1.1-unified.md` |
+| V1.1-DATA | 测试数据全量同步 + skill-loader glob + tauri extra files | 2026-04-09 | `evidence/task-logs/2026-04-09-v1.1-data.md` |

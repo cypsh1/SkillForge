@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
 import { highlight } from "sugar-high"
 
 import { ExportButton } from "@/components/config-editor/export-button"
+import { SectionBlock } from "@/components/workspace/section-block"
 import { parseDocument } from "@/lib/markdown-engine"
-import type { ParsedDocument } from "@/types/content-fragment"
+import { FragmentBlock } from "@/components/workspace/fragment-renderer"
+import type { ParsedDocument, ContentSection } from "@/types/content-fragment"
 import { JsonPreview } from "@/components/config-editor/json-preview"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -465,13 +467,15 @@ function PreviewSectionBlock({
   html,
   badge,
   dimmed,
+  children,
 }: {
   sectionId: string
   title: string
   color: string
-  html: string
+  html?: string
   badge?: string
   dimmed?: boolean
+  children?: ReactNode
 }) {
   const [open, setOpen] = useState(true)
   const api = usePanelSyncApi()
@@ -484,6 +488,7 @@ function PreviewSectionBlock({
   return (
     <div
       data-bridge-section={sectionId}
+      style={{ borderLeftColor: `color-mix(in srgb, ${color} 32%, transparent)` }}
       className={cn(
         !open && "bridge-section-collapsed",
         dimmed && "bridge-dim",
@@ -528,10 +533,14 @@ function PreviewSectionBlock({
         )}
       </div>
       <div className="bridge-section-content">
-        <div
-          className="pc"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {children ? (
+          <div className="pc">{children}</div>
+        ) : html ? (
+          <div
+            className="pc"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : null}
       </div>
     </div>
   )
@@ -541,6 +550,7 @@ function SectionedPreview({
   content,
   skill,
   fm,
+  bodyDocument,
   selectedEid,
   relatedEids,
   isSectionDimmed,
@@ -548,6 +558,7 @@ function SectionedPreview({
   content: string
   skill: ParsedSkill | null
   fm: SkillFrontmatter | null
+  bodyDocument: ParsedDocument | null
   selectedEid: string | null
   relatedEids: string[]
   isSectionDimmed: (sectionId: string) => boolean
@@ -555,9 +566,19 @@ function SectionedPreview({
   const { t } = useTranslation()
   const parts = useMemo(() => splitPreviewInto8(content), [content])
   const entityRules = useMemo(() => buildInspectorEntityRules(skill, fm), [skill, fm])
+
+  const { bodyExecSections, bodyDocSections } = useMemo(() => {
+    if (!bodyDocument) return { bodyExecSections: [] as ContentSection[], bodyDocSections: [] as ContentSection[] }
+    const execPattern = /脚本|script|pipeline/i
+    const exec = bodyDocument.sections.filter(s => execPattern.test(s.heading.text))
+    const doc = bodyDocument.sections.filter(s => !execPattern.test(s.heading.text))
+    return { bodyExecSections: exec, bodyDocSections: doc }
+  }, [bodyDocument])
+
   return (
     <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
-      {BRIDGE_SECTIONS.map((def) => {
+      {/* Front 6 frontmatter sections — keep existing YAML highlight rendering */}
+      {BRIDGE_SECTIONS.filter(def => def.id !== "exec" && def.id !== "doc").map((def) => {
         const key = def.id as keyof PreviewParts
         const raw = parts[key] ?? ""
         let html = buildSectionHtml(key, raw, skill)
@@ -585,6 +606,39 @@ function SectionedPreview({
           />
         )
       })}
+
+      {/* exec sections — FragmentBlock read-only */}
+      {bodyExecSections.map((section) => (
+        <PreviewSectionBlock
+          key={`exec-${section.id}`}
+          sectionId={`exec-${section.id}`}
+          title={section.heading.text}
+          color={SECTION_MAP["exec"]?.color ?? "#14b8a6"}
+          dimmed={isSectionDimmed("exec")}
+        >
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-x-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
+
+      {/* doc sections — FragmentBlock read-only */}
+      {bodyDocSections.map((section) => (
+        <PreviewSectionBlock
+          key={`doc-${section.id}`}
+          sectionId={`doc-${section.id}`}
+          title={section.heading.text}
+          color={SECTION_MAP["doc"]?.color ?? "#14b8a6"}
+          dimmed={isSectionDimmed("doc")}
+          badge={`${section.blocks.length}`}
+        >
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-doc-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
     </div>
   )
 }
@@ -615,7 +669,9 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
   return (
     <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
       {doc.preamble.length > 0 && (
-        <div data-bridge-section="__preamble__" className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
+        <div data-bridge-section="__preamble__"
+          style={{ borderLeftColor: "color-mix(in srgb, #64748b 32%, transparent)" }}
+          className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
           <div className="bridge-section-header" onClick={() => api?.scrollBothToSection("__preamble__")}>
             <span
               className="bridge-section-caret text-[8px] text-muted-foreground"
@@ -639,7 +695,9 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
       {doc.sections.map((sec) => {
         const isCollapsed = collapsedSet.has(sec.id)
         return (
-          <div key={sec.id} data-bridge-section={sec.id} className={isCollapsed ? "bridge-section-collapsed" : undefined}>
+          <div key={sec.id} data-bridge-section={sec.id}
+            style={{ borderLeftColor: "color-mix(in srgb, #64748b 32%, transparent)" }}
+            className={isCollapsed ? "bridge-section-collapsed" : undefined}>
             <div className="bridge-section-header" onClick={() => api?.scrollBothToSection(sec.id)}>
               <span
                 className="bridge-section-caret text-[8px] text-muted-foreground"
@@ -665,6 +723,105 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function BodyOnlyPreview({
+  bodyDocument,
+  isSectionDimmed,
+}: {
+  bodyDocument: ParsedDocument | null
+  isSectionDimmed: (sectionId: string) => boolean
+}) {
+  const { t } = useTranslation()
+  const { bodyExecSections, bodyDocSections } = useMemo(() => {
+    if (!bodyDocument) return { bodyExecSections: [] as ContentSection[], bodyDocSections: [] as ContentSection[] }
+    const execPattern = /脚本|script|pipeline/i
+    const exec = bodyDocument.sections.filter(s => execPattern.test(s.heading.text))
+    const doc = bodyDocument.sections.filter(s => !execPattern.test(s.heading.text))
+    return { bodyExecSections: exec, bodyDocSections: doc }
+  }, [bodyDocument])
+
+  return (
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+      <div className="mb-2 px-3 py-2 rounded text-xs"
+        style={{ background: "rgba(59,130,246,0.08)", color: "#60a5fa" }}>
+        ℹ️ {t("workspace.hint.noFrontmatter")}
+      </div>
+      {bodyExecSections.map((section) => (
+        <PreviewSectionBlock key={`exec-${section.id}`} sectionId={`exec-${section.id}`}
+          title={section.heading.text} color={SECTION_MAP["exec"]?.color ?? "#8b5cf6"}
+          dimmed={isSectionDimmed("exec")}>
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-x-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
+      {bodyDocSections.map((section) => (
+        <PreviewSectionBlock key={`doc-${section.id}`} sectionId={`doc-${section.id}`}
+          title={section.heading.text} color={SECTION_MAP["doc"]?.color ?? "#14b8a6"}
+          dimmed={isSectionDimmed("doc")} badge={`${section.blocks.length}`}>
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-doc-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
+    </div>
+  )
+}
+
+function BrokenFmPreview({
+  rawFrontmatter,
+  bodyDocument,
+  isSectionDimmed,
+}: {
+  rawFrontmatter: string | null
+  bodyDocument: ParsedDocument | null
+  isSectionDimmed: (sectionId: string) => boolean
+}) {
+  const { t } = useTranslation()
+  const { bodyExecSections, bodyDocSections } = useMemo(() => {
+    if (!bodyDocument) return { bodyExecSections: [] as ContentSection[], bodyDocSections: [] as ContentSection[] }
+    const execPattern = /脚本|script|pipeline/i
+    const exec = bodyDocument.sections.filter(s => execPattern.test(s.heading.text))
+    const doc = bodyDocument.sections.filter(s => !execPattern.test(s.heading.text))
+    return { bodyExecSections: exec, bodyDocSections: doc }
+  }, [bodyDocument])
+
+  return (
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+      <div className="mb-2 px-3 py-2 rounded text-xs"
+        style={{ background: "rgba(239,68,68,0.08)", color: "#f87171" }}>
+        ⚠️ {t("workspace.hint.brokenFrontmatter")}
+      </div>
+      {rawFrontmatter && (
+        <PreviewSectionBlock sectionId="broken-fm" title="Frontmatter (原始)" color="#ef4444">
+          <pre className="whitespace-pre-wrap text-[10px]">{rawFrontmatter}</pre>
+        </PreviewSectionBlock>
+      )}
+      {bodyExecSections.map((section) => (
+        <PreviewSectionBlock key={`exec-${section.id}`} sectionId={`exec-${section.id}`}
+          title={section.heading.text} color={SECTION_MAP["exec"]?.color ?? "#8b5cf6"}
+          dimmed={isSectionDimmed("exec")}>
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-x-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
+      {bodyDocSections.map((section) => (
+        <PreviewSectionBlock key={`doc-${section.id}`} sectionId={`doc-${section.id}`}
+          title={section.heading.text} color={SECTION_MAP["doc"]?.color ?? "#14b8a6"}
+          dimmed={isSectionDimmed("doc")} badge={`${section.blocks.length}`}>
+          {section.blocks.map((block, i) => (
+            <FragmentBlock key={i} block={block} editing={false}
+              fieldId={`f-doc-${section.id}-${i}`} onUpdate={() => {}} />
+          ))}
+        </PreviewSectionBlock>
+      ))}
     </div>
   )
 }
@@ -701,17 +858,19 @@ export function InspectorPanel() {
     [api],
   )
 
-  const markdownBody = useMemo(() => {
-    if (!selectedSkill) return ""
-    const bodyStart = selectedSkill.rawContent.indexOf("---", 3)
-    if (bodyStart === -1) return selectedSkill.rawContent
-    return selectedSkill.rawContent.slice(bodyStart + 3).trimStart()
-  }, [selectedSkill])
-
   const skillMdPreview = useMemo(() => {
     if (!editState) return ""
-    return serializeSkillMd(editState.frontmatter, markdownBody)
-  }, [editState, markdownBody])
+    return serializeSkillMd(
+      editState.frontmatter,
+      editState.markdownBody,
+      editState.frontmatterStatus,
+    )
+  }, [editState])
+
+  const previewBodyDoc = useMemo(() => {
+    if (!editState?.markdownBody) return selectedSkill?.bodyDocument ?? null
+    return parseDocument(editState.markdownBody)
+  }, [editState?.markdownBody, selectedSkill?.bodyDocument])
 
   const selectedConfigData = useMemo(() => {
     if (!selection || selection.nodeType !== "config-file" || !selection.filePath || !editState) {
@@ -848,15 +1007,29 @@ export function InspectorPanel() {
             className="min-h-0 flex-1 overflow-y-auto thin-scroll"
             onClick={api ? handleInspectorClick : undefined}
           >
-            {selection?.nodeType === "skill-md" && (
-              <SectionedPreview
-                content={skillMdPreview}
-                skill={selectedSkill}
-                fm={editState?.frontmatter ?? null}
-                selectedEid={selectedEid}
-                relatedEids={relatedEids}
-                isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
-              />
+            {selection?.nodeType === "skill-md" && editState && (
+              editState.frontmatterStatus === "valid" ? (
+                <SectionedPreview
+                  content={skillMdPreview}
+                  skill={selectedSkill}
+                  fm={editState.frontmatter}
+                  bodyDocument={previewBodyDoc}
+                  selectedEid={selectedEid}
+                  relatedEids={relatedEids}
+                  isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
+                />
+              ) : editState.frontmatterStatus === "missing" ? (
+                <BodyOnlyPreview
+                  bodyDocument={previewBodyDoc}
+                  isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
+                />
+              ) : (
+                <BrokenFmPreview
+                  rawFrontmatter={editState.rawFrontmatter}
+                  bodyDocument={previewBodyDoc}
+                  isSectionDimmed={(sectionId) => api?.isSectionDimmed(sectionId) ?? false}
+                />
+              )
             )}
 
             {selection?.nodeType === "config-file" && selection.filePath && (
@@ -875,9 +1048,18 @@ export function InspectorPanel() {
                 <ExtraFileSourcePreview doc={extraDoc} />
               ) : (
                 <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
-                  <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>
-                    <code dangerouslySetInnerHTML={{ __html: highlight(extraContent) }} />
-                  </pre>
+                  <SectionBlock
+                    sectionId={`xf-${selection.filePath?.split("/").pop() ?? "file"}`}
+                    title={selection.filePath?.split("/").pop() ?? "文件"}
+                    color="#64748b"
+                    badge={extraFile?.type}
+                  >
+                    <div className="pc">
+                      <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45 }}>
+                        <code dangerouslySetInnerHTML={{ __html: highlight(extraContent) }} />
+                      </pre>
+                    </div>
+                  </SectionBlock>
                 </div>
               )
             )}

@@ -5,13 +5,30 @@ import type { WorkspaceState, WorkspaceAction, NavigatorSelection, SkillEditStat
 function getOrCreateEditState(state: WorkspaceState, skillId: string): SkillEditState {
   if (state.editStates[skillId]) return state.editStates[skillId]
   const skill = state.skills.find((s) => s.id === skillId)
-  if (!skill) return { frontmatter: { name: "" }, configFiles: {}, extraFiles: {}, dirty: false }
+  if (!skill) return {
+    frontmatter: { name: "" },
+    markdownBody: "",
+    frontmatterStatus: "missing" as const,
+    rawFrontmatter: null,
+    configFiles: {},
+    extraFiles: {},
+    dirty: false,
+  }
   const extraContents: Record<string, string> = {}
   for (const [p, f] of Object.entries(skill.extraFiles ?? {})) {
     extraContents[p] = f.content
   }
+
+  const fmMatch = skill.rawContent.match(/^---\n[\s\S]*?\n---\n?/)
+  const body = fmMatch
+    ? skill.rawContent.slice(fmMatch[0].length).trimStart()
+    : (skill.frontmatterStatus === "missing" ? skill.rawContent : "")
+
   return {
     frontmatter: structuredClone(skill.frontmatter),
+    markdownBody: body,
+    frontmatterStatus: skill.frontmatterStatus,
+    rawFrontmatter: skill.rawFrontmatter,
     configFiles: structuredClone(skill.configFiles),
     extraFiles: extraContents,
     dirty: false,
@@ -63,6 +80,18 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
             extraFiles: { ...existing.extraFiles, [path]: content },
             dirty: true,
           },
+        },
+      }
+    }
+
+    case "UPDATE_SKILL_BODY": {
+      const { skillId, body } = action.payload
+      const existing = getOrCreateEditState(state, skillId)
+      return {
+        ...state,
+        editStates: {
+          ...state.editStates,
+          [skillId]: { ...existing, markdownBody: body, dirty: true },
         },
       }
     }
@@ -135,6 +164,7 @@ interface WorkspaceContextValue {
   updateFrontmatter: (skillId: string, fm: SkillFrontmatter) => void
   updateConfig: (skillId: string, path: string, data: unknown) => void
   updateExtraFile: (skillId: string, path: string, content: string) => void
+  updateSkillBody: (skillId: string, body: string) => void
   markSaved: (skillId: string, serializedContent: string) => void
   addSkill: (skill: ParsedSkill) => void
   removeSkill: (skillId: string) => void
@@ -168,6 +198,8 @@ export function useWorkspaceReducer(skills: ParsedSkill[]) {
     dispatch({ type: "UPDATE_CONFIG", payload: { skillId, path, data } })
   const updateExtraFile = (skillId: string, path: string, content: string) =>
     dispatch({ type: "UPDATE_EXTRA_FILE", payload: { skillId, path, content } })
+  const updateSkillBody = (skillId: string, body: string) =>
+    dispatch({ type: "UPDATE_SKILL_BODY", payload: { skillId, body } })
   const markSaved = (skillId: string, serializedContent: string) =>
     dispatch({ type: "SAVE_SKILL", payload: { skillId, serializedContent } })
   const addSkill = (skill: ParsedSkill) =>
@@ -176,7 +208,7 @@ export function useWorkspaceReducer(skills: ParsedSkill[]) {
     dispatch({ type: "REMOVE_SKILL", payload: { skillId } })
 
   return useMemo<WorkspaceContextValue>(
-    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, markSaved, addSkill, removeSkill }),
+    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, updateSkillBody, markSaved, addSkill, removeSkill }),
     [state, dispatch, selectedSkill, editState],
   )
 }

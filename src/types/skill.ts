@@ -1,8 +1,11 @@
 import type { FrontmatterData, EnvVarData } from "@/lib/schemas/frontmatter-schema"
+import type { ParsedDocument } from "@/types/content-fragment"
 
 // Re-export Zod-derived types as the canonical source
 export type SkillFrontmatter = FrontmatterData
 export type EnvVarDefinition = EnvVarData
+
+export type FrontmatterStatus = "valid" | "missing" | "invalid"
 
 export interface ToolParameter {
   name: string
@@ -35,6 +38,9 @@ export interface ParsedSkill {
   id: string
   path: string
   frontmatter: SkillFrontmatter
+  frontmatterStatus: FrontmatterStatus
+  rawFrontmatter: string | null
+  bodyDocument: ParsedDocument
   description: string
   tools: SkillTool[]
   envVars: EnvVarDefinition[]

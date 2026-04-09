@@ -1,9 +1,8 @@
-import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { highlight } from "sugar-high"
 import { python } from "sugar-high/presets"
-import { cn } from "@/lib/utils"
-import { usePanelSyncApi } from "@/hooks/use-panel-sync"
+import { SectionBlock } from "@/components/workspace/section-block"
 import { parseDocument, serializeDocument } from "@/lib/markdown-engine"
 import { FragmentBlock } from "@/components/workspace/fragment-renderer"
 import type { ContentBlock, ParsedDocument } from "@/types/content-fragment"
@@ -28,92 +27,6 @@ function highlightCode(code: string, type: ExtraFileType): string {
     default:
       return highlight(code)
   }
-}
-
-/* ─── FileSection: 复用 bridge-section CSS 的通用区块容器 ─── */
-
-function FileSection({
-  title,
-  badge,
-  readOnly,
-  editable,
-  editing,
-  onEdit,
-  onCancel,
-  onDone,
-  defaultCollapsed,
-  sectionId,
-  color = "#64748b",
-  children,
-}: {
-  title: string
-  badge?: string
-  readOnly?: boolean
-  editable?: boolean
-  editing?: boolean
-  onEdit?: () => void
-  onCancel?: () => void
-  onDone?: () => void
-  defaultCollapsed?: boolean
-  sectionId?: string
-  color?: string
-  children: ReactNode
-}) {
-  const { t } = useTranslation()
-  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
-  const api = usePanelSyncApi()
-  const expandTickRef = useRef(api?.editorExpandTick ?? 0)
-  useEffect(() => {
-    if (!api || api.editorExpandTick === expandTickRef.current) return
-    expandTickRef.current = api.editorExpandTick
-    setCollapsed(!api.editorAllExpanded)
-  }, [api?.editorExpandTick, api?.editorAllExpanded])
-  return (
-    <div
-      data-bridge-section={sectionId}
-      style={color ? { borderLeftColor: `color-mix(in srgb, ${color} 32%, transparent)` } : undefined}
-      className={cn(
-        collapsed && "bridge-section-collapsed",
-        readOnly && "bridge-section-readonly",
-        editing && "editing",
-      )}
-    >
-      <div
-        className="bridge-section-header"
-        onClick={() => sectionId && api?.scrollBothToSection(sectionId)}
-      >
-        <span
-          className="bridge-section-caret text-[8px] text-muted-foreground transition-transform"
-          style={{ transform: collapsed ? "rotate(-90deg)" : undefined }}
-          onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed) }}
-        >▼</span>
-        <span className="bridge-section-dot" style={{ backgroundColor: color }} />
-        <span className="text-xs font-semibold">{title}</span>
-        {badge && (
-          <span className="bridge-badge">{badge}</span>
-        )}
-        {readOnly && (
-          <span className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]" style={{ background: "rgba(255,255,255,0.06)", color: "var(--muted-foreground)" }}>
-            🔒 {t("workspace.action.readOnly")}
-          </span>
-        )}
-        {editable && !editing && (
-          <button type="button" className="eb" onClick={(e) => { e.stopPropagation(); onEdit?.() }}>{t("workspace.action.edit")}</button>
-        )}
-        {editing && (
-          <span className="eb-group">
-            <span className="editing-ind">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
-              {t("workspace.action.editing")}
-            </span>
-            <button type="button" className="eb-cancel" onClick={(e) => { e.stopPropagation(); onCancel?.() }}>{t("workspace.action.cancel")}</button>
-            <button type="button" className="eb-done" onClick={(e) => { e.stopPropagation(); onDone?.() }}>{t("workspace.action.done")}</button>
-          </span>
-        )}
-      </div>
-      <div className="bridge-section-content">{children}</div>
-    </div>
-  )
 }
 
 /* ─── 入口路由 ─── */
@@ -184,18 +97,18 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
 
   if (!parsed) {
     return (
-      <FileSection title="JSON" readOnly>
+      <SectionBlock title="JSON" readOnly>
         <div className="ecard">
           <pre className="sh-code text-xs text-destructive">{content}</pre>
         </div>
-      </FileSection>
+      </SectionBlock>
     )
   }
 
   const entries = Object.entries(editing ? draft : parsed)
 
   return (
-    <FileSection
+    <SectionBlock
       title={t("workspace.file.data")}
       editable
       editing={editing}
@@ -237,7 +150,7 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
           ))}
         </div>
       )}
-    </FileSection>
+    </SectionBlock>
   )
 }
 
@@ -278,11 +191,11 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
 
   if (!hasPreamble && !hasSections) {
     return (
-      <FileSection title={t("workspace.file.content")} readOnly>
+      <SectionBlock title={t("workspace.file.content")} readOnly>
         <div className="ecard">
           <pre className="sh-code whitespace-pre-wrap">{content || t("workspace.empty.emptyContent")}</pre>
         </div>
-      </FileSection>
+      </SectionBlock>
     )
   }
 
@@ -292,7 +205,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
   return (
     <div className="space-y-1">
       {hasPreamble && (
-        <FileSection
+        <SectionBlock
           title={t("workspace.file.overview")}
           sectionId="__preamble__"
           editable
@@ -312,7 +225,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
               />
             ))}
           </div>
-        </FileSection>
+        </SectionBlock>
       )}
       {doc.sections.map((sec, si) => {
         const isEditing = editingId === sec.id
@@ -320,7 +233,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
         const blockCount = sec.blocks.length
         const badge = blockCount > 0 ? `${blockCount}` : undefined
         return (
-          <FileSection
+          <SectionBlock
             key={sec.id}
             title={sec.heading.text}
             sectionId={sec.id}
@@ -347,14 +260,14 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
             ) : (
               <p className="text-[10px] text-muted-foreground">{t("workspace.empty.emptySection")}</p>
             )}
-          </FileSection>
+          </SectionBlock>
         )
       })}
     </div>
   )
 }
 
-/* ─── 代码查看器：FileSection 容器 + 语法高亮 ─── */
+/* ─── 代码查看器：SectionBlock 容器 + 语法高亮 ─── */
 
 function CodeFileViewer({ code, type }: { code: string; type: ExtraFileType }) {
   const { t } = useTranslation()
@@ -363,7 +276,7 @@ function CodeFileViewer({ code, type }: { code: string; type: ExtraFileType }) {
   const langLabel = type === "python" ? "Python" : type === "shell" ? "Shell" : type
 
   return (
-    <FileSection
+    <SectionBlock
       title={t("workspace.file.sourceCode")}
       badge={langLabel}
       readOnly
@@ -374,6 +287,6 @@ function CodeFileViewer({ code, type }: { code: string; type: ExtraFileType }) {
           <code dangerouslySetInnerHTML={{ __html: html }} />
         </pre>
       </div>
-    </FileSection>
+    </SectionBlock>
   )
 }

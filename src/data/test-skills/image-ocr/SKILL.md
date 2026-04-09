@@ -1,5 +1,4 @@
 ---
-
 name: image-ocr
 description: "Extract text from images using Tesseract OCR"
 metadata:
@@ -19,8 +18,8 @@ metadata:
             },
           ],
       },
-
-##   }
+  }
+---
 
 # Image OCR
 
@@ -41,4 +40,3 @@ image-ocr "document.jpg" --lang eng
 ```bash
 sudo dnf install tesseract
 ```
-

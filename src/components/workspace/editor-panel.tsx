@@ -2,9 +2,7 @@ import {
   lazy,
   Suspense,
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState,
   type MouseEvent,
   type ReactNode,
@@ -32,8 +30,12 @@ import { useWorkspace } from "@/hooks/use-workspace"
 import { BRIDGE_SECTIONS } from "@/lib/bridge-sections"
 import { getRelationCountSummary } from "@/lib/bridge-relations"
 import { getOpenclawMetadata, getOpenclawMetadataKey } from "@/lib/schemas/frontmatter-schema"
+import { SectionBlock } from "@/components/workspace/section-block"
 import { cn } from "@/lib/utils"
 import { validateSkill } from "@/lib/skill-validator"
+import { FragmentBlock } from "@/components/workspace/fragment-renderer"
+import { serializeDocument } from "@/lib/markdown-engine"
+import type { ContentBlock } from "@/types/content-fragment"
 import type { NavigatorSelection } from "@/types/workspace"
 import type { ParsedSkill, SkillFrontmatter, SkillTool, EnvVarDefinition } from "@/types/skill"
 
@@ -119,12 +121,6 @@ function pathToFileEid(path: string): string | null {
   return null
 }
 
-function scriptEidFromSectionTitle(title: string): string | null {
-  const m = title.match(/([\w-]+(?:\.py)?)/i)
-  if (!m) return null
-  return m[1].replace(/\.py$/i, "")
-}
-
 function RelationIndicator({ eid, fieldKey }: { eid: string; fieldKey?: string }) {
   const summary = getRelationCountSummary(eid)
   const { forward, alternate, contains } = summary
@@ -190,95 +186,6 @@ function EidText({
   )
 }
 
-function BridgeSectionBlock({
-  sectionId,
-  title,
-  color,
-  badge,
-  readOnly,
-  editable,
-  editing,
-  onEdit,
-  onCancel,
-  onDone,
-  defaultCollapsed,
-  dimmed,
-  children,
-}: {
-  sectionId: string
-  title: string
-  color: string
-  badge?: string
-  readOnly?: boolean
-  editable?: boolean
-  editing?: boolean
-  onEdit?: () => void
-  onCancel?: () => void
-  onDone?: () => void
-  defaultCollapsed?: boolean
-  dimmed?: boolean
-  children: ReactNode
-}) {
-  const { t } = useTranslation()
-  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
-  const api = usePanelSyncApi()
-  const expandTickRef = useRef(api?.editorExpandTick ?? 0)
-  useEffect(() => {
-    if (!api || api.editorExpandTick === expandTickRef.current) return
-    expandTickRef.current = api.editorExpandTick
-    setCollapsed(!api.editorAllExpanded)
-  }, [api?.editorExpandTick, api?.editorAllExpanded])
-  return (
-    <div
-      data-bridge-section={sectionId}
-      className={cn(
-        collapsed && "bridge-section-collapsed",
-        readOnly && "bridge-section-readonly",
-        editing && "editing",
-        dimmed && "bridge-dim",
-      )}
-    >
-      <div
-        className="bridge-section-header"
-        onClick={() => api?.scrollBothToSection(sectionId)}
-      >
-        <span
-          className="bridge-section-caret text-[8px] text-muted-foreground transition-transform"
-          style={{ transform: collapsed ? "rotate(-90deg)" : undefined }}
-          onClick={(e) => {
-            e.stopPropagation()
-            setCollapsed(!collapsed)
-          }}
-        >
-          ▼
-        </span>
-        <span className="bridge-section-dot" style={{ backgroundColor: color }} />
-        <span className="text-xs font-semibold">{title}</span>
-        {badge && <span className="bridge-badge">{badge}</span>}
-        {readOnly && (
-          <span className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted-foreground)' }}>
-            🔒 {t("workspace.action.readOnly")}
-          </span>
-        )}
-        {editable && !editing && (
-          <button type="button" className="eb" onClick={(e) => { e.stopPropagation(); onEdit?.() }}>{t("workspace.action.edit")}</button>
-        )}
-        {editing && (
-          <span className="eb-group">
-            <span className="editing-ind">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
-              {t("workspace.action.editing")}
-            </span>
-            <button type="button" className="eb-cancel" onClick={(e) => { e.stopPropagation(); onCancel?.() }}>{t("workspace.action.cancel")}</button>
-            <button type="button" className="eb-done" onClick={(e) => { e.stopPropagation(); onDone?.() }}>{t("workspace.action.done")}</button>
-          </span>
-        )}
-      </div>
-      <div className="bridge-section-content">{children}</div>
-    </div>
-  )
-}
-
 function ToolsBlock({ tools }: { tools: SkillTool[] }) {
   const { t } = useTranslation()
   if (tools.length === 0) {
@@ -304,58 +211,6 @@ function ToolsBlock({ tools }: { tools: SkillTool[] }) {
             <RelationIndicator eid={tool.name} fieldKey={fieldKey} />
           </div>
         </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function SectionsTree({ skill }: { skill: ParsedSkill }) {
-  const { t } = useTranslation()
-  const [expanded, setExpanded] = useState<Set<number>>(new Set())
-
-  if (skill.sections.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("workspace.empty.noSections")}</p>
-  }
-
-  const toggle = (index: number) => {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(index)) next.delete(index)
-      else next.add(index)
-      return next
-    })
-  }
-
-  return (
-    <div>
-      {skill.sections.map((section, i) => {
-        const fieldKey = `f-d-${section.title.slice(0, 8).replace(/\s+/g, '-').toLowerCase()}`
-        const hasContent = section.content.trim().length > 0
-        const isOpen = expanded.has(i)
-        const indent = section.level > 1 ? (section.level - 1) * 12 : 0
-        return (
-          <div key={i} data-field={fieldKey}>
-            <div
-              className={cn("di", hasContent && "di-toggle")}
-              style={{ paddingLeft: indent || undefined }}
-              onClick={hasContent ? () => toggle(i) : undefined}
-            >
-              {hasContent && (
-                <span
-                  className="di-arrow"
-                  style={{ transform: isOpen ? undefined : "rotate(-90deg)" }}
-                >▼</span>
-              )}
-              <span className="dh">{"#".repeat(section.level)}</span>
-              <span>{section.title}</span>
-            </div>
-            {isOpen && hasContent && (
-              <div className="ecard dc" style={{ marginLeft: indent || undefined }}>
-                <pre className="dc-pre">{section.content}</pre>
-              </div>
-            )}
-          </div>
         )
       })}
     </div>
@@ -642,17 +497,15 @@ function SkillMdPanel({
   skill,
   fm,
   onChange,
+  onBodyChange,
 }: {
   skill: ParsedSkill
   fm: SkillFrontmatter
   onChange: (updated: SkillFrontmatter) => void
+  onBodyChange: (body: string) => void
 }) {
   const { t } = useTranslation()
   const api = usePanelSyncApi()
-  const execSections = useMemo(
-    () => skill.sections.filter((s) => /脚本|script|pipeline/i.test(s.title)),
-    [skill.sections],
-  )
 
   const readList = normalizeFileList(fm.files?.read)
   const writeList = normalizeFileList(fm.files?.write)
@@ -763,7 +616,7 @@ function SkillMdPanel({
   return (
     <div>
       {/* ====== basic ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="basic"
         title={t("workspace.section.basicInfo")}
         color={bridgeColor("basic")}
@@ -782,10 +635,10 @@ function SkillMdPanel({
         ) : (
           <BasicInfoDisplay fm={fm} />
         )}
-      </BridgeSectionBlock>
+      </SectionBlock>
 
       {/* ====== trigger ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="trigger"
         title={t("workspace.section.trigger")}
         color={bridgeColor("trigger")}
@@ -805,10 +658,10 @@ function SkillMdPanel({
         ) : (
           <TriggerDisplay fm={fm} />
         )}
-      </BridgeSectionBlock>
+      </SectionBlock>
 
       {/* ====== meta ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="meta"
         title={t("workspace.section.metadata")}
         color={bridgeColor("meta")}
@@ -827,10 +680,10 @@ function SkillMdPanel({
         ) : (
           <MetaOpenclawView fm={fm} />
         )}
-      </BridgeSectionBlock>
+      </SectionBlock>
 
       {/* ====== env ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="env"
         title={t("workspace.section.envVars")}
         color={bridgeColor("env")}
@@ -869,10 +722,10 @@ function SkillMdPanel({
             </table>
           </div>
         )}
-      </BridgeSectionBlock>
+      </SectionBlock>
 
       {/* ====== tools (readonly) ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="tools"
         title={t("workspace.section.tools")}
         color={bridgeColor("tools")}
@@ -884,10 +737,10 @@ function SkillMdPanel({
           frontmatter → tools[]
         </p>
         <ToolsBlock tools={skill.tools} />
-      </BridgeSectionBlock>
+      </SectionBlock>
 
       {/* ====== files ====== */}
-      <BridgeSectionBlock
+      <SectionBlock
         sectionId="files"
         title={t("workspace.section.filePerms")}
         color={bridgeColor("files")}
@@ -949,56 +802,9 @@ function SkillMdPanel({
             </div>
           </div>
         )}
-      </BridgeSectionBlock>
+      </SectionBlock>
 
-      {/* ====== exec (readonly) ====== */}
-      <BridgeSectionBlock
-        sectionId="exec"
-        title={t("workspace.section.scriptPipeline")}
-        color={bridgeColor("exec")}
-        badge={t("workspace.section.execLayer")}
-        readOnly
-        dimmed={api?.isSectionDimmed("exec")}
-      >
-        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
-          {t("workspace.hint.execFromBody")}
-        </p>
-        {execSections.length === 0 ? (
-          <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noExecSections")}</p>
-        ) : (
-          <div className="ecard" style={{ padding: '6px 8px' }}>
-            {execSections.map((s, i) => {
-              const scriptEid = scriptEidFromSectionTitle(s.title)
-              const fieldKey = scriptEid ? `f-x-${scriptEid}` : undefined
-              const isRoot = s.level <= 2
-              return (
-                <div key={i} className={cn("pi", !isRoot && "pi-indent")} data-field={fieldKey}>
-                  {!isRoot && <span>→</span>}
-                  <span className={cn(isRoot && "text-xs font-semibold")}>
-                    {scriptEid ? <EidText eid={scriptEid} fieldKey={fieldKey}>{s.title}</EidText> : s.title}
-                  </span>
-                  {scriptEid ? <span className="ml-auto"><RelationIndicator eid={scriptEid} fieldKey={fieldKey} /></span> : null}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </BridgeSectionBlock>
-
-      {/* ====== doc (readonly) ====== */}
-      <BridgeSectionBlock
-        sectionId="doc"
-        title={t("workspace.section.docStructure")}
-        color={bridgeColor("doc")}
-        badge={t("workspace.section.sectionCount", { count: skill.sections.length })}
-        readOnly
-        dimmed={api?.isSectionDimmed("doc")}
-      >
-        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
-          markdown body → headings
-        </p>
-        <SectionsTree skill={skill} />
-      </BridgeSectionBlock>
+      <BodySectionsRenderer skill={skill} onBodyChange={onBodyChange} />
     </div>
   )
 }
@@ -1042,6 +848,164 @@ function MetaOpenclawView({ fm }: { fm: SkillFrontmatter }) {
           </span>
         </div>
       )}
+    </div>
+  )
+}
+
+function BodySectionsRenderer({
+  skill,
+  onBodyChange,
+}: {
+  skill: ParsedSkill
+  onBodyChange: (body: string) => void
+}) {
+  const { t } = useTranslation()
+  const api = usePanelSyncApi()
+
+  const { bodyExecSections, bodyDocSections } = useMemo(() => {
+    const execPattern = /脚本|script|pipeline/i
+    const exec = skill.bodyDocument.sections.filter(s => execPattern.test(s.heading.text))
+    const doc = skill.bodyDocument.sections.filter(s => !execPattern.test(s.heading.text))
+    return { bodyExecSections: exec, bodyDocSections: doc }
+  }, [skill.bodyDocument])
+
+  const [editingDocSections, setEditingDocSections] = useState<Set<string>>(new Set())
+  const [draftBlocks, setDraftBlocks] = useState<Record<string, ContentBlock[]>>({})
+
+  const startEditDoc = useCallback((secId: string, blocks: ContentBlock[]) => {
+    setDraftBlocks(prev => ({ ...prev, [secId]: structuredClone(blocks) }))
+    setEditingDocSections(prev => new Set(prev).add(secId))
+  }, [])
+
+  const cancelEditDoc = useCallback((secId: string) => {
+    setEditingDocSections(prev => { const n = new Set(prev); n.delete(secId); return n })
+  }, [])
+
+  const saveDocSection = useCallback((secId: string) => {
+    const updatedSections = skill.bodyDocument.sections.map(s =>
+      s.id === secId && draftBlocks[secId] ? { ...s, blocks: draftBlocks[secId] } : s
+    )
+    const updatedDoc = { ...skill.bodyDocument, sections: updatedSections }
+    const newBody = serializeDocument(updatedDoc)
+    onBodyChange(newBody)
+    setEditingDocSections(prev => { const n = new Set(prev); n.delete(secId); return n })
+  }, [skill.bodyDocument, draftBlocks, onBodyChange])
+
+  return (
+    <>
+      {bodyExecSections.length === 0 ? (
+        <SectionBlock sectionId="exec" title={t("workspace.section.scriptPipeline")}
+          color={bridgeColor("exec")} readOnly dimmed={api?.isSectionDimmed("exec")}>
+          <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noExecSections")}</p>
+        </SectionBlock>
+      ) : (
+        bodyExecSections.map((section) => (
+          <SectionBlock
+            key={section.id}
+            sectionId={`exec-${section.id}`}
+            title={section.heading.text}
+            color={bridgeColor("exec")}
+            badge={`${section.blocks.length}`}
+            readOnly
+            dimmed={api?.isSectionDimmed("exec")}
+          >
+            {section.blocks.map((block, i) => (
+              <FragmentBlock key={i} block={block} editing={false}
+                fieldId={`f-x-${section.id}-${i}`}
+                onUpdate={() => {}} />
+            ))}
+          </SectionBlock>
+        ))
+      )}
+
+      {bodyDocSections.length === 0 ? (
+        <SectionBlock sectionId="doc" title={t("workspace.section.docStructure")}
+          color={bridgeColor("doc")} readOnly dimmed={api?.isSectionDimmed("doc")}>
+          <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noSections")}</p>
+        </SectionBlock>
+      ) : (
+        bodyDocSections.map((section) => {
+          const isEditing = editingDocSections.has(section.id)
+          const blocks = isEditing ? (draftBlocks[section.id] ?? section.blocks) : section.blocks
+          return (
+            <SectionBlock
+              key={section.id}
+              sectionId={`doc-${section.id}`}
+              title={section.heading.text}
+              color={bridgeColor("doc")}
+              badge={`${section.blocks.length}`}
+              editable
+              editing={isEditing}
+              onEdit={() => startEditDoc(section.id, section.blocks)}
+              onCancel={() => cancelEditDoc(section.id)}
+              onDone={() => saveDocSection(section.id)}
+              dimmed={api?.isSectionDimmed("doc")}
+            >
+              {blocks.map((block, i) => (
+                <FragmentBlock
+                  key={i}
+                  block={block}
+                  editing={isEditing}
+                  fieldId={`f-doc-${section.id}-${i}`}
+                  onUpdate={(updated) => {
+                    if (!isEditing) return
+                    setDraftBlocks(prev => {
+                      const arr = [...(prev[section.id] ?? section.blocks)]
+                      arr[i] = updated
+                      return { ...prev, [section.id]: arr }
+                    })
+                  }}
+                />
+              ))}
+            </SectionBlock>
+          )
+        })
+      )}
+    </>
+  )
+}
+
+function DocOnlySkillPanel({
+  skill,
+  onBodyChange,
+}: {
+  skill: ParsedSkill
+  onBodyChange: (body: string) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div>
+      <div className="mb-3 px-3 py-2 rounded text-xs"
+        style={{ background: "rgba(59,130,246,0.08)", color: "#60a5fa" }}>
+        ℹ️ {t("workspace.hint.noFrontmatter")}
+      </div>
+      <BodySectionsRenderer skill={skill} onBodyChange={onBodyChange} />
+    </div>
+  )
+}
+
+function BrokenFmSkillPanel({
+  skill,
+  rawFrontmatter,
+  onBodyChange,
+}: {
+  skill: ParsedSkill
+  rawFrontmatter: string | null
+  onBodyChange: (body: string) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div>
+      <div className="mb-3 px-3 py-2 rounded text-xs"
+        style={{ background: "rgba(239,68,68,0.08)", color: "#f87171" }}>
+        ⚠️ {t("workspace.hint.brokenFrontmatter")}
+      </div>
+      {rawFrontmatter && (
+        <SectionBlock sectionId="broken-fm" title="Frontmatter (原始)" color="#ef4444">
+          <pre className="sh-code whitespace-pre-wrap text-[10px]">{rawFrontmatter}</pre>
+        </SectionBlock>
+      )}
+      <BodySectionsRenderer skill={skill} onBodyChange={onBodyChange} />
     </div>
   )
 }
@@ -1187,7 +1151,7 @@ function SkillOverviewPanel({
 export function EditorPanel() {
   const { t } = useTranslation()
   const api = usePanelSyncApi()
-  const { state, selectedSkill, editState, updateFrontmatter, updateConfig, updateExtraFile, select } = useWorkspace()
+  const { state, selectedSkill, editState, updateFrontmatter, updateConfig, updateExtraFile, updateSkillBody, select } = useWorkspace()
 
   const handleEditorClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -1300,11 +1264,25 @@ export function EditorPanel() {
               onSelect={select}
             />
           ) : selection.nodeType === "skill-md" ? (
-            <SkillMdPanel
-              skill={selectedSkill}
-              fm={editState.frontmatter}
-              onChange={(updated) => updateFrontmatter(selectedSkill.id, updated)}
-            />
+            editState.frontmatterStatus === "valid" ? (
+              <SkillMdPanel
+                skill={selectedSkill}
+                fm={editState.frontmatter}
+                onChange={(updated) => updateFrontmatter(selectedSkill.id, updated)}
+                onBodyChange={(body) => updateSkillBody(selectedSkill.id, body)}
+              />
+            ) : editState.frontmatterStatus === "missing" ? (
+              <DocOnlySkillPanel
+                skill={selectedSkill}
+                onBodyChange={(body) => updateSkillBody(selectedSkill.id, body)}
+              />
+            ) : (
+              <BrokenFmSkillPanel
+                skill={selectedSkill}
+                rawFrontmatter={editState.rawFrontmatter}
+                onBodyChange={(body) => updateSkillBody(selectedSkill.id, body)}
+              />
+            )
           ) : selection.nodeType === "config-file" ? (
             <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">{t("workspace.file.loadingEditor")}</div>}>
               <ConfigFileEditor

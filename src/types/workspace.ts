@@ -1,4 +1,4 @@
-import type { ParsedSkill, SkillFrontmatter } from "./skill"
+import type { ParsedSkill, SkillFrontmatter, FrontmatterStatus } from "./skill"
 
 export type NavigatorNodeType =
   | "skill-overview"
@@ -14,6 +14,9 @@ export interface NavigatorSelection {
 
 export interface SkillEditState {
   frontmatter: SkillFrontmatter
+  markdownBody: string
+  frontmatterStatus: FrontmatterStatus
+  rawFrontmatter: string | null
   configFiles: Record<string, unknown>
   extraFiles: Record<string, string>
   dirty: boolean
@@ -30,6 +33,7 @@ export type WorkspaceAction =
   | { type: "UPDATE_FRONTMATTER"; payload: { skillId: string; frontmatter: SkillFrontmatter } }
   | { type: "UPDATE_CONFIG"; payload: { skillId: string; path: string; data: unknown } }
   | { type: "UPDATE_EXTRA_FILE"; payload: { skillId: string; path: string; content: string } }
+  | { type: "UPDATE_SKILL_BODY"; payload: { skillId: string; body: string } }
   | { type: "RESET_EDITS"; payload: { skillId: string } }
   | { type: "SAVE_SKILL"; payload: { skillId: string; serializedContent: string } }
   | { type: "ADD_SKILL"; payload: ParsedSkill }

@@ -312,6 +312,9 @@
   transition: max-height .25s ease, opacity .2s;
 }
 
+.bridge-section-collapsed .bridge-section-header {
+  margin-bottom: 0;
+}
 .bridge-section-collapsed .bridge-section-content {
   max-height: 0;
   opacity: 0;

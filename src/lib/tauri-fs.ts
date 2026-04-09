@@ -1,5 +1,5 @@
 import { parseSkillMd } from "@/lib/skill-parser"
-import type { ParsedSkill } from "@/types/skill"
+import type { ParsedSkill, ExtraFile, ExtraFileType } from "@/types/skill"
 
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI__" in window
@@ -39,6 +39,11 @@ export async function loadLocalSkills(): Promise<ParsedSkill[]> {
       if (Object.keys(configFiles).length > 0) {
         skill.configFiles = configFiles
         skill.hasConfig = true
+      }
+
+      const extraFiles = await loadExtraFiles(fs, skillDir)
+      if (Object.keys(extraFiles).length > 0) {
+        skill.extraFiles = extraFiles
       }
 
       skills.push(skill)
@@ -84,6 +89,56 @@ async function walkJsonFiles(
         result[`config/${childRelative}`] = JSON.parse(text)
       } catch (err) {
         console.warn(`Failed to parse ${childFull}:`, err)
+      }
+    }
+  }
+}
+
+const TEXT_EXTENSIONS = new Set(["md", "json", "py", "sh", "js", "txt", "toml"])
+
+function inferFileType(path: string): ExtraFileType {
+  if (path.endsWith(".json")) return "json"
+  if (path.endsWith(".md")) return "markdown"
+  if (path.endsWith(".py")) return "python"
+  if (path.endsWith(".sh")) return "shell"
+  return "text"
+}
+
+async function loadExtraFiles(
+  fs: Awaited<ReturnType<typeof getTauriFsModule>>,
+  skillDir: string,
+): Promise<Record<string, ExtraFile>> {
+  const result: Record<string, ExtraFile> = {}
+  await walkTextFiles(fs, skillDir, "", result)
+  return result
+}
+
+async function walkTextFiles(
+  fs: Awaited<ReturnType<typeof getTauriFsModule>>,
+  baseDir: string,
+  relativePath: string,
+  result: Record<string, ExtraFile>,
+) {
+  const fullPath = relativePath ? `${baseDir}/${relativePath}` : baseDir
+  const entries = await fs.readDir(fullPath)
+
+  for (const entry of entries) {
+    const childRelative = relativePath
+      ? `${relativePath}/${entry.name}`
+      : entry.name
+
+    if (entry.isDirectory) {
+      if (entry.name === "config" && !relativePath) continue
+      await walkTextFiles(fs, baseDir, childRelative, result)
+    } else {
+      if (!relativePath && entry.name === "SKILL.md") continue
+      const ext = entry.name.split(".").pop()?.toLowerCase()
+      if (!ext || !TEXT_EXTENSIONS.has(ext)) continue
+      try {
+        const text = await fs.readTextFile(`${baseDir}/${childRelative}`)
+        result[childRelative] = { path: childRelative, content: text, type: inferFileType(childRelative) }
+      } catch {
+        // skip unreadable files
       }
     }
   }
