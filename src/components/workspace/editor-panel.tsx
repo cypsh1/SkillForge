@@ -24,7 +24,6 @@ const TopicsEditor = lazy(() => import("@/components/config-editor/topics-editor
 const SchemaViewer = lazy(() => import("@/components/config-editor/schema-viewer").then(m => ({ default: m.SchemaViewer })))
 const ExtraFileEditor = lazy(() => import("@/components/workspace/extra-file-editors").then(m => ({ default: m.ExtraFileEditor })))
 const ValidationPanel = lazy(() => import("@/components/skill-editor/validation-panel").then(m => ({ default: m.ValidationPanel })))
-import { Card, CardContent } from "@/components/ui/card"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BRIDGE_SECTIONS } from "@/lib/bridge-sections"
@@ -1250,11 +1249,7 @@ export function EditorPanel() {
           {!selection ? (
             <EmptyState title={t("workspace.empty.selectSkill")} />
           ) : !selectedSkill || !editState ? (
-            <Card>
-              <CardContent className="py-6 text-sm text-muted-foreground">
-                {t("workspace.empty.skillNotFound")}
-              </CardContent>
-            </Card>
+            <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.skillNotFound")}</p>
           ) : selection.nodeType === "skill-overview" ? (
             <SkillOverviewPanel
               skill={selectedSkill}
@@ -1329,46 +1324,22 @@ function ConfigFileEditor({
   const { t } = useTranslation()
   const filePath = selection.filePath
   if (!filePath) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          {t("workspace.empty.configPathMissing")}
-        </CardContent>
-      </Card>
-    )
+    return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.configPathMissing")}</p>
   }
 
   const raw = editState.configFiles[filePath]
   if (raw === undefined) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          {t("workspace.empty.configDataMissing", { path: filePath })}
-        </CardContent>
-      </Card>
-    )
+    return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.configDataMissing", { path: filePath })}</p>
   }
 
   const kind = configEditorKind(filePath)
   if (!kind) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          {t("workspace.empty.configUnsupported", { path: filePath })}
-        </CardContent>
-      </Card>
-    )
+    return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.configUnsupported", { path: filePath })}</p>
   }
 
   if (kind === "sources") {
     if (!isSourcesConfig(raw)) {
-      return (
-        <Card>
-          <CardContent className="py-6 text-sm text-muted-foreground">
-            {t("workspace.empty.sourcesInvalid")}
-          </CardContent>
-        </Card>
-      )
+      return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.sourcesInvalid")}</p>
     }
     return (
       <SourcesEditor
@@ -1380,13 +1351,7 @@ function ConfigFileEditor({
 
   if (kind === "topics") {
     if (!isTopicsConfig(raw)) {
-      return (
-        <Card>
-          <CardContent className="py-6 text-sm text-muted-foreground">
-            {t("workspace.empty.topicsInvalid")}
-          </CardContent>
-        </Card>
-      )
+      return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.topicsInvalid")}</p>
     }
     return (
       <TopicsEditor
@@ -1397,13 +1362,7 @@ function ConfigFileEditor({
   }
 
   if (!isSchemaRecord(raw)) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          {t("workspace.empty.schemaInvalid")}
-        </CardContent>
-      </Card>
-    )
+    return <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.schemaInvalid")}</p>
   }
 
   return (
