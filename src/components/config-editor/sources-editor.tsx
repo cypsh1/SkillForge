@@ -59,6 +59,7 @@ export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
 
   return (
     <SectionBlock
+      sectionId="cfg-sources"
       title={t("workspace.configEditor.sourcesCount", { count: sources.length })}
       color={CONFIG_COLOR}
       badge={`${enabledCount}/${sources.length}`}

@@ -1409,6 +1409,7 @@ function SchemaRawEditor({
 
   return (
     <SectionBlock
+      sectionId="cfg-schema"
       title={t("workspace.file.schema")}
       editable
       editing={editing}

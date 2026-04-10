@@ -75,6 +75,7 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   return (
     <SectionBlock
+      sectionId="cfg-topics"
       title={t("workspace.configEditor.topicsCount", { count: topics.length })}
       color={CONFIG_COLOR}
       badge={`${topics.length}`}
