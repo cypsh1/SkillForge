@@ -53,9 +53,14 @@ export function ExtraFileEditor({ file, editContent, onUpdate }: ExtraFileEditor
 
 /* ─── JSON 编辑器：展示态 .fr 行 → 编辑态 .ef-row 表单 ─── */
 
+function isNested(value: unknown): boolean {
+  return value !== null && typeof value === "object"
+}
+
 function formatJsonValue(value: unknown, tYes: string, tNo: string): string {
   if (value === null || value === undefined) return "—"
   if (typeof value === "boolean") return value ? tYes : tNo
+  if (isNested(value)) return JSON.stringify(value)
   return String(value)
 }
 
@@ -90,6 +95,8 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
         if (!Number.isNaN(n)) typed = n
       } else if (typeof original === "boolean") {
         typed = raw === "true"
+      } else if (isNested(original)) {
+        try { typed = JSON.parse(raw) } catch { typed = raw }
       }
       return { ...prev, [key]: typed }
     })
@@ -119,7 +126,7 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
       {editing ? (
         <div className="ecard">
           {entries.map(([key, value]) => (
-            <div key={key} className="ef-row">
+            <div key={key} className={`ef-row ${isNested(value) ? "ef-row-top" : ""}`}>
               <label className="ef-lbl">{key}</label>
               {typeof value === "boolean" ? (
                 <button
@@ -130,6 +137,14 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
                 >
                   <span className="ftg-dot" />
                 </button>
+              ) : isNested(value) ? (
+                <textarea
+                  className="fi flex-1"
+                  style={{ height: "auto", minHeight: 48, resize: "vertical", lineHeight: 1.4 }}
+                  value={JSON.stringify(value, null, 2)}
+                  onChange={(e) => handleField(key, e.target.value)}
+                  spellCheck={false}
+                />
               ) : (
                 <input
                   className="fi flex-1"
