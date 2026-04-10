@@ -17,9 +17,9 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 **V1.0 路线图执行完成。V1.1 后续优化进行中。**
 
-V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）和 V1.1-SCHEMA-EDIT（schema.json 可编辑）已完成。
+V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）和 V1.1-STYLE-UNIFY（跨文件类型一致性）已完成。
 
-**当前进行中**：V1.1-STYLE-UNIFY（跨文件类型展示与编辑一致性），分 3 个 Phase 执行。方案文件：`.claude/plans/staged-humming-teapot.md`。
+**当前无进行中任务**。下一步从 backlog V1.1 待办中选择。
 
 ### V1.0 执行顺序
 

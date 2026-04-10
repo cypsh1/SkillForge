@@ -20,32 +20,34 @@ last_updated: 2026-04-09
 
 ## 当前任务
 
-**V1.1-STYLE-UNIFY：跨文件类型展示与编辑一致性**
+**（无）** — 请从下方「V1.1 待办」或产品路线图中选择下一项，并将本段标题改为所选任务 ID + 名称。
 
-来源：用户排查发现 config 文件（sources.json / topics.json / schema.json）的编辑和预览面板与 SKILL.md 风格不一致——打开 SKILL.md 是紧凑、有联动的专业界面，切到 config 文件变成另一种卡片布局，不像同一个产品。
+---
 
-详细方案：`.claude/plans/staged-humming-teapot.md`
+## 最近完成
+
+**V1.1-STYLE-UNIFY：跨文件类型展示与编辑一致性** ✅ 2026-04-10
+
+来源：用户排查发现 config 文件的编辑和预览面板与 SKILL.md 风格不一致。
 
 ### 执行计划
 
 | Phase | 名称 | 内容 | 状态 |
 |---|---|---|---|
-| A | 编辑面板容器统一 | config 文件编辑区包裹统一容器（彩色边框、折叠、编辑按钮），统计摘要行样式对齐 | 待执行 |
-| B | 预览面板结构化 + 桥线联动 | config 文件预览从原始 JSON 文本升级为分段预览，打通左右面板桥线 | 待执行 |
-| C | 清理 + 嵌套 JSON 修复 | 删除废弃旧页面代码；修复嵌套 JSON 编辑丢失层级问题 | 待执行 |
+| A | 编辑面板容器统一 | SourcesEditor/TopicsEditor 重构为 SectionBlock 包裹 + 展示/编辑切换 + draft 模式；ConfigFileEditor Card 错误态改简文本 | ✅ |
+| B | 预览面板结构化 + 桥线联动 | config 预览从 JsonPreview 升级为 SourcesPreview/TopicsPreview/SchemaJsonPreview + sectionId 桥线 | ✅ |
+| C | 清理 + 嵌套 JSON 修复 | 删除 5 个废弃文件（-632 行）；JsonFileEditor 嵌套对象/数组显示+编辑+保存修复 | ✅ |
 
 ### 验收标准
 
-- [ ] config 文件编辑面板有彩色左边框、折叠按钮，与 SKILL.md 风格统一
-- [ ] config 文件预览面板有结构化分段，不再是原始 JSON 文本
-- [ ] 左右面板桥线联动对 config 文件生效（跳转、折叠同步）
-- [ ] 嵌套 JSON 编辑不丢失数据
-- [ ] 废弃旧页面代码已清理
-- [ ] tsc ✅ build ✅
+- [x] config 文件编辑面板有彩色左边框、折叠按钮，与 SKILL.md 风格统一
+- [x] config 文件预览面板有结构化分段，不再是原始 JSON 文本
+- [x] 左右面板桥线联动对 config 文件生效（跳转、折叠同步）
+- [x] 嵌套 JSON 编辑不丢失数据
+- [x] 废弃旧页面代码已清理
+- [x] tsc ✅ build ✅
 
 ---
-
-## 最近完成
 
 **V1.1-SCHEMA-EDIT：schema.json 可编辑** ✅ 2026-04-10
 
@@ -307,6 +309,8 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
+| V1.1-STYLE-UNIFY | 跨文件类型展示与编辑一致性（Phase A-C） | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-style-unify.md` |
+| V1.1-SCHEMA-EDIT | schema.json 可编辑 | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-schema-edit.md` |
 | V1-5 | 代码分割 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-5-code-splitting.md` |
 | V1-4 | 保存流程闭环 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-4-save-flow.md` |
 | V1-LAYOUT | 布局间距全面优化 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-layout-optimization.md` |
