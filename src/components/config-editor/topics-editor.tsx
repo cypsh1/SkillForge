@@ -1,12 +1,6 @@
-import { useCallback } from "react"
+import { useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { GripVertical, Plus, X } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
+import { SectionBlock } from "@/components/workspace/section-block"
 
 export interface TopicSearch {
   queries: string[]
@@ -42,235 +36,209 @@ export interface TopicsEditorProps {
   onChange: (newData: TopicsConfig) => void
 }
 
+const CONFIG_COLOR = "#06b6d4"
+
 export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<Topic[]>([])
+
   const topics = data.topics
 
-  const updateTopic = useCallback(
-    (index: number, updates: Partial<Topic>) => {
-      const newTopics = [...topics]
-      newTopics[index] = { ...newTopics[index], ...updates }
-      onChange({ ...data, topics: newTopics })
-    },
-    [topics, data, onChange],
-  )
+  const handleEdit = useCallback(() => {
+    setDraft(structuredClone(topics))
+    setEditing(true)
+  }, [topics])
 
-  const updateSearch = useCallback(
-    (index: number, updates: Partial<TopicSearch>) => {
-      const topicRow = topics[index]
-      const nextSearch = { ...topicRow.search, ...updates }
-      updateTopic(index, { search: nextSearch })
-    },
-    [topics, updateTopic],
-  )
+  const handleDone = useCallback(() => {
+    onChange({ ...data, topics: draft })
+    setEditing(false)
+  }, [data, draft, onChange])
 
-  const setQueryAt = useCallback(
-    (topicIndex: number, queryIndex: number, value: string) => {
-      const topicRow = topics[topicIndex]
-      const queries = [...(topicRow.search.queries ?? [])]
-      queries[queryIndex] = value
-      updateSearch(topicIndex, { queries })
-    },
-    [topics, updateSearch],
-  )
+  const handleCancel = useCallback(() => setEditing(false), [])
 
-  const addQuery = useCallback(
-    (topicIndex: number) => {
-      const topicRow = topics[topicIndex]
-      const queries = [...(topicRow.search.queries ?? []), ""]
-      updateSearch(topicIndex, { queries })
-    },
-    [topics, updateSearch],
-  )
+  const updateDraftTopic = useCallback((index: number, updates: Partial<Topic>) => {
+    setDraft(prev => prev.map((t, i) => i === index ? { ...t, ...updates } : t))
+  }, [])
 
-  const removeQuery = useCallback(
-    (topicIndex: number, queryIndex: number) => {
-      const topicRow = topics[topicIndex]
-      const queries = (topicRow.search.queries ?? []).filter((_, i) => i !== queryIndex)
-      updateSearch(topicIndex, { queries })
-    },
-    [topics, updateSearch],
-  )
+  const updateDraftSearch = useCallback((index: number, updates: Partial<TopicSearch>) => {
+    setDraft(prev => prev.map((t, i) =>
+      i === index ? { ...t, search: { ...t.search, ...updates } } : t
+    ))
+  }, [])
 
-  const updateDisplay = useCallback(
-    (index: number, updates: Partial<TopicDisplay>) => {
-      const topicRow = topics[index]
-      updateTopic(index, { display: { ...topicRow.display, ...updates } })
-    },
-    [topics, updateTopic],
-  )
+  const updateDraftDisplay = useCallback((index: number, updates: Partial<TopicDisplay>) => {
+    setDraft(prev => prev.map((t, i) =>
+      i === index ? { ...t, display: { ...t.display, ...updates } } : t
+    ))
+  }, [])
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span>{t("workspace.configEditor.topicsCount", { count: topics.length })}</span>
-      </div>
-
-      <div className="rounded-md border p-2">
-        <div className="space-y-2">
-          {topics.map((topic, index) => (
-            <TopicCard
+    <SectionBlock
+      sectionId="cfg-topics"
+      title={t("workspace.configEditor.topicsCount", { count: topics.length })}
+      color={CONFIG_COLOR}
+      badge={`${topics.length}`}
+      editable
+      editing={editing}
+      onEdit={handleEdit}
+      onCancel={handleCancel}
+      onDone={handleDone}
+    >
+      {editing ? (
+        <div className="space-y-1.5">
+          {draft.map((topic, index) => (
+            <TopicEditCard
               key={topic.id}
               topic={topic}
-              onUpdateTopic={(updates) => updateTopic(index, updates)}
-              onSetQueryAt={(qi, value) => setQueryAt(index, qi, value)}
-              onAddQuery={() => addQuery(index)}
-              onRemoveQuery={(qi) => removeQuery(index, qi)}
-              onUpdateDisplay={(updates) => updateDisplay(index, updates)}
+              onUpdateTopic={(updates) => updateDraftTopic(index, updates)}
+              onUpdateSearch={(updates) => updateDraftSearch(index, updates)}
+              onUpdateDisplay={(updates) => updateDraftDisplay(index, updates)}
             />
           ))}
         </div>
-      </div>
+      ) : (
+        <div className="ecard">
+          {topics.map(topic => (
+            <TopicDisplayRow key={topic.id} topic={topic} />
+          ))}
+        </div>
+      )}
+    </SectionBlock>
+  )
+}
+
+function TopicDisplayRow({ topic }: { topic: Topic }) {
+  const queryCount = topic.search.queries?.length ?? 0
+  return (
+    <div className="fr">
+      <span className="fl" style={{ width: 24, textAlign: "center" }}>{topic.emoji}</span>
+      <span className="fv" style={{ flex: "none", fontFamily: "inherit" }}>{topic.label}</span>
+      <span className="text-[10px] ml-auto flex items-center gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+        {queryCount > 0 && <span className="bridge-badge">{queryCount}q</span>}
+        <span>{topic.display.style}</span>
+      </span>
     </div>
   )
 }
 
-function TopicCard({
+function TopicEditCard({
   topic,
   onUpdateTopic,
-  onSetQueryAt,
-  onAddQuery,
-  onRemoveQuery,
+  onUpdateSearch,
   onUpdateDisplay,
 }: {
   topic: Topic
   onUpdateTopic: (updates: Partial<Topic>) => void
-  onSetQueryAt: (queryIndex: number, value: string) => void
-  onAddQuery: () => void
-  onRemoveQuery: (queryIndex: number) => void
+  onUpdateSearch: (updates: Partial<TopicSearch>) => void
   onUpdateDisplay: (updates: Partial<TopicDisplay>) => void
 }) {
   const { t } = useTranslation()
   const queries = topic.search.queries ?? []
 
+  const setQueryAt = (qi: number, value: string) => {
+    const next = [...queries]
+    next[qi] = value
+    onUpdateSearch({ queries: next })
+  }
+
+  const addQuery = () => {
+    onUpdateSearch({ queries: [...queries, ""] })
+  }
+
+  const removeQuery = (qi: number) => {
+    onUpdateSearch({ queries: queries.filter((_, i) => i !== qi) })
+  }
+
   return (
-    <Card>
-      <CardHeader className="py-2 px-3">
-        <div className="flex items-start gap-2">
-          <GripVertical
-            className="size-4 shrink-0 text-muted-foreground mt-2"
-            aria-hidden
-          />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="space-y-1.5">
-              <CardTitle className="text-[10px] font-medium text-muted-foreground">
-                {t("workspace.configEditor.topicLabel")}
-              </CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  value={topic.emoji}
-                  onChange={(e) => onUpdateTopic({ emoji: e.target.value })}
-                  className="h-8 w-14 text-center text-sm shrink-0"
-                  aria-label="Emoji"
+    <div className="ecard" style={{ padding: "6px 6px" }}>
+      {/* Header: emoji + label + id */}
+      <div className="ef-row">
+        <input
+          className="fi"
+          style={{ width: 40, flex: "none", textAlign: "center" }}
+          value={topic.emoji}
+          onChange={e => onUpdateTopic({ emoji: e.target.value })}
+          aria-label="Emoji"
+        />
+        <input
+          className="fi flex-1"
+          value={topic.label}
+          onChange={e => onUpdateTopic({ label: e.target.value })}
+        />
+      </div>
+      <p className="text-[9px] font-mono text-muted-foreground px-0.5 mt-0.5 truncate">{topic.id}</p>
+
+      {/* Description */}
+      <div className="ef-row ef-row-top mt-1">
+        <label className="ef-lbl" style={{ width: 36 }}>{t("workspace.configEditor.description")}</label>
+        <textarea
+          className="fi flex-1"
+          style={{ height: "auto", minHeight: 48, resize: "vertical", lineHeight: 1.5 }}
+          value={topic.description}
+          onChange={e => onUpdateTopic({ description: e.target.value })}
+        />
+      </div>
+
+      {/* Search queries */}
+      <div className="mt-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] text-muted-foreground">{t("workspace.configEditor.searchKeywords")}</span>
+          <button
+            type="button"
+            className="eb"
+            style={{ fontSize: 9 }}
+            onClick={addQuery}
+          >
+            + {t("workspace.configEditor.add")}
+          </button>
+        </div>
+        {queries.length === 0 ? (
+          <p className="text-[9px] text-muted-foreground px-0.5">{t("workspace.configEditor.noKeywords")}</p>
+        ) : (
+          <div className="space-y-0.5">
+            {queries.map((q, qi) => (
+              <div key={`${topic.id}-q-${qi}`} className="ef-row">
+                <input
+                  className="fi flex-1"
+                  value={q}
+                  onChange={e => setQueryAt(qi, e.target.value)}
                 />
-                <Input
-                  value={topic.label}
-                  onChange={(e) => onUpdateTopic({ label: e.target.value })}
-                  className="h-8 flex-1 min-w-[8rem] text-xs"
-                />
+                <button
+                  type="button"
+                  className="text-[10px] text-muted-foreground hover:text-destructive px-1"
+                  onClick={() => removeQuery(qi)}
+                  aria-label={t("workspace.configEditor.removeKeyword")}
+                >
+                  ✕
+                </button>
               </div>
-            </div>
-            <p className="text-[10px] font-mono text-muted-foreground truncate" title={topic.id}>
-              {topic.id}
-            </p>
+            ))}
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="py-2 px-3 space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor={`desc-${topic.id}`} className="text-[10px] text-muted-foreground">
-            {t("workspace.configEditor.description")}
-          </Label>
-          <Textarea
-            id={`desc-${topic.id}`}
-            value={topic.description}
-            onChange={(e) => onUpdateTopic({ description: e.target.value })}
-            className="min-h-[72px] text-xs resize-y"
-          />
-        </div>
+        )}
+      </div>
 
-        <Separator />
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label className="text-[10px] text-muted-foreground">
-              {t("workspace.configEditor.searchKeywords")}
-            </Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 text-[10px] gap-1"
-              onClick={onAddQuery}
-            >
-              <Plus className="size-3.5" />
-              {t("workspace.configEditor.add")}
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {queries.length === 0 ? (
-              <p className="text-[10px] text-muted-foreground">{t("workspace.configEditor.noKeywords")}</p>
-            ) : (
-              queries.map((q, qi) => (
-                <div key={`${topic.id}-q-${qi}`} className="flex items-center gap-1.5">
-                  <Input
-                    value={q}
-                    onChange={(e) => onSetQueryAt(qi, e.target.value)}
-                    className="h-7 text-xs font-mono flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => onRemoveQuery(qi)}
-                    aria-label={t("workspace.configEditor.removeKeyword")}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <Label className="text-[10px] text-muted-foreground">
-            {t("workspace.configEditor.displaySettings")}
-          </Label>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Label htmlFor={`max-${topic.id}`} className="text-[10px] text-muted-foreground whitespace-nowrap">
-                max_items
-              </Label>
-              <Input
-                id={`max-${topic.id}`}
-                type="number"
-                min={0}
-                value={Number.isFinite(topic.display.max_items) ? topic.display.max_items : ""}
-                onChange={(e) => {
-                  const v = e.target.value === "" ? 0 : Number(e.target.value)
-                  onUpdateDisplay({ max_items: Number.isNaN(v) ? 0 : v })
-                }}
-                className="h-7 w-20 text-xs"
-              />
-            </div>
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Label htmlFor={`style-${topic.id}`} className="text-[10px] text-muted-foreground whitespace-nowrap">
-                style
-              </Label>
-              <Input
-                id={`style-${topic.id}`}
-                value={topic.display.style}
-                onChange={(e) => onUpdateDisplay({ style: e.target.value })}
-                className="h-7 text-xs flex-1 min-w-[6rem]"
-              />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Display settings */}
+      <div className="ef-row mt-2">
+        <label className="ef-lbl" style={{ width: 56 }}>max_items</label>
+        <input
+          type="number"
+          min={0}
+          className="fi"
+          style={{ width: 56, flex: "none" }}
+          value={Number.isFinite(topic.display.max_items) ? topic.display.max_items : ""}
+          onChange={e => {
+            const v = e.target.value === "" ? 0 : Number(e.target.value)
+            onUpdateDisplay({ max_items: Number.isNaN(v) ? 0 : v })
+          }}
+        />
+        <label className="ef-lbl" style={{ width: 32 }}>style</label>
+        <input
+          className="fi flex-1"
+          value={topic.display.style}
+          onChange={e => onUpdateDisplay({ style: e.target.value })}
+        />
+      </div>
+    </div>
   )
 }

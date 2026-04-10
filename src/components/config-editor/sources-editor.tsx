@@ -1,10 +1,6 @@
-import { useCallback } from "react"
+import { useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { SectionBlock } from "@/components/workspace/section-block"
 
 interface Source {
   id: string
@@ -29,73 +25,98 @@ interface SourcesEditorProps {
   onChange: (newData: SourcesConfig) => void
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  rss: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  twitter: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  github: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-  reddit: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  web: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-}
+const CONFIG_COLOR = "#06b6d4"
 
 export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<Source[]>([])
+
   const sources = data.sources
 
-  const updateSource = useCallback(
-    (index: number, updates: Partial<Source>) => {
-      const newSources = [...sources]
-      newSources[index] = { ...newSources[index], ...updates }
-      onChange({ ...data, sources: newSources })
-    },
-    [sources, data, onChange],
-  )
+  const handleEdit = useCallback(() => {
+    setDraft(structuredClone(sources))
+    setEditing(true)
+  }, [sources])
 
-  const enabledCount = sources.filter((s) => s.enabled).length
-  const priorityCount = sources.filter((s) => s.priority).length
-  const typeGroups = sources.reduce(
-    (acc, s) => {
-      acc[s.type] = (acc[s.type] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+  const handleDone = useCallback(() => {
+    onChange({ ...data, sources: draft })
+    setEditing(false)
+  }, [data, draft, onChange])
+
+  const handleCancel = useCallback(() => setEditing(false), [])
+
+  const updateDraftSource = useCallback((index: number, updates: Partial<Source>) => {
+    setDraft(prev => prev.map((s, i) => i === index ? { ...s, ...updates } : s))
+  }, [])
+
+  const enabledCount = sources.filter(s => s.enabled).length
+  const priorityCount = sources.filter(s => s.priority).length
+  const typeGroups = sources.reduce<Record<string, number>>((acc, s) => {
+    acc[s.type] = (acc[s.type] || 0) + 1
+    return acc
+  }, {})
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span>{t("workspace.configEditor.sourcesCount", { count: sources.length })}</span>
-        <span>·</span>
-        <span className="text-green-600">
-          {t("workspace.configEditor.enabledCount", { count: enabledCount })}
-        </span>
-        <span>·</span>
-        <span className="text-yellow-600">
-          {t("workspace.configEditor.priorityCount", { count: priorityCount })}
-        </span>
-        <span>·</span>
+    <SectionBlock
+      sectionId="cfg-sources"
+      title={t("workspace.configEditor.sourcesCount", { count: sources.length })}
+      color={CONFIG_COLOR}
+      badge={`${enabledCount}/${sources.length}`}
+      editable
+      editing={editing}
+      onEdit={handleEdit}
+      onCancel={handleCancel}
+      onDone={handleDone}
+    >
+      <p className="text-[9px] text-muted-foreground mb-1.5 px-0.5">
+        {t("workspace.configEditor.enabledCount", { count: enabledCount })}
+        {" · "}
+        {t("workspace.configEditor.priorityCount", { count: priorityCount })}
         {Object.entries(typeGroups).map(([type, count]) => (
-          <Badge key={type} variant="secondary" className="text-[10px] px-1.5 py-0">
-            {type}: {count}
-          </Badge>
+          <span key={type}>{" · "}{type}: {count}</span>
         ))}
-      </div>
-
-      <div className="rounded-md border p-2">
-        <div className="space-y-2">
-          {sources.map((source, index) => (
-            <SourceCard
+      </p>
+      {editing ? (
+        <div className="space-y-1.5">
+          {draft.map((source, index) => (
+            <SourceEditCard
               key={source.id}
               source={source}
-              onUpdate={(updates) => updateSource(index, updates)}
+              onUpdate={(updates) => updateDraftSource(index, updates)}
             />
           ))}
         </div>
-      </div>
+      ) : (
+        <div className="ecard">
+          {sources.map(source => (
+            <SourceDisplayRow key={source.id} source={source} />
+          ))}
+        </div>
+      )}
+    </SectionBlock>
+  )
+}
+
+function SourceDisplayRow({ source }: { source: Source }) {
+  return (
+    <div className="fr">
+      <span className="fl" style={{ width: 36 }}>{source.type}</span>
+      <span className="fv" style={{ flex: "none" }}>{source.name || source.id}</span>
+      <span className="text-[10px] ml-auto flex items-center gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+        {source.enabled
+          ? <span style={{ color: "#10b981" }}>✓</span>
+          : <span style={{ opacity: 0.35 }}>—</span>}
+        {source.priority && <span style={{ color: "#f59e0b" }}>★</span>}
+        {source.topics.length > 0 && (
+          <span className="bridge-badge">{source.topics.length}</span>
+        )}
+      </span>
     </div>
   )
 }
 
-function SourceCard({
+function SourceEditCard({
   source,
   onUpdate,
 }: {
@@ -104,90 +125,62 @@ function SourceCard({
 }) {
   const { t } = useTranslation()
   return (
-    <Card className={`transition-opacity ${source.enabled ? "" : "opacity-50"}`}>
-      <CardHeader className="py-2 px-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Badge
-              variant="outline"
-              className={`text-[10px] px-1.5 py-0 shrink-0 ${TYPE_COLORS[source.type] ?? ""}`}
-            >
-              {source.type}
-            </Badge>
-            <CardTitle className="text-xs font-mono truncate">
-              {source.id}
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-3 shrink-0 ml-2">
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor={`priority-${source.id}`} className="text-[10px] text-muted-foreground">
-                {t("workspace.configEditor.priority")}
-              </Label>
-              <Switch
-                id={`priority-${source.id}`}
-                checked={source.priority}
-                onCheckedChange={(checked) => onUpdate({ priority: checked })}
-                className="scale-75"
-              />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor={`enabled-${source.id}`} className="text-[10px] text-muted-foreground">
-                {t("workspace.configEditor.enabled")}
-              </Label>
-              <Switch
-                id={`enabled-${source.id}`}
-                checked={source.enabled}
-                onCheckedChange={(checked) => onUpdate({ enabled: checked })}
-                className="scale-75"
-              />
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="py-2 px-3 space-y-2">
-        <div className="flex items-center gap-2">
-          <Label className="text-[10px] text-muted-foreground w-10 shrink-0">
-            {t("workspace.configEditor.name")}
-          </Label>
-          <Input
-            value={source.name}
-            onChange={(e) => onUpdate({ name: e.target.value })}
-            className="h-6 text-xs"
+    <div className="ecard" style={{ padding: "6px 6px" }}>
+      <div className="ef-row">
+        <label className="ef-lbl" style={{ width: 36 }}>{source.type}</label>
+        <span className="fv" style={{ opacity: 0.5 }}>{source.id}</span>
+      </div>
+      <div className="ef-row">
+        <label className="ef-lbl" style={{ width: 36 }}>{t("workspace.configEditor.name")}</label>
+        <input
+          className="fi flex-1"
+          value={source.name}
+          onChange={e => onUpdate({ name: e.target.value })}
+        />
+      </div>
+      {source.url !== undefined && (
+        <div className="ef-row">
+          <label className="ef-lbl" style={{ width: 36 }}>URL</label>
+          <input
+            className="fi flex-1"
+            value={source.url}
+            onChange={e => onUpdate({ url: e.target.value })}
           />
         </div>
-        {source.url && (
-          <div className="flex items-center gap-2">
-            <Label className="text-[10px] text-muted-foreground w-10 shrink-0">URL</Label>
-            <Input
-              value={source.url}
-              onChange={(e) => onUpdate({ url: e.target.value })}
-              className="h-6 text-xs font-mono"
-            />
-          </div>
-        )}
-        {source.handle && (
-          <div className="flex items-center gap-2">
-            <Label className="text-[10px] text-muted-foreground w-10 shrink-0">
-              {t("workspace.configEditor.handle")}
-            </Label>
-            <Input
-              value={source.handle}
-              onChange={(e) => onUpdate({ handle: e.target.value })}
-              className="h-6 text-xs font-mono"
-            />
-          </div>
-        )}
-        <div className="flex flex-wrap gap-1">
-          {source.topics.map((topic) => (
-            <Badge key={topic} variant="secondary" className="text-[10px] px-1.5 py-0">
-              {topic}
-            </Badge>
-          ))}
+      )}
+      {source.handle !== undefined && (
+        <div className="ef-row">
+          <label className="ef-lbl" style={{ width: 36 }}>{t("workspace.configEditor.handle")}</label>
+          <input
+            className="fi flex-1"
+            value={source.handle}
+            onChange={e => onUpdate({ handle: e.target.value })}
+          />
         </div>
-        {source.note && (
-          <p className="text-[10px] text-muted-foreground italic">{source.note}</p>
-        )}
-      </CardContent>
-    </Card>
+      )}
+      <div className="ef-row">
+        <label className="ef-lbl" style={{ width: 36 }}>{t("workspace.configEditor.enabled")}</label>
+        <button type="button" className="ftg" onClick={() => onUpdate({ enabled: !source.enabled })}>
+          <span className={`ftg-track ${source.enabled ? "on" : ""}`} />
+        </button>
+        <label className="ef-lbl" style={{ width: 28, marginLeft: 8 }}>{t("workspace.configEditor.priority")}</label>
+        <button type="button" className="ftg" onClick={() => onUpdate({ priority: !source.priority })}>
+          <span className={`ftg-track ${source.priority ? "on" : ""}`} />
+        </button>
+      </div>
+      {source.topics.length > 0 && (
+        <div className="ef-row ef-row-top">
+          <label className="ef-lbl" style={{ width: 36 }}>Topics</label>
+          <div className="flex flex-wrap gap-1">
+            {source.topics.map(topic => (
+              <span key={topic} className="bridge-badge">{topic}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {source.note && (
+        <p className="text-[9px] text-muted-foreground italic px-0.5 mt-0.5">{source.note}</p>
+      )}
+    </div>
   )
 }

@@ -8,7 +8,6 @@ import { SectionBlock } from "@/components/workspace/section-block"
 import { parseDocument } from "@/lib/markdown-engine"
 import { FragmentBlock } from "@/components/workspace/fragment-renderer"
 import type { ParsedDocument, ContentSection } from "@/types/content-fragment"
-import { JsonPreview } from "@/components/config-editor/json-preview"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
@@ -1033,14 +1032,11 @@ export function InspectorPanel() {
             )}
 
             {selection?.nodeType === "config-file" && selection.filePath && (
-              <div className="flex min-h-0 flex-col gap-1.5 p-2" style={{ paddingBottom: 32 }}>
-                <p className="shrink-0 truncate text-xs text-muted-foreground">{selection.filePath}</p>
-                {selectedConfigData !== undefined ? (
-                  <JsonPreview data={selectedConfigData} className="h-auto min-h-[200px]" />
-                ) : (
-                  <p className="text-sm text-muted-foreground">{t("workspace.empty.noFileData")}</p>
-                )}
-              </div>
+              selectedConfigData !== undefined ? (
+                <ConfigFilePreview data={selectedConfigData} filePath={selection.filePath} />
+              ) : (
+                <p className="p-3 text-sm text-muted-foreground">{t("workspace.empty.noFileData")}</p>
+              )
             )}
 
             {showExtraChrome && extraContent && (
@@ -1072,6 +1068,137 @@ export function InspectorPanel() {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+/* ─── Config file structured preview ─── */
+
+const CONFIG_COLOR = "#06b6d4"
+
+function configPreviewKind(filePath: string): "sources" | "topics" | "schema" | null {
+  const base = filePath.split("/").pop() ?? filePath
+  if (base === "sources.json") return "sources"
+  if (base === "topics.json") return "topics"
+  if (base === "schema.json") return "schema"
+  return null
+}
+
+function ConfigFilePreview({ data, filePath }: { data: unknown; filePath: string }) {
+  const kind = configPreviewKind(filePath)
+  if (kind === "sources" && data && typeof data === "object" && "sources" in data) {
+    return <SourcesPreview data={data as { sources: SourcePreviewItem[] }} />
+  }
+  if (kind === "topics" && data && typeof data === "object" && "topics" in data) {
+    return <TopicsPreview data={data as { topics: TopicPreviewItem[] }} />
+  }
+  // schema and unknown: formatted JSON in SectionBlock
+  return <SchemaJsonPreview data={data} filePath={filePath} />
+}
+
+interface SourcePreviewItem {
+  id: string; type: string; name: string; enabled: boolean
+  priority: boolean; topics: string[]; url?: string; note?: string
+  [key: string]: unknown
+}
+
+function SourcesPreview({ data }: { data: { sources: SourcePreviewItem[] } }) {
+  const { t } = useTranslation()
+  const sources = data.sources
+  const enabledCount = sources.filter(s => s.enabled).length
+
+  return (
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+      <SectionBlock
+        sectionId="cfg-sources"
+        title={t("workspace.configEditor.sourcesCount", { count: sources.length })}
+        color={CONFIG_COLOR}
+        badge={`${enabledCount}/${sources.length}`}
+        readOnly
+      >
+        <div className="pc">
+          {sources.map(src => (
+            <div key={src.id} className="pf" style={{ fontSize: 11, lineHeight: 1.6 }}>
+              <span style={{ color: "var(--muted-foreground)", marginRight: 6 }}>{src.type}</span>
+              <strong>{src.name || src.id}</strong>
+              {src.url && (
+                <span style={{ color: "var(--muted-foreground)", fontSize: 10, marginLeft: 6 }}>{src.url}</span>
+              )}
+              <span style={{ float: "right", fontSize: 10, color: "var(--muted-foreground)" }}>
+                {src.enabled
+                  ? <span style={{ color: "#10b981" }}>✓</span>
+                  : <span style={{ opacity: 0.35 }}>—</span>}
+                {src.priority && <span style={{ color: "#f59e0b", marginLeft: 4 }}>★</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </SectionBlock>
+    </div>
+  )
+}
+
+interface TopicPreviewItem {
+  id: string; emoji: string; label: string; description: string
+  search: { queries: string[]; [key: string]: unknown }
+  display: { max_items: number; style: string; [key: string]: unknown }
+  [key: string]: unknown
+}
+
+function TopicsPreview({ data }: { data: { topics: TopicPreviewItem[] } }) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+      <SectionBlock
+        sectionId="cfg-topics"
+        title={t("workspace.configEditor.topicsCount", { count: data.topics.length })}
+        color={CONFIG_COLOR}
+        badge={`${data.topics.length}`}
+        readOnly
+      >
+        <div className="pc">
+          {data.topics.map(topic => (
+            <div key={topic.id} className="pf" style={{ fontSize: 11, lineHeight: 1.8 }}>
+              <span style={{ marginRight: 4 }}>{topic.emoji}</span>
+              <strong>{topic.label}</strong>
+              <span style={{ color: "var(--muted-foreground)", fontSize: 10, marginLeft: 8 }}>
+                {topic.description.length > 60 ? topic.description.slice(0, 60) + "…" : topic.description}
+              </span>
+              <span style={{ float: "right" }}>
+                {topic.search.queries?.length > 0 && (
+                  <span className="bridge-badge">{topic.search.queries.length}q</span>
+                )}
+                <span style={{ fontSize: 10, color: "var(--muted-foreground)", marginLeft: 4 }}>{topic.display.style}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </SectionBlock>
+    </div>
+  )
+}
+
+function SchemaJsonPreview({ data, filePath }: { data: unknown; filePath: string }) {
+  const formatted = useMemo(() => {
+    try { return JSON.stringify(data, null, 2) }
+    catch { return "// JSON serialize failed" }
+  }, [data])
+
+  return (
+    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+      <SectionBlock
+        sectionId="cfg-schema"
+        title={filePath.split("/").pop() ?? "config"}
+        color={CONFIG_COLOR}
+        readOnly
+      >
+        <div className="pc">
+          <pre className="sh-code whitespace-pre-wrap" style={{ lineHeight: 1.45, margin: 0 }}>
+            <code>{formatted}</code>
+          </pre>
+        </div>
+      </SectionBlock>
     </div>
   )
 }
