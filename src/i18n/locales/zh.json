@@ -216,6 +216,7 @@
       "data": "数据",
       "content": "内容",
       "sourceCode": "源代码",
+      "schema": "Schema 定义",
       "lineCount": "{{count}} 行",
       "loadingEditor": "加载编辑器…",
       "loadingValidation": "加载验证…",

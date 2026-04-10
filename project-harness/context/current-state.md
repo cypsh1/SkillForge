@@ -3,7 +3,7 @@
 ## description: 会话交接页（最近完成、下一步、环境状态）
 
 status: active
-last_updated: 2026-04-09
+last_updated: 2026-04-10
 
 # 当前状态
 
@@ -17,7 +17,9 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 **V1.0 路线图执行完成。V1.1 后续优化进行中。**
 
-V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）和 V1.1-DATA（测试数据全量同步）已完成。
+V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）和 V1.1-SCHEMA-EDIT（schema.json 可编辑）已完成。
+
+**当前进行中**：V1.1-STYLE-UNIFY（跨文件类型展示与编辑一致性），分 3 个 Phase 执行。方案文件：`.claude/plans/staged-humming-teapot.md`。
 
 ### V1.0 执行顺序
 
@@ -696,6 +698,18 @@ fbbaf4d feat: Phase 2 完成 — 编辑器/验证/导出/暗色模式
   - `toast.error()` 处理失败，按钮自动恢复
 - `navigator-panel.tsx`：技能名旁新增琥珀色 dirty 圆点（6px，保存后消失）
 - `sonner.tsx`：shadcn 生成后修改为暗色硬编码（移除 next-themes 依赖）
+- 验收：tsc ✅ build ✅ 浏览器验证 ✅
+
+### V1.1-SCHEMA-EDIT schema.json 可编辑（2026-04-10）
+
+- 排查发现：config-file 类型的 `schema.json` 路由到只读 `SchemaViewer`，是唯一不可编辑的 JSON 配置文件
+- 根因：`ConfigFileEditor` 的 `kind === "schema"` 分支直接返回 `<SchemaViewer />`，无编辑入口
+- 修复：新增 `SchemaRawEditor` 组件
+  - 展示态：保持原有 SchemaViewer 格式化表格
+  - 编辑态：SectionBlock + textarea 全文 JSON 编辑 + JSON.parse 校验
+  - 完成后通过 `updateConfig` 写回编辑状态
+- i18n 补齐：`workspace.file.schema` — zh:"Schema 定义" / en:"Schema Definition"
+- 涉及文件：`editor-panel.tsx`、`zh.json`、`en.json`
 - 验收：tsc ✅ build ✅ 浏览器验证 ✅
 
 ## 当前环境状态

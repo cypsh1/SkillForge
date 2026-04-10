@@ -1406,5 +1406,75 @@ function ConfigFileEditor({
     )
   }
 
-  return <SchemaViewer schema={raw} />
+  return (
+    <SchemaRawEditor
+      schema={raw}
+      onChange={(newData) => updateConfig(skill.id, filePath, newData)}
+    />
+  )
+}
+
+function SchemaRawEditor({
+  schema,
+  onChange,
+}: {
+  schema: Record<string, unknown>
+  onChange: (data: unknown) => void
+}) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  const [parseError, setParseError] = useState<string | null>(null)
+
+  const handleEdit = () => {
+    setDraft(JSON.stringify(schema, null, 2))
+    setParseError(null)
+    setEditing(true)
+  }
+
+  const handleDone = () => {
+    try {
+      const parsed = JSON.parse(draft) as unknown
+      onChange(parsed)
+      setEditing(false)
+      setParseError(null)
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : "Invalid JSON")
+    }
+  }
+
+  const handleCancel = () => {
+    setEditing(false)
+    setParseError(null)
+  }
+
+  return (
+    <SectionBlock
+      title={t("workspace.file.schema")}
+      editable
+      editing={editing}
+      onEdit={handleEdit}
+      onCancel={handleCancel}
+      onDone={handleDone}
+    >
+      {editing ? (
+        <div className="space-y-1">
+          {parseError && (
+            <p className="text-[10px] text-destructive px-1">{parseError}</p>
+          )}
+          <div className="ecard">
+            <textarea
+              className="fi w-full font-mono text-[11px] resize-y leading-relaxed"
+              style={{ minHeight: "300px" }}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+        </div>
+      ) : (
+        <SchemaViewer schema={schema} />
+      )}
+    </SectionBlock>
+  )
 }

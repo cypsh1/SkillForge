@@ -20,11 +20,56 @@ last_updated: 2026-04-09
 
 ## 当前任务
 
-**（无）** — 请从下方「V1.1 待办」或产品路线图中选择下一项，并将本段标题改为所选任务 ID + 名称。
+**V1.1-STYLE-UNIFY：跨文件类型展示与编辑一致性**
+
+来源：用户排查发现 config 文件（sources.json / topics.json / schema.json）的编辑和预览面板与 SKILL.md 风格不一致——打开 SKILL.md 是紧凑、有联动的专业界面，切到 config 文件变成另一种卡片布局，不像同一个产品。
+
+详细方案：`.claude/plans/staged-humming-teapot.md`
+
+### 执行计划
+
+| Phase | 名称 | 内容 | 状态 |
+|---|---|---|---|
+| A | 编辑面板容器统一 | config 文件编辑区包裹统一容器（彩色边框、折叠、编辑按钮），统计摘要行样式对齐 | 待执行 |
+| B | 预览面板结构化 + 桥线联动 | config 文件预览从原始 JSON 文本升级为分段预览，打通左右面板桥线 | 待执行 |
+| C | 清理 + 嵌套 JSON 修复 | 删除废弃旧页面代码；修复嵌套 JSON 编辑丢失层级问题 | 待执行 |
+
+### 验收标准
+
+- [ ] config 文件编辑面板有彩色左边框、折叠按钮，与 SKILL.md 风格统一
+- [ ] config 文件预览面板有结构化分段，不再是原始 JSON 文本
+- [ ] 左右面板桥线联动对 config 文件生效（跳转、折叠同步）
+- [ ] 嵌套 JSON 编辑不丢失数据
+- [ ] 废弃旧页面代码已清理
+- [ ] tsc ✅ build ✅
 
 ---
 
 ## 最近完成
+
+**V1.1-SCHEMA-EDIT：schema.json 可编辑** ✅ 2026-04-10
+
+来源：用户排查发现 config-file 类型的 schema.json 路由到只读 SchemaViewer，无法编辑。
+
+### 改动
+
+| 批次 | 内容 | 涉及文件 | 状态 |
+|---|---|---|---|
+| S1 | 新增 SchemaRawEditor（SectionBlock + textarea 编辑 + JSON parse 校验） | editor-panel.tsx | ✅ |
+| S2 | ConfigFileEditor schema case 改用 SchemaRawEditor（传入 onChange） | editor-panel.tsx | ✅ |
+| S3 | i18n 补齐 `workspace.file.schema` key | zh.json, en.json | ✅ |
+
+### 验收标准
+
+- [x] schema.json 展示态保持 SchemaViewer 格式化表格
+- [x] 点击"编辑"切换为 textarea 显示完整 JSON 原文
+- [x] JSON 语法错误时就地提示 parse error
+- [x] "完成"后通过 updateConfig 写回编辑状态
+- [x] `npx tsc -b --noEmit` ✅
+- [x] `npm run build` ✅
+- [x] 浏览器验证 ✅
+
+---
 
 **V1.1-DATA：测试数据全量同步 + 文件加载器重构** ✅ 2026-04-09
 
@@ -216,6 +261,7 @@ V1-4/V1-5 完成后、发布前执行。
 | V1.1-跨文件校验 | 跨文件联动校验 | #3b | 文件之间的依赖/引用关系校验（如 SKILL.md 中引用的脚本文件是否存在） |
 | V1.1-代码联动 | 代码文件桥连/联动增强 | #23 | 为 extra-file 扩展 `usePanelSync` 字段映射逻辑，实现左侧字段 hover 高亮右侧对应代码行（需要为 extra-file 定义实体模型） |
 | ~~V1.1-统一解析~~ | ~~统一解析/展示/编辑架构~~ | #24 | ✅ 已在 V1.1-UNIFIED 中完成（SectionBlock 公共组件 + FragmentBlock 统一渲染 + 四分类路由） |
+| **V1.1-STYLE-UNIFY** | **跨文件类型展示与编辑一致性** | 用户反馈 | **进行中** — config 文件编辑/预览面板与 SKILL.md 风格统一 + 桥线联动 + 清理废弃代码 + 嵌套 JSON 修复。方案：`.claude/plans/staged-humming-teapot.md` |
 | V1.1-标题编辑 | 子区块标题编辑+预览同步 | #15 | 点击编辑时子区块标题进入可编辑状态，修改后右侧源码预览同步更新 |
 | V1.1-编辑校验 | SKILL.md 编辑后校验 | #16 | frontmatter 编辑后触发 Zod 校验 + 提示；其他 MD 文件编辑后基础格式校验 |
 
@@ -290,3 +336,4 @@ V1-4/V1-5 完成后、发布前执行。
 | V1-UX-FIX | V1-UX 用户反馈修正 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-ux-fix.md` |
 | V1.1-UNIFIED | Markdown 正文统一 + 文件渲染对齐（B1-B5） | 2026-04-09 | `evidence/task-logs/2026-04-09-v1.1-unified.md` |
 | V1.1-DATA | 测试数据全量同步 + skill-loader glob + tauri extra files | 2026-04-09 | `evidence/task-logs/2026-04-09-v1.1-data.md` |
+| V1.1-SCHEMA-EDIT | schema.json 可编辑（SchemaRawEditor） | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-schema-edit.md` |

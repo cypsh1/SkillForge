@@ -216,6 +216,7 @@
       "data": "Data",
       "content": "Content",
       "sourceCode": "Source Code",
+      "schema": "Schema Definition",
       "lineCount": "{{count}} lines",
       "loadingEditor": "Loading editor…",
       "loadingValidation": "Loading validation…",
