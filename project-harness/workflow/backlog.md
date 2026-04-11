@@ -26,6 +26,27 @@ last_updated: 2026-04-09
 
 ## 最近完成
 
+**V1.1-TRIGGER-FIX：触发条件虚假默认值修复** ✅ 2026-04-11
+
+来源：用户发现触发条件区块显示 9 行字段，大部分是代码默认值而非真实配置，且编辑面板与预览面板数据不一致。
+
+### 改动
+
+- TriggerDisplay：只渲染 frontmatter 中实际存在的字段；无配置时显示"未配置触发条件"
+- saveTrigger：`user-invocable` 不再无条件写回，仅在原本存在或用户明确修改时写入
+- i18n：新增 `form.trigger.empty` 中英文 key
+- Harness：执行策略新增 L7"数据真实性"规则
+- Memory：新增 `feedback_data_truthfulness.md` 跨会话记忆
+
+### 验收标准
+
+- [x] 无触发配置的 Skill（如 tech-news-digest）：编辑面板显示"未配置触发条件"，预览面板同为空
+- [x] 有触发配置的 Skill（如 Agent Browser）：只显示已配置的字段（read_when + allowed-tools），左右一致
+- [x] 编辑后保存不会在文件中新增原本不存在的默认字段
+- [x] tsc ✅ build ✅
+
+---
+
 **V1.1-STYLE-UNIFY：跨文件类型展示与编辑一致性** ✅ 2026-04-10
 
 来源：用户排查发现 config 文件的编辑和预览面板与 SKILL.md 风格不一致。
@@ -310,6 +331,7 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
+| V1.1-TRIGGER-FIX | 触发条件虚假默认值修复 + L7 数据真实性规则 | 2026-04-11 | `evidence/task-logs/2026-04-11-v1.1-trigger-fix.md` |
 | V1.1-STYLE-UNIFY | 跨文件类型展示与编辑一致性（Phase A-C） | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-style-unify.md` |
 | V1.1-SCHEMA-EDIT | schema.json 可编辑 | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-schema-edit.md` |
 | V1-5 | 代码分割 | 2026-04-08 | `evidence/task-logs/2026-04-08-v1-5-code-splitting.md` |
