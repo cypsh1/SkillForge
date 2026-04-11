@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/use-workspace"
 import { downloadFile } from "@/lib/download"
 import { getRelationCountSummary } from "@/lib/bridge-relations"
 import { BRIDGE_SECTIONS, SECTION_MAP } from "@/lib/bridge-sections"
+import { frontmatterSchema } from "@/lib/schemas/frontmatter-schema"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { toast } from "sonner"
 import { isTauri, saveSkillFile, saveSkillConfig } from "@/lib/tauri-fs"
@@ -597,7 +598,7 @@ function SectionedPreview({
           <PreviewSectionBlock
             key={def.id}
             sectionId={def.id}
-            title={SECTION_MAP[def.id]?.name ?? def.id}
+            title={t(`workspace.bridge.section.${def.id}`, { defaultValue: SECTION_MAP[def.id]?.name ?? def.id })}
             color={def.color}
             dimmed={isSectionDimmed(def.id)}
             badge={badge}
@@ -797,7 +798,7 @@ function BrokenFmPreview({
         ⚠️ {t("workspace.hint.brokenFrontmatter")}
       </div>
       {rawFrontmatter && (
-        <PreviewSectionBlock sectionId="broken-fm" title="Frontmatter (原始)" color="#ef4444">
+        <PreviewSectionBlock sectionId="broken-fm" title={t("workspace.hint.brokenFrontmatterTitle")} color="#ef4444">
           <pre className="whitespace-pre-wrap text-[10px]">{rawFrontmatter}</pre>
         </PreviewSectionBlock>
       )}
@@ -884,8 +885,23 @@ export function InspectorPanel() {
     downloadFile("SKILL.md", skillMdPreview, "text/markdown;charset=utf-8")
   }
 
+  const hasValidationErrors = useMemo(() => {
+    if (!editState?.frontmatter) return false
+    return !frontmatterSchema.safeParse(editState.frontmatter).success
+  }, [editState?.frontmatter])
+
   const handleSaveAll = useCallback(async () => {
     if (!selectedSkill || !editState?.dirty) return
+
+    // Validate frontmatter before saving
+    const validation = frontmatterSchema.safeParse(editState.frontmatter)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]
+      const field = firstError?.path?.join(".") ?? ""
+      toast.error(`${t("workspace.action.validationFailed")}: ${field ? `${field} — ` : ""}${firstError?.message ?? ""}`)
+      return
+    }
+
     setSaving(true)
     try {
       await saveSkillFile(selectedSkill.path, "SKILL.md", skillMdPreview)
@@ -984,8 +1000,9 @@ export function InspectorPanel() {
               variant="default"
               size="sm"
               className="h-7 gap-1.5 text-xs"
-              disabled={saving}
+              disabled={saving || hasValidationErrors}
               onClick={handleSaveAll}
+              title={hasValidationErrors ? t("workspace.action.validationFailed") : undefined}
             >
               <Save className="size-3.5" />
               {saving ? t("workspace.action.saving") : t("workspace.action.save")}
@@ -1046,7 +1063,7 @@ export function InspectorPanel() {
                 <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
                   <SectionBlock
                     sectionId={`xf-${selection.filePath?.split("/").pop() ?? "file"}`}
-                    title={selection.filePath?.split("/").pop() ?? "文件"}
+                    title={selection.filePath?.split("/").pop() ?? t("workspace.field.file")}
                     color="#64748b"
                     badge={extraFile?.type}
                   >

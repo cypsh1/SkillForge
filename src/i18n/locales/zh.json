@@ -110,11 +110,13 @@
       "saving": "保存中…",
       "saved": "已保存",
       "saveFailed": "保存失败",
+      "validationFailed": "校验未通过，无法保存",
       "modified": "已修改",
       "addEnvVar": "+ 添加环境变量",
       "addReadPath": "+ 添加读取路径",
       "addWritePath": "+ 添加写入路径",
       "addItem": "添加项",
+      "listItemPlaceholder": "列表项...",
       "inputEnterToAdd": "输入后回车添加"
     },
     "section": {
@@ -128,7 +130,8 @@
       "docStructure": "文档结构",
       "execLayer": "执行层",
       "triggerCount": "{{count}} 触发词",
-      "sectionCount": "{{count}} 节"
+      "sectionCount": "{{count}} 节",
+      "statistics": "数据统计"
     },
     "field": {
       "emoji": "Emoji",
@@ -163,12 +166,14 @@
       "envVarCount": "环境变量",
       "configCount": "配置文件",
       "docCount": "文档章节",
-      "allowedToolsPlaceholder": "工具名称（可选）"
+      "allowedToolsPlaceholder": "工具名称（可选）",
+      "file": "文件"
     },
     "hint": {
       "execFromBody": "markdown body → 脚本相关章节",
       "noFrontmatter": "此 SKILL.md 无结构化配置（frontmatter），以文档模式展示",
-      "brokenFrontmatter": "Frontmatter 格式异常，无法解析为结构化配置"
+      "brokenFrontmatter": "Frontmatter 格式异常，无法解析为结构化配置",
+      "brokenFrontmatterTitle": "Frontmatter (原始)"
     },
     "empty": {
       "noTools": "未定义工具",
@@ -190,11 +195,22 @@
       "configUnsupported": "暂不支持编辑「{{path}}」",
       "sourcesInvalid": "sources.json 格式无效，缺少 sources 数组",
       "topicsInvalid": "topics.json 格式无效，缺少 topics 数组",
-      "schemaInvalid": "schema.json 应为 JSON 对象"
+      "schemaInvalid": "schema.json 应为 JSON 对象",
+      "loadingSkills": "加载 Skills…"
     },
     "bool": {
       "yes": "是",
       "no": "否"
+    },
+    "error": {
+      "title": "出现错误",
+      "retry": "重试"
+    },
+    "relation": {
+      "ariaRelation": "关系",
+      "clickToViewRelations": "点击查看关联关系",
+      "ariaPath": "关系路径",
+      "clear": "清除"
     },
     "bridge": {
       "logicLayer": "逻辑层:",
@@ -203,7 +219,25 @@
       "bridgeLine": "桥线连接",
       "expandSync": "折叠联动",
       "altScroll": "临时独立滚动",
-      "clickToJump": "点击双面板跳转"
+      "clickToJump": "点击双面板跳转",
+      "layer": {
+        "identity": "身份",
+        "deps": "依赖",
+        "caps": "能力",
+        "config": "配置",
+        "exec": "执行",
+        "ops": "运维"
+      },
+      "section": {
+        "basic": "基本信息",
+        "trigger": "触发条件",
+        "meta": "元数据",
+        "env": "环境变量",
+        "tools": "工具",
+        "files": "文件权限",
+        "exec": "脚本管道",
+        "doc": "文档结构"
+      }
     },
     "contextBar": {
       "left": "左",
@@ -298,7 +332,9 @@
       "next": "下一步",
       "useButtons": "使用上方按钮导出或创建",
       "sampleToolDesc": "示例工具说明，可按需修改。",
-      "sampleEnvDesc": "示例配置项说明"
+      "sampleEnvDesc": "示例配置项说明",
+      "defaultSkillName": "新技能",
+      "cloneNote": "克隆模板：请从已有技能目录复制所需文件并按需修改。"
     },
     "nav": {
       "searchPlaceholder": "搜索 Skill…",

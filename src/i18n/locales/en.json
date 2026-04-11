@@ -110,11 +110,13 @@
       "saving": "Saving…",
       "saved": "Saved",
       "saveFailed": "Save failed",
+      "validationFailed": "Validation failed, cannot save",
       "modified": "Modified",
       "addEnvVar": "+ Add Env Var",
       "addReadPath": "+ Add Read Path",
       "addWritePath": "+ Add Write Path",
       "addItem": "Add Item",
+      "listItemPlaceholder": "List item...",
       "inputEnterToAdd": "Type and press Enter"
     },
     "section": {
@@ -128,7 +130,8 @@
       "docStructure": "Doc Structure",
       "execLayer": "Execution",
       "triggerCount": "{{count}} triggers",
-      "sectionCount": "{{count}} sections"
+      "sectionCount": "{{count}} sections",
+      "statistics": "Statistics"
     },
     "field": {
       "emoji": "Emoji",
@@ -163,12 +166,14 @@
       "envVarCount": "Env Vars",
       "configCount": "Config Files",
       "docCount": "Doc Sections",
-      "allowedToolsPlaceholder": "Tool name (optional)"
+      "allowedToolsPlaceholder": "Tool name (optional)",
+      "file": "File"
     },
     "hint": {
       "execFromBody": "markdown body → script-related sections",
       "noFrontmatter": "This SKILL.md has no structured config (frontmatter), displayed in document mode",
-      "brokenFrontmatter": "Frontmatter format is invalid, cannot parse as structured config"
+      "brokenFrontmatter": "Frontmatter format is invalid, cannot parse as structured config",
+      "brokenFrontmatterTitle": "Frontmatter (raw)"
     },
     "empty": {
       "noTools": "No tools defined",
@@ -190,11 +195,22 @@
       "configUnsupported": "Editing \"{{path}}\" is not supported yet",
       "sourcesInvalid": "Invalid sources.json: missing sources array",
       "topicsInvalid": "Invalid topics.json: missing topics array",
-      "schemaInvalid": "schema.json must be a JSON object"
+      "schemaInvalid": "schema.json must be a JSON object",
+      "loadingSkills": "Loading Skills…"
     },
     "bool": {
       "yes": "Yes",
       "no": "No"
+    },
+    "error": {
+      "title": "An error occurred",
+      "retry": "Retry"
+    },
+    "relation": {
+      "ariaRelation": "Relation",
+      "clickToViewRelations": "Click to view relations",
+      "ariaPath": "Relation path",
+      "clear": "Clear"
     },
     "bridge": {
       "logicLayer": "Layer:",
@@ -203,7 +219,25 @@
       "bridgeLine": "Bridge Lines",
       "expandSync": "Expand Sync",
       "altScroll": "Independent Scroll",
-      "clickToJump": "Click to jump"
+      "clickToJump": "Click to jump",
+      "layer": {
+        "identity": "Identity",
+        "deps": "Deps",
+        "caps": "Caps",
+        "config": "Config",
+        "exec": "Exec",
+        "ops": "Ops"
+      },
+      "section": {
+        "basic": "Basic Info",
+        "trigger": "Triggers",
+        "meta": "Metadata",
+        "env": "Env Vars",
+        "tools": "Tools",
+        "files": "File Access",
+        "exec": "Scripts",
+        "doc": "Docs"
+      }
     },
     "contextBar": {
       "left": "L",
@@ -298,7 +332,9 @@
       "next": "Next",
       "useButtons": "Use the buttons above to export or create",
       "sampleToolDesc": "Sample tool description, modify as needed.",
-      "sampleEnvDesc": "Sample config description"
+      "sampleEnvDesc": "Sample config description",
+      "defaultSkillName": "New Skill",
+      "cloneNote": "Clone template: copy files from an existing skill directory and modify as needed."
     },
     "nav": {
       "searchPlaceholder": "Search Skills…",

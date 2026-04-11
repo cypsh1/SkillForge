@@ -38,16 +38,19 @@ interface ExtraFileEditorProps {
 }
 
 export function ExtraFileEditor({ file, editContent, onUpdate }: ExtraFileEditorProps) {
+  const baseName = file.path.split("/").pop() ?? "file"
+  const sectionId = `xf-${baseName}`
+
   switch (file.type) {
     case "json":
-      return <JsonFileEditor content={editContent} onChange={onUpdate} />
+      return <JsonFileEditor content={editContent} onChange={onUpdate} sectionId={sectionId} />
     case "markdown":
       return <MarkdownFileEditor content={editContent} onChange={onUpdate} />
     case "python":
     case "shell":
-      return <CodeFileViewer code={file.content} type={file.type} />
+      return <CodeFileViewer code={file.content} type={file.type} sectionId={sectionId} />
     default:
-      return <CodeFileViewer code={file.content} type="text" />
+      return <CodeFileViewer code={file.content} type="text" sectionId={sectionId} />
   }
 }
 
@@ -64,7 +67,7 @@ function formatJsonValue(value: unknown, tYes: string, tNo: string): string {
   return String(value)
 }
 
-function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: string) => void }) {
+function JsonFileEditor({ content, onChange, sectionId }: { content: string; onChange: (c: string) => void; sectionId: string }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Record<string, unknown>>({})
@@ -104,7 +107,7 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
 
   if (!parsed) {
     return (
-      <SectionBlock title="JSON" readOnly>
+      <SectionBlock title="JSON" readOnly sectionId={sectionId} color="#64748b">
         <div className="ecard">
           <pre className="sh-code text-xs text-destructive">{content}</pre>
         </div>
@@ -116,6 +119,8 @@ function JsonFileEditor({ content, onChange }: { content: string; onChange: (c: 
 
   return (
     <SectionBlock
+      sectionId={sectionId}
+      color="#64748b"
       title={t("workspace.file.data")}
       editable
       editing={editing}
@@ -206,7 +211,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
 
   if (!hasPreamble && !hasSections) {
     return (
-      <SectionBlock title={t("workspace.file.content")} readOnly>
+      <SectionBlock title={t("workspace.file.content")} readOnly color="#64748b">
         <div className="ecard">
           <pre className="sh-code whitespace-pre-wrap">{content || t("workspace.empty.emptyContent")}</pre>
         </div>
@@ -223,6 +228,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
         <SectionBlock
           title={t("workspace.file.overview")}
           sectionId="__preamble__"
+          color="#64748b"
           editable
           editing={isPreambleEditing}
           onEdit={() => startEdit("__preamble__", doc.preamble)}
@@ -252,6 +258,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
             key={sec.id}
             title={sec.heading.text}
             sectionId={sec.id}
+            color="#64748b"
             badge={badge}
             editable={blockCount > 0}
             editing={isEditing}
@@ -284,7 +291,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
 
 /* ─── 代码查看器：SectionBlock 容器 + 语法高亮 ─── */
 
-function CodeFileViewer({ code, type }: { code: string; type: ExtraFileType }) {
+function CodeFileViewer({ code, type, sectionId }: { code: string; type: ExtraFileType; sectionId: string }) {
   const { t } = useTranslation()
   const html = useMemo(() => highlightCode(code, type), [code, type])
   const lineCount = code.split("\n").length
@@ -292,6 +299,8 @@ function CodeFileViewer({ code, type }: { code: string; type: ExtraFileType }) {
 
   return (
     <SectionBlock
+      sectionId={sectionId}
+      color="#64748b"
       title={t("workspace.file.sourceCode")}
       badge={langLabel}
       readOnly

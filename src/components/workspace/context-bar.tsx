@@ -20,7 +20,7 @@ export function ContextBar() {
 
   const { altHeld, currentSection, editorScrollPct, inspectorScrollPct } = api
   const meta = currentSection ? SECTION_MAP[currentSection.id] : undefined
-  const name = meta?.name ?? currentSection?.id ?? "—"
+  const name = currentSection?.id ? t(`workspace.bridge.section.${currentSection.id}`, { defaultValue: meta?.name ?? currentSection.id }) : "—"
   const pos =
     currentSection && currentSection.total > 0
       ? `(${currentSection.index + 1}/${currentSection.total})`

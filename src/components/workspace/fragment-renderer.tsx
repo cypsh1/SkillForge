@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { Plus, Trash2 } from "lucide-react"
 import { highlight } from "sugar-high"
 import type {
@@ -110,6 +111,7 @@ function ListFragment({
   editing: boolean
   onUpdate: (b: ContentBlock) => void
 }) {
+  const { t } = useTranslation()
   const updateItem = useCallback(
     (index: number, value: string) => {
       const items = [...block.items]
@@ -153,7 +155,7 @@ function ListFragment({
               className="fi flex-1"
               value={item}
               onChange={(e) => updateItem(i, e.target.value)}
-              placeholder="列表项..."
+              placeholder={t("workspace.action.listItemPlaceholder")}
             />
             <button
               type="button"
@@ -166,7 +168,7 @@ function ListFragment({
         ))}
         <button type="button" className="fl-add" onClick={addItem}>
           <Plus size={12} />
-          <span>添加项</span>
+          <span>{t("workspace.action.addItem")}</span>
         </button>
       </div>
     )

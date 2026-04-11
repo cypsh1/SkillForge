@@ -14,6 +14,7 @@ export interface SectionBlockProps {
   onEdit?: () => void
   onCancel?: () => void
   onDone?: () => void
+  onTitleChange?: (newTitle: string) => void
   defaultCollapsed?: boolean
   dimmed?: boolean
   children: ReactNode
@@ -30,6 +31,7 @@ export function SectionBlock({
   onEdit,
   onCancel,
   onDone,
+  onTitleChange,
   defaultCollapsed,
   dimmed,
   children,
@@ -71,7 +73,17 @@ export function SectionBlock({
           ▼
         </span>
         <span className="bridge-section-dot" style={{ backgroundColor: color }} />
-        <span className="text-xs font-semibold">{title}</span>
+        {editing && onTitleChange ? (
+          <input
+            className="text-xs font-semibold bg-transparent border-b border-muted-foreground/30 outline-none px-0 py-0 w-auto min-w-[60px]"
+            value={title}
+            onChange={(e) => { e.stopPropagation(); onTitleChange(e.target.value) }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ fontFamily: "inherit" }}
+          />
+        ) : (
+          <span className="text-xs font-semibold">{title}</span>
+        )}
         {badge && <span className="bridge-badge">{badge}</span>}
         {readOnly && (
           <span

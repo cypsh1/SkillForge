@@ -3,7 +3,7 @@
 ## description: 会话交接页（最近完成、下一步、环境状态）
 
 status: active
-last_updated: 2026-04-10
+last_updated: 2026-04-11
 
 # 当前状态
 
@@ -21,10 +21,20 @@ V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测
 
 **当前无进行中任务**。下一步从 backlog V1.1 待办中选择。
 
-### 本次会话变更（2026-04-11）
+### 本次会话完成（2026-04-11）— V1.1 批量优化（8 项）
 
-- **会话存档机制**：CLAUDE.md 新增中间态存档规则和会话切换自动提示，新建 `project-harness/context/working-draft.md`。解决讨论/方案制定中途上下文耗尽时无法跨会话衔接的问题。（提交 `dfd7675`）
-- **执行策略 L7（数据真实性）**：展示态只显示文件中实际存在的数据，不用代码默认值伪造配置信息。已写入 backlog.md 执行策略 + memory feedback 文件。
+单会话批量执行 8 项 V1.1 待办，通过 Agent 委派 + 总控验证模式完成：
+
+1. **V1.1-文档编辑**：exec 区块从只读变为可编辑（镜像 doc 编辑模式）
+2. **#17 文档折叠**：验证已由 SectionBlock 内置实现，无需改动
+3. **V1.1-标题编辑**：编辑态下子区块标题变为 input，修改后 heading.raw 正确序列化
+4. **#22 代码文件样式对齐**：extra-file 编辑面板加 sectionId + color，启用桥线同步
+5. **#4+ 概览优化**：SkillOverviewPanel 用 SectionBlock 包裹 4 个分组
+6. **#1 架构条适配**：空层完全隐藏，箭头动态适配；非 SKILL.md 页面不显示
+7. **V1.1-编辑校验**：homepage URL 校验 + envVar.name 必填 + 保存前 safeParse 拦截 + 按钮禁用态
+8. **#8 i18n 补全**：12 处硬编码中文替换 + 架构条/区块名称 i18n 化，共新增 ~30 个 key
+
+全部 tsc ✅ build ✅ 浏览器验证 ✅
 
 ### V1.0 执行顺序
 

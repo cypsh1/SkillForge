@@ -3,7 +3,7 @@ import { z } from "zod"
 // --- Sub-schemas ---
 
 export const envVarSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: "Variable name is required" }),
   required: z.boolean().optional().default(false),
   description: z.string().optional().default(""),
 })
@@ -52,7 +52,10 @@ export const frontmatterSchema = z.object({
   // Identity
   version: z.string().optional(),
   author: z.string().optional(),
-  homepage: z.string().optional(),
+  homepage: z.string().optional().refine(
+    (val) => !val || /^https?:\/\/.+/.test(val),
+    { message: "Must be a valid URL (https://...)" },
+  ),
   source: z.string().optional(),
   emoji: z.string().optional(),
 

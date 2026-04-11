@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import {
@@ -32,6 +33,7 @@ function groupRelations(rels: BridgeRelation[]): Map<RelationType, BridgeRelatio
  * 关系气泡（data-ri）与实体延迟提示（.en.has-rel），文档级事件委托 + 覆盖层渲染。
  */
 export function RelationHover() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   const selectRelationTarget = api?.selectRelationTarget
   const selectedEid = api?.selectedEid ?? null
@@ -211,7 +213,7 @@ export function RelationHover() {
           className="bub vis pointer-events-auto fixed z-[36] min-w-[160px]"
           style={{ left: bub.left, top: bub.top }}
           role="dialog"
-          aria-label={`关系：${bub.eid}`}
+          aria-label={`${t("workspace.relation.ariaRelation")}: ${bub.eid}`}
           onMouseEnter={clearBubTimer}
           onMouseLeave={() => scheduleBubHide(150)}
         >
@@ -246,7 +248,7 @@ export function RelationHover() {
           className="htip vis fixed z-[36]"
           style={{ left: htip.left, top: htip.top }}
         >
-          点击查看关联关系
+          {t("workspace.relation.clickToViewRelations")}
         </div>
       ) : null}
     </div>

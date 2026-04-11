@@ -15,7 +15,6 @@ import {
   FileText,
   Layers,
   Settings,
-  ShieldCheck,
 } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 
@@ -859,26 +858,61 @@ function BodySectionsRenderer({
   }, [skill.bodyDocument])
 
   const [editingDocSections, setEditingDocSections] = useState<Set<string>>(new Set())
+  const [editingExecSections, setEditingExecSections] = useState<Set<string>>(new Set())
   const [draftBlocks, setDraftBlocks] = useState<Record<string, ContentBlock[]>>({})
+  const [draftHeadings, setDraftHeadings] = useState<Record<string, { depth: number; text: string; raw: string }>>({})
 
-  const startEditDoc = useCallback((secId: string, blocks: ContentBlock[]) => {
+  const startEditDoc = useCallback((secId: string, blocks: ContentBlock[], heading: { depth: number; text: string; raw: string }) => {
     setDraftBlocks(prev => ({ ...prev, [secId]: structuredClone(blocks) }))
+    setDraftHeadings(prev => ({ ...prev, [secId]: structuredClone(heading) }))
     setEditingDocSections(prev => new Set(prev).add(secId))
   }, [])
 
   const cancelEditDoc = useCallback((secId: string) => {
     setEditingDocSections(prev => { const n = new Set(prev); n.delete(secId); return n })
+    setDraftHeadings(prev => { const n = { ...prev }; delete n[secId]; return n })
   }, [])
 
   const saveDocSection = useCallback((secId: string) => {
     const updatedSections = skill.bodyDocument.sections.map(s =>
-      s.id === secId && draftBlocks[secId] ? { ...s, blocks: draftBlocks[secId] } : s
+      s.id === secId ? {
+        ...s,
+        ...(draftBlocks[secId] ? { blocks: draftBlocks[secId] } : {}),
+        ...(draftHeadings[secId] ? { heading: draftHeadings[secId] } : {}),
+      } : s
     )
     const updatedDoc = { ...skill.bodyDocument, sections: updatedSections }
     const newBody = serializeDocument(updatedDoc)
     onBodyChange(newBody)
     setEditingDocSections(prev => { const n = new Set(prev); n.delete(secId); return n })
-  }, [skill.bodyDocument, draftBlocks, onBodyChange])
+    setDraftHeadings(prev => { const n = { ...prev }; delete n[secId]; return n })
+  }, [skill.bodyDocument, draftBlocks, draftHeadings, onBodyChange])
+
+  const startEditExec = useCallback((secId: string, blocks: ContentBlock[], heading: { depth: number; text: string; raw: string }) => {
+    setDraftBlocks(prev => ({ ...prev, [secId]: structuredClone(blocks) }))
+    setDraftHeadings(prev => ({ ...prev, [secId]: structuredClone(heading) }))
+    setEditingExecSections(prev => new Set(prev).add(secId))
+  }, [])
+
+  const cancelEditExec = useCallback((secId: string) => {
+    setEditingExecSections(prev => { const n = new Set(prev); n.delete(secId); return n })
+    setDraftHeadings(prev => { const n = { ...prev }; delete n[secId]; return n })
+  }, [])
+
+  const saveExecSection = useCallback((secId: string) => {
+    const updatedSections = skill.bodyDocument.sections.map(s =>
+      s.id === secId ? {
+        ...s,
+        ...(draftBlocks[secId] ? { blocks: draftBlocks[secId] } : {}),
+        ...(draftHeadings[secId] ? { heading: draftHeadings[secId] } : {}),
+      } : s
+    )
+    const updatedDoc = { ...skill.bodyDocument, sections: updatedSections }
+    const newBody = serializeDocument(updatedDoc)
+    onBodyChange(newBody)
+    setEditingExecSections(prev => { const n = new Set(prev); n.delete(secId); return n })
+    setDraftHeadings(prev => { const n = { ...prev }; delete n[secId]; return n })
+  }, [skill.bodyDocument, draftBlocks, draftHeadings, onBodyChange])
 
   return (
     <>
@@ -888,23 +922,50 @@ function BodySectionsRenderer({
           <p className="text-sm text-muted-foreground pl-1">{t("workspace.empty.noExecSections")}</p>
         </SectionBlock>
       ) : (
-        bodyExecSections.map((section) => (
-          <SectionBlock
-            key={section.id}
-            sectionId={`exec-${section.id}`}
-            title={section.heading.text}
-            color={bridgeColor("exec")}
-            badge={`${section.blocks.length}`}
-            readOnly
-            dimmed={api?.isSectionDimmed("exec")}
-          >
-            {section.blocks.map((block, i) => (
-              <FragmentBlock key={i} block={block} editing={false}
-                fieldId={`f-x-${section.id}-${i}`}
-                onUpdate={() => {}} />
-            ))}
-          </SectionBlock>
-        ))
+        bodyExecSections.map((section) => {
+          const isEditing = editingExecSections.has(section.id)
+          const blocks = isEditing ? (draftBlocks[section.id] ?? section.blocks) : section.blocks
+          return (
+            <SectionBlock
+              key={section.id}
+              sectionId={`exec-${section.id}`}
+              title={isEditing ? (draftHeadings[section.id]?.text ?? section.heading.text) : section.heading.text}
+              color={bridgeColor("exec")}
+              badge={`${section.blocks.length}`}
+              editable
+              editing={isEditing}
+              onEdit={() => startEditExec(section.id, section.blocks, section.heading)}
+              onCancel={() => cancelEditExec(section.id)}
+              onDone={() => saveExecSection(section.id)}
+              onTitleChange={isEditing ? (newText) => {
+                const depth = section.heading.depth
+                const prefix = "#".repeat(depth)
+                setDraftHeadings(prev => ({
+                  ...prev,
+                  [section.id]: { depth, text: newText, raw: `${prefix} ${newText}` }
+                }))
+              } : undefined}
+              dimmed={api?.isSectionDimmed("exec")}
+            >
+              {blocks.map((block, i) => (
+                <FragmentBlock
+                  key={i}
+                  block={block}
+                  editing={isEditing}
+                  fieldId={`f-x-${section.id}-${i}`}
+                  onUpdate={(updated) => {
+                    if (!isEditing) return
+                    setDraftBlocks(prev => {
+                      const arr = [...(prev[section.id] ?? section.blocks)]
+                      arr[i] = updated
+                      return { ...prev, [section.id]: arr }
+                    })
+                  }}
+                />
+              ))}
+            </SectionBlock>
+          )
+        })
       )}
 
       {bodyDocSections.length === 0 ? (
@@ -920,14 +981,22 @@ function BodySectionsRenderer({
             <SectionBlock
               key={section.id}
               sectionId={`doc-${section.id}`}
-              title={section.heading.text}
+              title={isEditing ? (draftHeadings[section.id]?.text ?? section.heading.text) : section.heading.text}
               color={bridgeColor("doc")}
               badge={`${section.blocks.length}`}
               editable
               editing={isEditing}
-              onEdit={() => startEditDoc(section.id, section.blocks)}
+              onEdit={() => startEditDoc(section.id, section.blocks, section.heading)}
               onCancel={() => cancelEditDoc(section.id)}
               onDone={() => saveDocSection(section.id)}
+              onTitleChange={isEditing ? (newText) => {
+                const depth = section.heading.depth
+                const prefix = "#".repeat(depth)
+                setDraftHeadings(prev => ({
+                  ...prev,
+                  [section.id]: { depth, text: newText, raw: `${prefix} ${newText}` }
+                }))
+              } : undefined}
               dimmed={api?.isSectionDimmed("doc")}
             >
               {blocks.map((block, i) => (
@@ -990,7 +1059,7 @@ function BrokenFmSkillPanel({
         ⚠️ {t("workspace.hint.brokenFrontmatter")}
       </div>
       {rawFrontmatter && (
-        <SectionBlock sectionId="broken-fm" title="Frontmatter (原始)" color="#ef4444">
+        <SectionBlock sectionId="broken-fm" title={t("workspace.hint.brokenFrontmatterTitle")} color="#ef4444">
           <pre className="sh-code whitespace-pre-wrap text-[10px]">{rawFrontmatter}</pre>
         </SectionBlock>
       )}
@@ -1019,79 +1088,93 @@ function SkillOverviewPanel({
   const configCount = Object.keys(skill.configFiles).length
 
   return (
-    <div className="space-y-2">
-      <div className="ecard">
-        <div className="fr" data-field="ov-emoji">
-          <span className="fl">{t("workspace.field.emoji")}</span>
-          <span className="fv">{fm.emoji || "—"}</span>
-        </div>
-        <div className="fr" data-field="ov-name">
-          <span className="fl">{t("workspace.field.name")}</span>
-          <span className="fv font-semibold">{fm.name || "—"}</span>
-        </div>
-        <div className="fr" data-field="ov-desc">
-          <span className="fl">{t("workspace.field.description")}</span>
-          <span className="fv">{skill.description || fm.description || "—"}</span>
-        </div>
-        <div className="fr" data-field="ov-ver">
-          <span className="fl">{t("workspace.field.version")}</span>
-          <span className="fv">{fm.version ? `v${fm.version}` : "—"}</span>
-        </div>
-        <div className="fr" data-field="ov-author">
-          <span className="fl">{t("workspace.field.author")}</span>
-          <span className="fv">{fm.author || "—"}</span>
-        </div>
-        {fm.homepage ? (
-          <div className="fr" data-field="ov-home">
-            <span className="fl">{t("workspace.field.homepage")}</span>
-            <a
-              href={fm.homepage}
-              target="_blank"
-              rel="noreferrer"
-              className="fv"
-              style={{ color: "#3b82f6" }}
-            >
-              {fm.homepage}
-            </a>
+    <div className="space-y-1">
+      <SectionBlock
+        sectionId="ov-basic"
+        title={t("workspace.section.basicInfo")}
+        color="#3b82f6"
+      >
+        <div className="ecard">
+          <div className="fr" data-field="ov-emoji">
+            <span className="fl">{t("workspace.field.emoji")}</span>
+            <span className="fv">{fm.emoji || "—"}</span>
           </div>
-        ) : null}
-      </div>
+          <div className="fr" data-field="ov-name">
+            <span className="fl">{t("workspace.field.name")}</span>
+            <span className="fv font-semibold">{fm.name || "—"}</span>
+          </div>
+          <div className="fr" data-field="ov-desc">
+            <span className="fl">{t("workspace.field.description")}</span>
+            <span className="fv">{skill.description || fm.description || "—"}</span>
+          </div>
+          <div className="fr" data-field="ov-ver">
+            <span className="fl">{t("workspace.field.version")}</span>
+            <span className="fv">{fm.version ? `v${fm.version}` : "—"}</span>
+          </div>
+          <div className="fr" data-field="ov-author">
+            <span className="fl">{t("workspace.field.author")}</span>
+            <span className="fv">{fm.author || "—"}</span>
+          </div>
+          {fm.homepage ? (
+            <div className="fr" data-field="ov-home">
+              <span className="fl">{t("workspace.field.homepage")}</span>
+              <a
+                href={fm.homepage}
+                target="_blank"
+                rel="noreferrer"
+                className="fv"
+                style={{ color: "#3b82f6" }}
+              >
+                {fm.homepage}
+              </a>
+            </div>
+          ) : null}
+        </div>
+      </SectionBlock>
 
-      <div className="ecard">
-        <div className="fr">
-          <span className="fl">{t("workspace.field.toolCount")}</span>
-          <span className="fv">{skill.tools.length}</span>
-        </div>
-        <div className="fr">
-          <span className="fl">{t("workspace.field.envVarCount")}</span>
-          <span className="fv">{skill.envVars.length}</span>
-        </div>
-        {configCount > 0 ? (
+      <SectionBlock
+        sectionId="ov-stats"
+        title={t("workspace.section.statistics")}
+        color="#64748b"
+      >
+        <div className="ecard">
           <div className="fr">
-            <span className="fl">{t("workspace.field.configCount")}</span>
-            <span className="fv">{configCount}</span>
+            <span className="fl">{t("workspace.field.toolCount")}</span>
+            <span className="fv">{skill.tools.length}</span>
           </div>
-        ) : null}
-        <div className="fr">
-          <span className="fl">{t("workspace.field.docCount")}</span>
-          <span className="fv">{skill.sections.length}</span>
+          <div className="fr">
+            <span className="fl">{t("workspace.field.envVarCount")}</span>
+            <span className="fv">{skill.envVars.length}</span>
+          </div>
+          {configCount > 0 ? (
+            <div className="fr">
+              <span className="fl">{t("workspace.field.configCount")}</span>
+              <span className="fv">{configCount}</span>
+            </div>
+          ) : null}
+          <div className="fr">
+            <span className="fl">{t("workspace.field.docCount")}</span>
+            <span className="fv">{skill.sections.length}</span>
+          </div>
         </div>
-      </div>
+      </SectionBlock>
 
-      <div className="ecard">
-        <div className="fr">
-          <span className="fl">{t("workspace.field.path")}</span>
-          <span className="fv font-mono text-[10px]">{skill.path || "—"}</span>
+      <SectionBlock
+        sectionId="ov-files"
+        title={t("workspace.file.relatedFiles")}
+        color="#64748b"
+      >
+        <div className="ecard">
+          <div className="fr">
+            <span className="fl">{t("workspace.field.path")}</span>
+            <span className="fv font-mono text-[10px]">{skill.path || "—"}</span>
+          </div>
+          <div className="fr">
+            <span className="fl">{t("workspace.field.fileCount")}</span>
+            <span className="fv">{1 + configPaths.length + Object.keys(skill.extraFiles).length}</span>
+          </div>
         </div>
-        <div className="fr">
-          <span className="fl">{t("workspace.field.fileCount")}</span>
-          <span className="fv">{1 + configPaths.length + Object.keys(skill.extraFiles).length}</span>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-medium text-muted-foreground mb-1.5 pl-1">{t("workspace.file.relatedFiles")}</h3>
-        <div className="space-y-0.5">
+        <div className="mt-1.5 space-y-0.5">
           <button
             type="button"
             className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-primary hover:bg-muted/50 transition-colors"
@@ -1120,18 +1203,18 @@ function SkillOverviewPanel({
             </button>
           ))}
         </div>
-      </div>
+      </SectionBlock>
 
       {validationResult ? (
-        <div>
-          <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5 pl-1">
-            <ShieldCheck className="size-5" />
-            {t("workspace.file.configValidation")}
-          </h3>
+        <SectionBlock
+          sectionId="ov-validation"
+          title={t("workspace.file.configValidation")}
+          color="#64748b"
+        >
           <Suspense fallback={<div className="text-sm text-muted-foreground">{t("workspace.file.loadingValidation")}</div>}>
             <ValidationPanel result={validationResult} />
           </Suspense>
-        </div>
+        </SectionBlock>
       ) : null}
     </div>
   )

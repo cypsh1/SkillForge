@@ -91,27 +91,20 @@ export function ArchitectureBar() {
   return (
     <div className="arch-bar">
       <span className="arch-label">{t("workspace.bridge.logicLayer")}</span>
-      {BRIDGE_LAYERS.map((layer, idx) => {
-        const enabled = enabledSet.has(layer.id)
-        return (
+      {BRIDGE_LAYERS.filter((l) => enabledSet.has(l.id)).map((layer, idx, arr) => (
           <div key={layer.id} className="flex items-center">
             <button
               type="button"
-              className={cn(
-                "arch-chip",
-                currentLayer === layer.id && "on",
-                !enabled && "empty",
-              )}
+              className={cn("arch-chip", currentLayer === layer.id && "on")}
               data-l={layer.id}
               onClick={() => handleClick(layer.id)}
             >
               <span>{layer.icon}</span>
-              <span>{layer.name}</span>
+              <span>{t(`workspace.bridge.layer.${layer.id}`)}</span>
             </button>
-            {idx < BRIDGE_LAYERS.length - 1 ? <span className="arch-arrow">→</span> : null}
+            {idx < arr.length - 1 ? <span className="arch-arrow">→</span> : null}
           </div>
-        )
-      })}
+      ))}
     </div>
   )
 }

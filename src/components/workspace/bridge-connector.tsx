@@ -113,7 +113,7 @@ export function BridgeConnector() {
         topLine: { x1: xLeft, y1: eTop, x2: xRight, y2: iTop, dashed: topDash },
         bottomLine: { x1: xLeft, y1: eBot, x2: xRight, y2: iBot, dashed: botDash },
         color: def.color,
-        name: SECTION_MAP[def.id]?.name ?? def.id,
+        name: t(`workspace.bridge.section.${def.id}`, { defaultValue: SECTION_MAP[def.id]?.name ?? def.id }),
       })
     }
 

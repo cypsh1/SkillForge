@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ErrorBoundary } from "@/components/error-boundary"
 
 import type { ParsedSkill } from "@/types/skill"
@@ -10,9 +11,10 @@ function isTauriEnv(): boolean {
 }
 
 function LoadingScreen() {
+  const { t } = useTranslation()
   return (
     <div className="flex h-svh items-center justify-center">
-      <div className="text-sm text-muted-foreground">加载 Skills…</div>
+      <div className="text-sm text-muted-foreground">{t("workspace.empty.loadingSkills")}</div>
     </div>
   )
 }

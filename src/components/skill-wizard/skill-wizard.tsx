@@ -65,11 +65,11 @@ function buildFrontmatter(data: WizardData): SkillFrontmatter {
 }
 
 function buildMarkdownBody(data: WizardData): string {
-  const title = data.name.trim() || "新技能"
+  const title = data.name.trim() || i18next.t("workspace.wizard.defaultSkillName")
   const desc = data.description.trim()
   const cloneNote =
     data.template === "clone"
-      ? "\n\n> 克隆模板：请从已有技能目录复制所需文件并按需修改。\n"
+      ? `\n\n> ${i18next.t("workspace.wizard.cloneNote")}\n`
       : ""
   return `# ${title}\n\n${desc}${cloneNote}`
 }

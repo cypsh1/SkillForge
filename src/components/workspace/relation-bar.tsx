@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import {
   getRelationStore,
@@ -19,6 +20,7 @@ function entityTitle(eid: string): string {
 }
 
 export function RelationBar() {
+  const { t } = useTranslation()
   const api = usePanelSyncApi()
   if (!api) return null
 
@@ -31,7 +33,7 @@ export function RelationBar() {
   const title = entityTitle(selectedEid)
 
   return (
-    <div className="rel-bar" role="region" aria-label="关系路径">
+    <div className="rel-bar" role="region" aria-label={t("workspace.relation.ariaPath")}>
       <div className="rel-bar-hd">
         <span className="rel-nm">{title}</span>
         <button
@@ -39,7 +41,7 @@ export function RelationBar() {
           className="rel-clear"
           onClick={() => clearRelationSelection()}
         >
-          ✕ 清除
+          ✕ {t("workspace.relation.clear")}
         </button>
       </div>
       <div className="rel-bar-rows">
