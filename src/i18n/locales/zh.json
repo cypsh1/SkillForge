@@ -40,7 +40,8 @@
       "disableModelInvocationDesc": "排除出 prompt",
       "commandDispatch": "命令分发",
       "commandTool": "命令工具",
-      "commandArgMode": "参数传递模式"
+      "commandArgMode": "参数传递模式",
+      "empty": "未配置触发条件"
     },
     "runtime": {
       "title": "运行时要求",

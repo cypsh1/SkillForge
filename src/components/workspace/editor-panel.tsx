@@ -305,62 +305,52 @@ function InlineToggle({ value, onChange }: { value: boolean; onChange: (v: boole
 
 function TriggerDisplay({ fm }: { fm: SkillFrontmatter }) {
   const { t } = useTranslation()
+
+  // Only collect fields that actually exist in the frontmatter
+  const rows: { field: string; label: string; node: React.ReactNode }[] = []
+
   const triggers = toStringArray(fm.triggers)
+  if (triggers.length > 0) {
+    rows.push({ field: "f-triggers", label: t("workspace.field.triggers"), node: triggers.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>) })
+  }
   const readWhen = toStringArray(fm.read_when)
-  const autoTrigger = fm.auto_trigger ?? false
-  const userInvocable = fm["user-invocable"] ?? true
-  const disableModel = fm["disable-model-invocation"] ?? false
-  const cmdDispatch = fm["command-dispatch"] ?? ""
-  const cmdTool = fm["command-tool"] ?? ""
-  const cmdArgMode = fm["command-arg-mode"] ?? ""
-  const allowedTools = fm["allowed-tools"] ?? ""
+  if (readWhen.length > 0) {
+    rows.push({ field: "f-readwhen", label: t("workspace.field.readWhen"), node: readWhen.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>) })
+  }
+  if (fm.auto_trigger !== undefined) {
+    rows.push({ field: "f-autotrigger", label: t("workspace.field.autoTrigger"), node: fm.auto_trigger ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span> })
+  }
+  if (fm["user-invocable"] !== undefined) {
+    rows.push({ field: "f-userinvocable", label: t("workspace.field.userInvocable"), node: fm["user-invocable"] ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span> })
+  }
+  if (fm["disable-model-invocation"] !== undefined) {
+    rows.push({ field: "f-disablemodel", label: t("workspace.field.disableModel"), node: fm["disable-model-invocation"] ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span> })
+  }
+  if (fm["command-dispatch"]) {
+    rows.push({ field: "f-cmddispatch", label: t("workspace.field.cmdDispatch"), node: <span className="font-mono">{fm["command-dispatch"]}</span> })
+  }
+  if (fm["command-tool"]) {
+    rows.push({ field: "f-cmdtool", label: t("workspace.field.cmdTool"), node: <span className="font-mono">{fm["command-tool"]}</span> })
+  }
+  if (fm["command-arg-mode"]) {
+    rows.push({ field: "f-cmdargmode", label: t("workspace.field.argMode"), node: <span className="font-mono">{fm["command-arg-mode"]}</span> })
+  }
+  if (fm["allowed-tools"]) {
+    rows.push({ field: "f-allowedtools", label: t("workspace.field.allowedTools"), node: <span className="font-mono">{fm["allowed-tools"]}</span> })
+  }
+
+  if (rows.length === 0) {
+    return <p className="text-[10px] text-muted-foreground pl-1">{t("form.trigger.empty")}</p>
+  }
 
   return (
     <div className="ecard">
-      <div className="fr" data-field="f-triggers">
-        <span className="fl">{t("workspace.field.triggers")}</span>
-        <span className="fv">
-          {triggers.length > 0
-            ? triggers.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>)
-            : <span className="text-muted-foreground">—</span>}
-        </span>
-      </div>
-      <div className="fr" data-field="f-readwhen">
-        <span className="fl">{t("workspace.field.readWhen")}</span>
-        <span className="fv">
-          {readWhen.length > 0
-            ? readWhen.map((tag, i) => <span key={i} className="tg-pill">{tag}</span>)
-            : <span className="text-muted-foreground">—</span>}
-        </span>
-      </div>
-      <div className="fr" data-field="f-autotrigger">
-        <span className="fl">{t("workspace.field.autoTrigger")}</span>
-        <span className="fv">{autoTrigger ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
-      </div>
-      <div className="fr" data-field="f-userinvocable">
-        <span className="fl">{t("workspace.field.userInvocable")}</span>
-        <span className="fv">{userInvocable ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
-      </div>
-      <div className="fr" data-field="f-disablemodel">
-        <span className="fl">{t("workspace.field.disableModel")}</span>
-        <span className="fv">{disableModel ? <span className="bool-on">{t("workspace.bool.yes")}</span> : <span className="bool-off">{t("workspace.bool.no")}</span>}</span>
-      </div>
-      <div className="fr" data-field="f-cmddispatch">
-        <span className="fl">{t("workspace.field.cmdDispatch")}</span>
-        <span className="fv font-mono">{cmdDispatch || <span className="text-muted-foreground">—</span>}</span>
-      </div>
-      <div className="fr" data-field="f-cmdtool">
-        <span className="fl">{t("workspace.field.cmdTool")}</span>
-        <span className="fv font-mono">{cmdTool || <span className="text-muted-foreground">—</span>}</span>
-      </div>
-      <div className="fr" data-field="f-cmdargmode">
-        <span className="fl">{t("workspace.field.argMode")}</span>
-        <span className="fv font-mono">{cmdArgMode || <span className="text-muted-foreground">—</span>}</span>
-      </div>
-      <div className="fr" data-field="f-allowedtools">
-        <span className="fl">{t("workspace.field.allowedTools")}</span>
-        <span className="fv font-mono">{allowedTools || <span className="text-muted-foreground">—</span>}</span>
-      </div>
+      {rows.map(({ field, label, node }) => (
+        <div key={field} className="fr" data-field={field}>
+          <span className="fl">{label}</span>
+          <span className="fv">{node}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -578,7 +568,7 @@ function SkillMdPanel({
       triggers: triggerDraft.triggers.length > 0 ? triggerDraft.triggers : undefined,
       read_when: triggerDraft.readWhen.length > 0 ? triggerDraft.readWhen : undefined,
       auto_trigger: triggerDraft.autoTrigger || undefined,
-      "user-invocable": triggerDraft.userInvocable,
+      "user-invocable": fm["user-invocable"] !== undefined ? triggerDraft.userInvocable : (triggerDraft.userInvocable === false ? false : undefined),
       "disable-model-invocation": triggerDraft.disableModel || undefined,
       "command-dispatch": triggerDraft.cmdDispatch || undefined,
       "command-tool": triggerDraft.cmdTool || undefined,
