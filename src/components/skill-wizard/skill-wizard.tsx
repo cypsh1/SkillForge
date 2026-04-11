@@ -3,13 +3,9 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Download,
-  FileText,
   FolderPlus,
   Plus,
-  Settings,
-  Terminal,
   X,
 } from "lucide-react"
 import i18next from "i18next"
@@ -21,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -30,8 +27,10 @@ import { createLocalSkillBundle, isTauri } from "@/lib/tauri-fs"
 import { cn } from "@/lib/utils"
 import type { SkillFrontmatter } from "@/types/skill"
 
+export type WizardTemplate = "blank" | "basic-tool" | "configurable" | "clone"
+
 export interface WizardData {
-  template: "blank" | "basic-tool" | "configurable" | "clone" | null
+  template: WizardTemplate
   name: string
   description: string
   version: string
@@ -82,7 +81,7 @@ function dirPreviewLines(name: string, template: WizardData["template"]): string
 }
 
 function applyTemplateDefaults(
-  template: Exclude<WizardData["template"], null>,
+  template: WizardTemplate,
 ): Pick<WizardData, "tools" | "envVars"> {
   if (template === "basic-tool")
     return {
@@ -116,38 +115,18 @@ export interface SkillWizardProps {
 export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
   const { t } = useTranslation()
   const steps = t("workspace.wizard.steps", { returnObjects: true }) as string[]
-  const templates = useMemo(
+  const templateOptions: Array<{ id: WizardTemplate; label: string }> = useMemo(
     () => [
-      {
-        id: "blank" as const,
-        title: t("workspace.wizard.templateBlank"),
-        desc: t("workspace.wizard.templateBlankDesc"),
-        icon: FileText,
-      },
-      {
-        id: "basic-tool" as const,
-        title: t("workspace.wizard.templateBasicTool"),
-        desc: t("workspace.wizard.templateBasicToolDesc"),
-        icon: Terminal,
-      },
-      {
-        id: "configurable" as const,
-        title: t("workspace.wizard.templateConfigurable"),
-        desc: t("workspace.wizard.templateConfigurableDesc"),
-        icon: Settings,
-      },
-      {
-        id: "clone" as const,
-        title: t("workspace.wizard.templateClone"),
-        desc: t("workspace.wizard.templateCloneDesc"),
-        icon: Copy,
-      },
+      { id: "blank", label: t("workspace.wizard.templateBlank") },
+      { id: "basic-tool", label: t("workspace.wizard.templateBasicTool") },
+      { id: "configurable", label: t("workspace.wizard.templateConfigurable") },
+      { id: "clone", label: t("workspace.wizard.templateClone") },
     ],
     [t],
   )
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>({
-    template: null,
+    template: "blank",
     name: "",
     description: "",
     version: "1.0.0",
@@ -166,14 +145,13 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
 
   const dirPreview = useMemo(() => dirPreviewLines(data.name, data.template), [data.name, data.template])
 
+  const LAST_STEP = steps.length - 1
   const canNext =
     step === 0
-      ? data.template !== null
-      : step === 1
-        ? data.name.trim() && data.description.trim()
-        : true
+      ? !!(data.name.trim() && data.description.trim())
+      : true
 
-  const selectTemplate = (id: Exclude<WizardData["template"], null>) => {
+  const selectTemplate = (id: WizardTemplate) => {
     const d = applyTemplateDefaults(id)
     setData((s) => ({ ...s, template: id, tools: d.tools, envVars: d.envVars }))
   }
@@ -182,7 +160,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
     downloadFile("SKILL.md", skillMdPreview, "text/markdown;charset=utf-8")
 
   const handleCreateLocal = async () => {
-    if (!skillMdPreview || !data.template) return
+    if (!skillMdPreview) return
     setCreating(true)
     setCreateError(null)
     try {
@@ -272,31 +250,22 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {step === 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {templates.map((tmpl) => {
-              const Icon = tmpl.icon
-              const sel = data.template === tmpl.id
-              return (
-                <button
-                  key={tmpl.id}
-                  type="button"
-                  onClick={() => selectTemplate(tmpl.id)}
-                  className={cn(
-                    "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors",
-                    sel ? "bg-blue-500/10 ring-2 ring-primary dark:bg-blue-500/15" : "hover:bg-muted/50",
-                  )}
-                >
-                  <Icon className="size-5 text-muted-foreground" />
-                  <span className="font-medium">{tmpl.title}</span>
-                  <span className="text-xs text-muted-foreground">{tmpl.desc}</span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {step === 1 && (
           <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>{t("workspace.wizard.templateLabel")}</Label>
+              <Select value={data.template} onValueChange={(v) => selectTemplate(v as WizardTemplate)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {templateOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("workspace.wizard.templateHint")}</p>
+            </div>
+            <Separator />
             {field(
               "skill-name",
               t("workspace.wizard.name"),
@@ -340,7 +309,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
           </div>
         )}
 
-        {step === 2 && (
+        {step === 1 && (
           <div className="space-y-3">
             {data.tools.map((tool, i) => (
               <Card key={i} size="sm" className="gap-2 py-3">
@@ -380,7 +349,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div className="space-y-3">
             {data.envVars.length === 0 ? (
               <Button type="button" variant="outline" size="sm" className="w-full" onClick={addEnv}>
@@ -427,7 +396,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-3">
             <div>
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("workspace.wizard.dirPreview")}</p>
@@ -447,7 +416,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
                 {t("workspace.wizard.exportSkillMd")}
               </Button>
               {isTauri() && (
-                <Button type="button" size="sm" disabled={!skillMdPreview || creating || !data.template} onClick={handleCreateLocal}>
+                <Button type="button" size="sm" disabled={!skillMdPreview || creating} onClick={handleCreateLocal}>
                   <FolderPlus className="size-3.5" />
                   {creating ? t("workspace.wizard.creating") : t("workspace.wizard.createLocal")}
                 </Button>
@@ -465,8 +434,8 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
           <ChevronLeft className="size-3.5" />
           {t("workspace.wizard.prev")}
         </Button>
-        {step < 4 ? (
-          <Button type="button" size="sm" disabled={!canNext} onClick={() => setStep((s) => Math.min(4, s + 1))}>
+        {step < LAST_STEP ? (
+          <Button type="button" size="sm" disabled={!canNext} onClick={() => setStep((s) => Math.min(LAST_STEP, s + 1))}>
             {t("workspace.wizard.next")}
             <ChevronRight className="size-3.5" />
           </Button>

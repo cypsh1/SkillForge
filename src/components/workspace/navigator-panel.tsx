@@ -46,7 +46,7 @@ import { SkillWizard } from "@/components/skill-wizard/skill-wizard"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { parseSkillMd } from "@/lib/skill-parser"
 import { cn } from "@/lib/utils"
-import type { NavigatorSelection } from "@/types/workspace"
+import { computeChanges, type NavigatorSelection } from "@/types/workspace"
 import type { ParsedSkill, ExtraFile } from "@/types/skill"
 
 function selectionMatches(
@@ -135,7 +135,7 @@ function deduplicateId(id: string, existingIds: string[]): string {
 
 export function NavigatorPanel() {
   const { t } = useTranslation()
-  const { state, select, addSkill, removeSkill } = useWorkspace()
+  const { state, select, addSkill, removeSkill, removeConfigFile, removeExtraFile } = useWorkspace()
   const { skills, selection } = state
 
   const [query, setQuery] = useState("")
@@ -168,6 +168,11 @@ export function NavigatorPanel() {
   const [pasteContent, setPasteContent] = useState("")
   const [pasteError, setPasteError] = useState("")
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [deleteFileTarget, setDeleteFileTarget] = useState<{
+    skillId: string
+    path: string
+    type: "config" | "extra"
+  } | null>(null)
   const [uploadError, setUploadError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -232,6 +237,23 @@ export function NavigatorPanel() {
       setDeleteTarget(null)
     }
   }, [deleteTarget, removeSkill])
+
+  const handleConfirmDeleteFile = useCallback(() => {
+    if (!deleteFileTarget) return
+    if (deleteFileTarget.type === "config") {
+      removeConfigFile(deleteFileTarget.skillId, deleteFileTarget.path)
+    } else {
+      removeExtraFile(deleteFileTarget.skillId, deleteFileTarget.path)
+    }
+    setDeleteFileTarget(null)
+  }, [deleteFileTarget, removeConfigFile, removeExtraFile])
+
+  const handleDeleteFile = useCallback(
+    (skillId: string, path: string, type: "config" | "extra") => {
+      setDeleteFileTarget({ skillId, path, type })
+    },
+    [],
+  )
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
@@ -333,6 +355,23 @@ export function NavigatorPanel() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={deleteFileTarget !== null} onOpenChange={(open) => { if (!open) setDeleteFileTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("workspace.nav.deleteFile")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteFileTarget ? t("workspace.nav.deleteFileConfirm", { path: deleteFileTarget.path }) : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("workspace.action.cancel")}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDeleteFile}>
+              {t("workspace.nav.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ScrollArea className="min-h-0 flex-1 overflow-hidden">
         <div className="space-y-0.5 p-2 pr-3">
           {filteredSkills.map((skill) => (
@@ -340,10 +379,12 @@ export function NavigatorPanel() {
               key={skill.id}
               skill={skill}
               dirty={state.editStates[skill.id]?.dirty ?? false}
+              changeCount={state.editStates[skill.id] ? computeChanges(state.editStates[skill.id]).totalCount : 0}
               expanded={expandedIds.has(skill.id)}
               onToggleExpand={() => toggleExpand(skill.id)}
               selection={selection}
               select={select}
+              onDeleteFile={handleDeleteFile}
               onDelete={() =>
                 setDeleteTarget({
                   id: skill.id,
@@ -361,21 +402,25 @@ export function NavigatorPanel() {
 interface SkillTreeBlockProps {
   skill: ParsedSkill
   dirty: boolean
+  changeCount: number
   expanded: boolean
   onToggleExpand: () => void
   selection: NavigatorSelection | null
   select: (sel: NavigatorSelection) => void
   onDelete: () => void
+  onDeleteFile: (skillId: string, path: string, type: "config" | "extra") => void
 }
 
 function SkillTreeBlock({
   skill,
   dirty,
+  changeCount,
   expanded,
   onToggleExpand,
   selection,
   select,
   onDelete,
+  onDeleteFile,
 }: SkillTreeBlockProps) {
   const { t } = useTranslation()
   const name = skill.frontmatter.name || skill.id
@@ -410,7 +455,13 @@ function SkillTreeBlock({
                 </Badge>
               ) : null}
               {dirty && (
-                <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title={t("workspace.nav.unsavedChanges")} />
+                changeCount > 0 ? (
+                  <Badge variant="outline" className="h-4 min-w-4 shrink-0 px-1 text-[9px] font-medium border-amber-500/50 bg-amber-500/10 text-amber-500">
+                    {changeCount}
+                  </Badge>
+                ) : (
+                  <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title={t("workspace.nav.unsavedChanges")} />
+                )
               )}
             </span>
             {skill.description ? (
@@ -441,10 +492,10 @@ function SkillTreeBlock({
             description={t("workspace.nav.skillIdentity")}
           />
           {skill.hasConfig ? (
-            <ConfigSubtree skill={skill} selection={selection} select={select} />
+            <ConfigSubtree skill={skill} selection={selection} select={select} onDeleteFile={onDeleteFile} />
           ) : null}
           {Object.keys(skill.extraFiles).length > 0 ? (
-            <ExtraFilesSubtree skill={skill} selection={selection} select={select} />
+            <ExtraFilesSubtree skill={skill} selection={selection} select={select} onDeleteFile={onDeleteFile} />
           ) : null}
         </div>
       ) : null}
@@ -459,27 +510,44 @@ interface TreeNodeProps {
   icon: ReactNode
   label: string
   description: string
+  onDelete?: () => void
 }
 
-function TreeNode({ selected, onClick, icon, label, description }: TreeNodeProps) {
+function TreeNode({ selected, onClick, icon, label, description, onDelete }: TreeNodeProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors",
-        selected && "bg-accent",
-        !selected && "hover:bg-muted/60",
+    <div className="group/node relative">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors",
+          onDelete && "pr-7",
+          selected && "bg-accent",
+          !selected && "hover:bg-muted/60",
+        )}
+      >
+        <span className="text-muted-foreground mt-0.5">{icon}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate">{label}</span>
+          {description ? (
+            <span className="text-muted-foreground block truncate text-[11px]">{description}</span>
+          ) : null}
+        </span>
+      </button>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/node:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+          aria-label={`Delete ${label}`}
+        >
+          <Trash2 className="size-3" />
+        </button>
       )}
-    >
-      <span className="text-muted-foreground mt-0.5">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate">{label}</span>
-        {description ? (
-          <span className="text-muted-foreground block truncate text-[11px]">{description}</span>
-        ) : null}
-      </span>
-    </button>
+    </div>
   )
 }
 
@@ -487,9 +555,10 @@ interface ConfigSubtreeProps {
   skill: ParsedSkill
   selection: NavigatorSelection | null
   select: (sel: NavigatorSelection) => void
+  onDeleteFile: (skillId: string, path: string, type: "config" | "extra") => void
 }
 
-function ConfigSubtree({ skill, selection, select }: ConfigSubtreeProps) {
+function ConfigSubtree({ skill, selection, select, onDeleteFile }: ConfigSubtreeProps) {
   const { t } = useTranslation()
   const paths = sortConfigPaths(Object.keys(skill.configFiles))
 
@@ -515,6 +584,7 @@ function ConfigSubtree({ skill, selection, select }: ConfigSubtreeProps) {
               icon={<Settings className="size-3.5 shrink-0" />}
               label={display}
               description={desc}
+              onDelete={() => onDeleteFile(skill.id, filePath, "config")}
             />
           )
         })}
@@ -527,10 +597,12 @@ function ExtraFilesSubtree({
   skill,
   selection,
   select,
+  onDeleteFile,
 }: {
   skill: ParsedSkill
   selection: NavigatorSelection | null
   select: (sel: NavigatorSelection) => void
+  onDeleteFile: (skillId: string, path: string, type: "config" | "extra") => void
 }) {
   const { t } = useTranslation()
   const entries = Object.values(skill.extraFiles)
@@ -562,6 +634,7 @@ function ExtraFilesSubtree({
           icon={extraFileIcon(f.type)}
           label={f.path}
           description={extraFileDescription(f, t)}
+          onDelete={() => onDeleteFile(skill.id, f.path, "extra")}
         />
       ))}
       {sortedDirs.map((dir) => {
@@ -583,6 +656,7 @@ function ExtraFilesSubtree({
                     icon={extraFileIcon(f.type)}
                     label={display}
                     description={extraFileDescription(f, t)}
+                    onDelete={() => onDeleteFile(skill.id, f.path, "extra")}
                   />
                 )
               })}

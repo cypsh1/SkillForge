@@ -12,6 +12,18 @@ export interface NavigatorSelection {
   filePath?: string
 }
 
+export interface OriginalSnapshot {
+  frontmatter: SkillFrontmatter
+  markdownBody: string
+  configFiles: Record<string, unknown>
+  extraFiles: Record<string, string>
+}
+
+export interface ChangeInfo {
+  totalCount: number
+  areas: string[]
+}
+
 export interface SkillEditState {
   frontmatter: SkillFrontmatter
   markdownBody: string
@@ -20,6 +32,39 @@ export interface SkillEditState {
   configFiles: Record<string, unknown>
   extraFiles: Record<string, string>
   dirty: boolean
+  deletedConfigPaths: string[]
+  deletedExtraPaths: string[]
+  originalSnapshot: OriginalSnapshot
+}
+
+export function computeChanges(editState: SkillEditState): ChangeInfo {
+  const { originalSnapshot: orig } = editState
+  const areas: string[] = []
+
+  if (JSON.stringify(editState.frontmatter) !== JSON.stringify(orig.frontmatter)) {
+    areas.push("frontmatter")
+  }
+  if (editState.markdownBody !== orig.markdownBody) {
+    areas.push("body")
+  }
+  for (const path of Object.keys(editState.configFiles)) {
+    if (JSON.stringify(editState.configFiles[path]) !== JSON.stringify(orig.configFiles[path])) {
+      areas.push(path)
+    }
+  }
+  for (const path of editState.deletedConfigPaths) {
+    areas.push(path)
+  }
+  for (const path of Object.keys(editState.extraFiles)) {
+    if (editState.extraFiles[path] !== orig.extraFiles[path]) {
+      areas.push(path)
+    }
+  }
+  for (const path of editState.deletedExtraPaths) {
+    areas.push(path)
+  }
+
+  return { totalCount: areas.length, areas }
 }
 
 export interface WorkspaceState {
@@ -38,3 +83,5 @@ export type WorkspaceAction =
   | { type: "SAVE_SKILL"; payload: { skillId: string; serializedContent: string } }
   | { type: "ADD_SKILL"; payload: ParsedSkill }
   | { type: "REMOVE_SKILL"; payload: { skillId: string } }
+  | { type: "REMOVE_CONFIG_FILE"; payload: { skillId: string; path: string } }
+  | { type: "REMOVE_EXTRA_FILE"; payload: { skillId: string; path: string } }

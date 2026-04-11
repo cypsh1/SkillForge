@@ -112,6 +112,7 @@
       "saveFailed": "Save failed",
       "validationFailed": "Validation failed, cannot save",
       "modified": "Modified",
+      "modifiedCount": "{{count}} changes",
       "addEnvVar": "+ Add Env Var",
       "addReadPath": "+ Add Read Path",
       "addWritePath": "+ Add Write Path",
@@ -291,7 +292,9 @@
     "wizard": {
       "createNew": "Create New Skill",
       "close": "Close",
-      "steps": ["Template", "Basic Info", "Tools", "Env Vars", "Preview & Create"],
+      "steps": ["Basic Info", "Tools", "Env Vars", "Preview & Create"],
+      "templateLabel": "Preset Template",
+      "templateHint": "Switching template prefills tools and env vars without affecting basic info",
       "templateBlank": "Blank Skill",
       "templateBlankDesc": "Minimal structure with only SKILL.md",
       "templateBasicTool": "Basic Tool",
@@ -344,6 +347,9 @@
       "createNew": "Create New Skill",
       "removeSkill": "Remove Skill",
       "removeConfirm": "Remove \"{{name}}\" from the list? Source files won't be deleted.",
+      "deleteFile": "Delete File",
+      "deleteFileConfirm": "Delete \"{{path}}\"? It will be permanently removed from disk on save.",
+      "delete": "Delete",
       "pasteTitle": "Paste SKILL.md Content",
       "pasteDesc": "Paste the full SKILL.md content below, including YAML frontmatter and markdown body.",
       "import": "Import",
@@ -371,6 +377,10 @@
       "fileJsonData": "JSON data",
       "fileMarkdownDoc": "Markdown doc",
       "fileAttached": "Extra file"
+    },
+    "changes": {
+      "frontmatter": "Metadata",
+      "body": "Body"
     }
   }
 }

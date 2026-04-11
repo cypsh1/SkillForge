@@ -3,7 +3,7 @@
 ## description: 会话交接页（最近完成、下一步、环境状态）
 
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-04-12
 
 # 当前状态
 
@@ -20,6 +20,50 @@ SkillForge — OpenClaw Skill 可视化配置工具
 V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）、V1.1-STYLE-UNIFY（跨文件类型一致性）和 V1.1-TRIGGER-FIX（触发条件虚假默认值修复）已完成。
 
 **当前无进行中任务**。下一步从 backlog V1.1 待办中选择。
+
+### 本次会话完成（2026-04-12）— V1.1 第二档 2 项任务
+
+批量执行 2 项中等复杂度 V1.1 任务：
+
+1. **V1.1-向导整合**：创建向导从 5 步精简为 4 步——砍掉 Step 0 整屏模板选择，模板选择下沉为基本信息页面顶部的 Select 下拉框
+   - 默认模板 "blank"，切换模板仅预填工具/环境变量，不覆盖基本信息
+   - 步骤导航、canNext 校验、footer 按钮全部适配新步骤索引
+   - `WizardTemplate` 类型提取，`WizardData.template` 从 `| null` 改为必有值
+
+2. **V1.1-修改追踪**：编辑态增强修改追踪——从单一 `dirty: boolean` 升级为区域级变更检测
+   - `SkillEditState` 新增 `originalSnapshot`（编辑初始化时 structuredClone 原始数据）
+   - `computeChanges()` 工具函数：对比当前 vs 原始，返回 `{ totalCount, areas[] }`
+   - Navigator 树节点：amber 数字 badge（替代原来的小圆点），显示修改区域数量
+   - Inspector 面板："N 处修改" badge（替代原来的"已修改"），hover 显示具体区域名称
+   - 为后续 V1.1-Diff 铺路：originalSnapshot 可直接作为 diff 基准
+
+全部 tsc ✅ build ✅ 浏览器验证 ✅
+
+### 本次会话完成（2026-04-12）— V1.1 第一档 3 项任务
+
+批量执行 3 项低风险 V1.1 任务：
+
+1. **V1.1-子节点删除**：config/extra 文件节点支持删除——hover 显示红色垃圾桶 → 确认对话框 → 从 editState 删除 + dirty → 保存时 Tauri 端物理删除
+   - 新增 `REMOVE_CONFIG_FILE` / `REMOVE_EXTRA_FILE` reducer action
+   - `SkillEditState` 新增 `deletedConfigPaths` / `deletedExtraPaths` 字段
+   - `tauri-fs.ts` 新增 `deleteSkillFile()` 函数
+   - `inspector-panel.tsx` handleSaveAll 执行磁盘删除
+   - `TreeNode` 组件新增 `onDelete` prop + hover 删除按钮
+
+2. **V1.1-拖拽**：sources/topics 列表拖拽排序——编辑模式下 GripVertical 拖拽手柄 + @dnd-kit 排序
+   - 安装 `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
+   - `SortableSourceEditCard` / `SortableTopicEditCard` 包装组件
+   - PointerSensor + KeyboardSensor，activationConstraint 防误触
+
+3. **V1.1-跨文件校验**：5 条 warning 级别跨文件规则
+   - `files.read[]` 引用路径不存在
+   - `files.write[]` 空路径
+   - sources.json 引用不存在的 topic ID
+   - env 变量未在代码中被引用
+   - Markdown body 中引用的脚本文件不存在
+   - `mergeSkillForValidation` 扩展支持 extraFiles
+
+全部 tsc ✅ build ✅ 浏览器验证 ✅
 
 ### 本次会话完成（2026-04-11）— V1.1 批量优化（8 项）
 

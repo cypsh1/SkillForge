@@ -1,5 +1,22 @@
 import { useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVertical } from "lucide-react"
 import { SectionBlock } from "@/components/workspace/section-block"
 
 export interface TopicSearch {
@@ -57,6 +74,21 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
 
   const handleCancel = useCallback(() => setEditing(false), [])
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  )
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setDraft((prev) => {
+      const oldIndex = prev.findIndex((t) => t.id === active.id)
+      const newIndex = prev.findIndex((t) => t.id === over.id)
+      return arrayMove(prev, oldIndex, newIndex)
+    })
+  }, [])
+
   const updateDraftTopic = useCallback((index: number, updates: Partial<Topic>) => {
     setDraft(prev => prev.map((t, i) => i === index ? { ...t, ...updates } : t))
   }, [])
@@ -86,17 +118,21 @@ export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
       onDone={handleDone}
     >
       {editing ? (
-        <div className="space-y-1.5">
-          {draft.map((topic, index) => (
-            <TopicEditCard
-              key={topic.id}
-              topic={topic}
-              onUpdateTopic={(updates) => updateDraftTopic(index, updates)}
-              onUpdateSearch={(updates) => updateDraftSearch(index, updates)}
-              onUpdateDisplay={(updates) => updateDraftDisplay(index, updates)}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={draft.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1.5">
+              {draft.map((topic, index) => (
+                <SortableTopicEditCard
+                  key={topic.id}
+                  topic={topic}
+                  onUpdateTopic={(updates) => updateDraftTopic(index, updates)}
+                  onUpdateSearch={(updates) => updateDraftSearch(index, updates)}
+                  onUpdateDisplay={(updates) => updateDraftDisplay(index, updates)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="ecard">
           {topics.map(topic => (
@@ -118,6 +154,50 @@ function TopicDisplayRow({ topic }: { topic: Topic }) {
         {queryCount > 0 && <span className="bridge-badge">{queryCount}q</span>}
         <span>{topic.display.style}</span>
       </span>
+    </div>
+  )
+}
+
+function SortableTopicEditCard({
+  topic,
+  onUpdateTopic,
+  onUpdateSearch,
+  onUpdateDisplay,
+}: {
+  topic: Topic
+  onUpdateTopic: (updates: Partial<Topic>) => void
+  onUpdateSearch: (updates: Partial<TopicSearch>) => void
+  onUpdateDisplay: (updates: Partial<TopicDisplay>) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: topic.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="flex items-start gap-1">
+        <button
+          type="button"
+          className="mt-1.5 shrink-0 cursor-grab p-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-3.5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <TopicEditCard
+            topic={topic}
+            onUpdateTopic={onUpdateTopic}
+            onUpdateSearch={onUpdateSearch}
+            onUpdateDisplay={onUpdateDisplay}
+          />
+        </div>
+      </div>
     </div>
   )
 }

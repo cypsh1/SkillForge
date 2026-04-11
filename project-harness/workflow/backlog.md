@@ -3,7 +3,7 @@
 ## description: 任务待办清单（唯一的任务管理文件）
 
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-04-12
 
 # Backlog
 
@@ -25,6 +25,49 @@ last_updated: 2026-04-11
 ---
 
 ## 最近完成
+
+**V1.1-TIER2：第二档 2 项任务** ✅ 2026-04-12
+
+来源：V1.1 backlog 中 2 项中等复杂度任务批量执行。
+
+### 改动
+
+| 任务 | 内容 | 涉及文件 |
+|---|---|---|
+| V1.1-向导整合 | 5 步→4 步，模板选择下沉为基本信息页 Select 下拉 | skill-wizard.tsx, en.json, zh.json |
+| V1.1-修改追踪 | originalSnapshot + computeChanges + Navigator 数字 badge + Inspector "N 处修改" | workspace.ts, use-workspace.ts, navigator-panel.tsx, inspector-panel.tsx, en.json, zh.json |
+
+### 验收标准
+
+- [x] 向导打开直接进入基本信息页，模板为顶部下拉框
+- [x] 4 步导航（基本信息→工具→环境变量→预览与创建）
+- [x] 编辑后 Navigator 树显示 amber 数字 badge
+- [x] Inspector 标题栏显示"N 处修改" + hover 区域明细
+- [x] tsc ✅ build ✅ 浏览器验证 ✅
+
+---
+
+**V1.1-TIER1：第一档 3 项任务** ✅ 2026-04-12
+
+来源：V1.1 backlog 中 3 项低风险、影响面小的独立任务批量执行。
+
+### 改动
+
+| 任务 | 内容 | 涉及文件 |
+|---|---|---|
+| V1.1-子节点删除 | config/extra 文件节点 hover 删除按钮 → 确认对话框 → editState 删除 → 保存时 Tauri 磁盘删除 | workspace.ts, use-workspace.ts, navigator-panel.tsx, tauri-fs.ts, inspector-panel.tsx |
+| V1.1-拖拽 | sources/topics 编辑模式拖拽排序（@dnd-kit + SortableContext + GripVertical） | sources-editor.tsx, topics-editor.tsx, package.json |
+| V1.1-跨文件校验 | 5 条 warning 级别规则：files.read/write 引用、source-topic 链接、env 变量引用、脚本引用 | skill-validator.ts, editor-panel.tsx |
+
+### 验收标准
+
+- [x] hover config/extra 节点出现删除按钮，SKILL.md 无
+- [x] 删除确认对话框 + dirty 标记 + 保存时磁盘删除
+- [x] 编辑模式拖拽手柄可见（cursor:grab）
+- [x] 跨文件校验 warning 在概览面板显示
+- [x] tsc ✅ build ✅ 浏览器验证 ✅
+
+---
 
 **V1.1-TRIGGER-FIX：触发条件虚假默认值修复** ✅ 2026-04-11
 
@@ -269,19 +312,19 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 来源 | 说明 |
 |---|---|---|---|
-| V1.1-向导 | 创建向导整合 | #2 | 4 模板合并为单入口 + 可选"从模板预填"，减少用户困惑 |
-| V1.1-子节点删除 | 子节点删除支持 | #3 | 目录子节点（config 文件等）支持删除 |
+| ~~V1.1-向导~~ | ~~创建向导整合~~ | #2 | ✅ 2026-04-12 5步→4步，模板下沉为 Select 下拉 |
+| ~~V1.1-子节点删除~~ | ~~子节点删除支持~~ | #3 | ✅ 2026-04-12 config/extra 文件 hover 删除 + 确认 + 保存时磁盘删除 |
 | ~~V1.1-文档编辑~~ | ~~exec 区块可编辑~~ | #6 | ✅ 2026-04-11 exec 区块编辑已开启（镜像 doc 模式） |
 | V1.1-配色 | 配色方案优化 | #7 | 两个方向待选：优化彩色 / 深紫主题。需先在 demo 中验证，再实施 |
-| V1.1-修改追踪 | 修改追踪增强 | #11 | 记录修改数量/位置/筛选（当前仅有 dirty 标记） |
+| ~~V1.1-修改追踪~~ | ~~修改追踪增强~~ | #11 | ✅ 2026-04-12 originalSnapshot + computeChanges + Navigator 数字 badge + Inspector "N 处修改" |
 | V1.1-在线导入 | ClawHub / GitHub 在线导入 | — | 从 ClawHub 搜索导入 + GitHub URL 导入 |
 | V1.1-SSH | 远程 SSH Skill 加载 | — | 连接 OpenClaw 服务器读写 |
 | V1.1-主题 | 深色/亮色主题切换 | — | 先产出 light mode demo 验证色值 |
 | V1.1-Diff | 配置 Diff | — | 对比编辑前后变更 |
-| V1.1-拖拽 | 拖拽排序 | — | sources/topics 列表拖拽重排 |
+| ~~V1.1-拖拽~~ | ~~拖拽排序~~ | — | ✅ 2026-04-12 @dnd-kit + SortableContext + GripVertical 手柄 |
 | V1.1-批量 | 批量操作 | — | 多 Skill 批量导出/验证 |
 | V1.1-更新 | Tauri 自动更新 | — | 桌面应用自动更新 |
-| V1.1-跨文件校验 | 跨文件联动校验 | #3b | 文件之间的依赖/引用关系校验（如 SKILL.md 中引用的脚本文件是否存在） |
+| ~~V1.1-跨文件校验~~ | ~~跨文件联动校验~~ | #3b | ✅ 2026-04-12 crossFileValidate 5 条 warning 规则（files.read/write + source-topic + env 引用 + 脚本引用） |
 | V1.1-代码联动 | 代码文件桥连/联动增强 | #23 | 为 extra-file 扩展 `usePanelSync` 字段映射逻辑，实现左侧字段 hover 高亮右侧对应代码行（需要为 extra-file 定义实体模型） |
 | ~~V1.1-统一解析~~ | ~~统一解析/展示/编辑架构~~ | #24 | ✅ 已在 V1.1-UNIFIED 中完成（SectionBlock 公共组件 + FragmentBlock 统一渲染 + 四分类路由） |
 | ~~V1.1-STYLE-UNIFY~~ | ~~跨文件类型展示与编辑一致性~~ | 用户反馈 | ✅ 已完成（2026-04-10）— config 文件编辑/预览面板与 SKILL.md 风格统一 + 桥线联动 + 清理废弃代码 + 嵌套 JSON 修复 |
@@ -331,6 +374,8 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
+| V1.1-TIER2 | V1.1 第二档 2 项（向导整合/修改追踪） | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-tier2.md` |
+| V1.1-TIER1 | V1.1 第一档 3 项（子节点删除/拖拽排序/跨文件校验） | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-tier1.md` |
 | V1.1-BATCH | V1.1 批量优化 8 项（exec编辑/标题编辑/样式对齐/概览/架构条/校验/i18n） | 2026-04-11 | `evidence/task-logs/2026-04-11-v1.1-batch-optimization.md` |
 | V1.1-TRIGGER-FIX | 触发条件虚假默认值修复 + L7 数据真实性规则 | 2026-04-11 | `evidence/task-logs/2026-04-11-v1.1-trigger-fix.md` |
 | V1.1-STYLE-UNIFY | 跨文件类型展示与编辑一致性（Phase A-C） | 2026-04-10 | `evidence/task-logs/2026-04-10-v1.1-style-unify.md` |

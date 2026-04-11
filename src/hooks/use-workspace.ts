@@ -5,14 +5,20 @@ import type { WorkspaceState, WorkspaceAction, NavigatorSelection, SkillEditStat
 function getOrCreateEditState(state: WorkspaceState, skillId: string): SkillEditState {
   if (state.editStates[skillId]) return state.editStates[skillId]
   const skill = state.skills.find((s) => s.id === skillId)
-  if (!skill) return {
-    frontmatter: { name: "" },
-    markdownBody: "",
-    frontmatterStatus: "missing" as const,
-    rawFrontmatter: null,
-    configFiles: {},
-    extraFiles: {},
-    dirty: false,
+  if (!skill) {
+    const emptySnapshot = { frontmatter: { name: "" }, markdownBody: "", configFiles: {}, extraFiles: {} }
+    return {
+      frontmatter: { name: "" },
+      markdownBody: "",
+      frontmatterStatus: "missing" as const,
+      rawFrontmatter: null,
+      configFiles: {},
+      extraFiles: {},
+      dirty: false,
+      deletedConfigPaths: [],
+      deletedExtraPaths: [],
+      originalSnapshot: emptySnapshot,
+    }
   }
   const extraContents: Record<string, string> = {}
   for (const [p, f] of Object.entries(skill.extraFiles ?? {})) {
@@ -24,6 +30,13 @@ function getOrCreateEditState(state: WorkspaceState, skillId: string): SkillEdit
     ? skill.rawContent.slice(fmMatch[0].length).trimStart()
     : (skill.frontmatterStatus === "missing" ? skill.rawContent : "")
 
+  const originalSnapshot = {
+    frontmatter: structuredClone(skill.frontmatter),
+    markdownBody: body,
+    configFiles: structuredClone(skill.configFiles),
+    extraFiles: { ...extraContents },
+  }
+
   return {
     frontmatter: structuredClone(skill.frontmatter),
     markdownBody: body,
@@ -32,6 +45,9 @@ function getOrCreateEditState(state: WorkspaceState, skillId: string): SkillEdit
     configFiles: structuredClone(skill.configFiles),
     extraFiles: extraContents,
     dirty: false,
+    deletedConfigPaths: [],
+    deletedExtraPaths: [],
+    originalSnapshot,
   }
 }
 
@@ -96,6 +112,58 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       }
     }
 
+    case "REMOVE_CONFIG_FILE": {
+      const { skillId, path } = action.payload
+      const existing = getOrCreateEditState(state, skillId)
+      const nextConfigFiles = { ...existing.configFiles }
+      delete nextConfigFiles[path]
+      const nextSelection =
+        state.selection?.skillId === skillId &&
+        state.selection?.nodeType === "config-file" &&
+        state.selection?.filePath === path
+          ? { skillId, nodeType: "skill-md" as const }
+          : state.selection
+      return {
+        ...state,
+        selection: nextSelection,
+        editStates: {
+          ...state.editStates,
+          [skillId]: {
+            ...existing,
+            configFiles: nextConfigFiles,
+            deletedConfigPaths: [...existing.deletedConfigPaths, path],
+            dirty: true,
+          },
+        },
+      }
+    }
+
+    case "REMOVE_EXTRA_FILE": {
+      const { skillId, path } = action.payload
+      const existing = getOrCreateEditState(state, skillId)
+      const nextExtraFiles = { ...existing.extraFiles }
+      delete nextExtraFiles[path]
+      const nextSelection =
+        state.selection?.skillId === skillId &&
+        state.selection?.nodeType === "extra-file" &&
+        state.selection?.filePath === path
+          ? { skillId, nodeType: "skill-md" as const }
+          : state.selection
+      return {
+        ...state,
+        selection: nextSelection,
+        editStates: {
+          ...state.editStates,
+          [skillId]: {
+            ...existing,
+            extraFiles: nextExtraFiles,
+            deletedExtraPaths: [...existing.deletedExtraPaths, path],
+            dirty: true,
+          },
+        },
+      }
+    }
+
     case "RESET_EDITS": {
       const { skillId } = action.payload
       const next = { ...state.editStates }
@@ -113,11 +181,16 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         for (const [p, content] of Object.entries(es.extraFiles)) {
           if (extraFiles[p]) extraFiles[p] = { ...extraFiles[p], content }
         }
+        for (const dp of es.deletedExtraPaths) {
+          delete extraFiles[dp]
+        }
+        const configFiles = structuredClone(es.configFiles)
         return {
           ...s,
           frontmatter: structuredClone(es.frontmatter),
-          configFiles: structuredClone(es.configFiles),
+          configFiles,
           extraFiles,
+          hasConfig: Object.keys(configFiles).length > 0,
           rawContent: serializedContent,
         }
       })
@@ -168,6 +241,8 @@ interface WorkspaceContextValue {
   markSaved: (skillId: string, serializedContent: string) => void
   addSkill: (skill: ParsedSkill) => void
   removeSkill: (skillId: string) => void
+  removeConfigFile: (skillId: string, path: string) => void
+  removeExtraFile: (skillId: string, path: string) => void
 }
 
 export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
@@ -206,9 +281,13 @@ export function useWorkspaceReducer(skills: ParsedSkill[]) {
     dispatch({ type: "ADD_SKILL", payload: skill })
   const removeSkill = (skillId: string) =>
     dispatch({ type: "REMOVE_SKILL", payload: { skillId } })
+  const removeConfigFile = (skillId: string, path: string) =>
+    dispatch({ type: "REMOVE_CONFIG_FILE", payload: { skillId, path } })
+  const removeExtraFile = (skillId: string, path: string) =>
+    dispatch({ type: "REMOVE_EXTRA_FILE", payload: { skillId, path } })
 
   return useMemo<WorkspaceContextValue>(
-    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, updateSkillBody, markSaved, addSkill, removeSkill }),
+    () => ({ state, dispatch, selectedSkill, editState, select, updateFrontmatter, updateConfig, updateExtraFile, updateSkillBody, markSaved, addSkill, removeSkill, removeConfigFile, removeExtraFile }),
     [state, dispatch, selectedSkill, editState],
   )
 }

@@ -18,9 +18,10 @@ import { BRIDGE_SECTIONS, SECTION_MAP } from "@/lib/bridge-sections"
 import { frontmatterSchema } from "@/lib/schemas/frontmatter-schema"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { toast } from "sonner"
-import { isTauri, saveSkillFile, saveSkillConfig } from "@/lib/tauri-fs"
+import { isTauri, saveSkillFile, saveSkillConfig, deleteSkillFile } from "@/lib/tauri-fs"
 import { cn } from "@/lib/utils"
 import type { ParsedSkill, SkillFrontmatter } from "@/types/skill"
+import { computeChanges } from "@/types/workspace"
 
 interface PreviewParts {
   basic: string
@@ -911,6 +912,12 @@ export function InspectorPanel() {
       for (const [path, content] of Object.entries(editState.extraFiles)) {
         await saveSkillFile(selectedSkill.path, path, content)
       }
+      for (const dp of editState.deletedConfigPaths) {
+        await deleteSkillFile(selectedSkill.path, dp)
+      }
+      for (const dp of editState.deletedExtraPaths) {
+        await deleteSkillFile(selectedSkill.path, dp)
+      }
       markSaved(selectedSkill.id, skillMdPreview)
       toast.success(t("workspace.action.saved"))
     } catch (err) {
@@ -956,14 +963,26 @@ export function InspectorPanel() {
           {showExtraChrome && selection.filePath && (
             <span className="text-[10px] truncate">{selection.filePath.split("/").pop()}</span>
           )}
-          {editState?.dirty && (
-            <Badge
-              variant="outline"
-              className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-            >
-              {t("workspace.action.modified")}
-            </Badge>
-          )}
+          {editState?.dirty && (() => {
+            const changes = computeChanges(editState)
+            const label = changes.totalCount > 0
+              ? t("workspace.action.modifiedCount", { count: changes.totalCount })
+              : t("workspace.action.modified")
+            const tooltip = changes.areas.map((a) =>
+              a === "frontmatter" ? t("workspace.changes.frontmatter")
+              : a === "body" ? t("workspace.changes.body")
+              : a.split("/").pop() ?? a
+            ).join(", ")
+            return (
+              <Badge
+                variant="outline"
+                className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                title={tooltip}
+              >
+                {label}
+              </Badge>
+            )
+          })()}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {api && (

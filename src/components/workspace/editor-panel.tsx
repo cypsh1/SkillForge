@@ -101,11 +101,23 @@ function mergeSkillForValidation(
   base: ParsedSkill,
   frontmatter: ParsedSkill["frontmatter"],
   configFiles: Record<string, unknown>,
+  extraFiles?: Record<string, string>,
 ): ParsedSkill {
+  const mergedExtraFiles = extraFiles
+    ? Object.fromEntries(
+        Object.entries(extraFiles).map(([p, content]) => [
+          p,
+          base.extraFiles[p]
+            ? { ...base.extraFiles[p], content }
+            : { path: p, content, type: "text" as const },
+        ]),
+      )
+    : base.extraFiles
   return {
     ...base,
     frontmatter,
     configFiles,
+    extraFiles: mergedExtraFiles,
     hasConfig: base.hasConfig || Object.keys(configFiles).length > 0,
   }
 }
@@ -1253,7 +1265,7 @@ export function EditorPanel() {
 
   const skillForValidation = useMemo(() => {
     if (!selectedSkill || !editState) return null
-    return mergeSkillForValidation(selectedSkill, editState.frontmatter, editState.configFiles)
+    return mergeSkillForValidation(selectedSkill, editState.frontmatter, editState.configFiles, editState.extraFiles)
   }, [selectedSkill, editState])
 
   const validationResult = useMemo(() => {

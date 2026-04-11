@@ -163,6 +163,18 @@ export async function saveSkillConfig(
   await saveSkillFile(skillPath, configRelativePath, content)
 }
 
+export async function deleteSkillFile(
+  skillPath: string,
+  relativePath: string,
+): Promise<void> {
+  const fs = await getTauriFsModule()
+  const fullPath = `${skillPath}/${relativePath}`
+  const fileExists = await fs.exists(fullPath)
+  if (fileExists) {
+    await fs.remove(fullPath)
+  }
+}
+
 export async function createLocalSkillBundle(
   skillName: string,
   skillMd: string,
