@@ -40,7 +40,8 @@
       "disableModelInvocationDesc": "Exclude from prompt",
       "commandDispatch": "Command Dispatch",
       "commandTool": "Command Tool",
-      "commandArgMode": "Argument Mode"
+      "commandArgMode": "Argument Mode",
+      "empty": "No trigger configuration"
     },
     "runtime": {
       "title": "Runtime Requirements",

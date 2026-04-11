@@ -17,9 +17,13 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 **V1.0 路线图执行完成。V1.1 后续优化进行中。**
 
-V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）和 V1.1-STYLE-UNIFY（跨文件类型一致性）已完成。
+V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）、V1.1-STYLE-UNIFY（跨文件类型一致性）和 V1.1-TRIGGER-FIX（触发条件虚假默认值修复）已完成。
 
 **当前无进行中任务**。下一步从 backlog V1.1 待办中选择。
+
+### 本次会话新增规范
+
+- **执行策略 L7（数据真实性）**：展示态只显示文件中实际存在的数据，不用代码默认值伪造配置信息。已写入 backlog.md 执行策略 + memory feedback 文件。
 
 ### V1.0 执行顺序
 
