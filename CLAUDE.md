@@ -50,8 +50,13 @@ SkillForge 是 OpenClaw Skill 可视化配置桌面工具（Tauri v2 + React 19 
 
 ## 沟通风格
 
-描述技术问题时，用用户能看到的现象来说明，不要用代码字段或内部变量名。
-例如：说"打开 config 文件后右侧只显示原始 JSON 文本"，不说"JsonPreview 组件没有 data-bridge-section 属性"。
+描述技术问题时，代码术语和产品语言并存：先写代码术语，紧跟括号注释其产品含义。让用户既能理解发生了什么，也能定位到代码；不要只写代码术语（用户看不懂），也不要只写产品语言（用户无法定位代码）。
+
+不要这样写：
+> TriggerDisplay 硬编码了 9 个字段行，无论有没有值都全显示。tech-news-digest 的 frontmatter 里只设置了 user-invocable: true，其他 8 个字段都是空/默认值，但都显示为 "—"。
+
+要这样写：
+> TriggerDisplay（编辑面板的触发条件区块）硬编码了 9 个字段行（触发词、读取条件、自动触发……允许工具），无论有没有值都全显示。tech-news-digest 的 frontmatter（skill 的元数据块）里只设置了 user-invocable: true（"用户可调 = 是"），其他 8 个字段都是空/默认值，但都显示为 "—"。
 
 ## 远程资源
 
