@@ -34,3 +34,6 @@ lerna-debug.log*
 
 # Local OpenClaw / MCP debug (not project source)
 .openclaw/
+
+# Astro cache (website)
+website/.astro/

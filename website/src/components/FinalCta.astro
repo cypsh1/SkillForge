@@ -1,0 +1,23 @@
+---
+import type zh from '../i18n/zh.json';
+
+interface Props {
+  t: typeof zh;
+}
+
+const { t } = Astro.props;
+const releasesUrl = 'https://github.com/cypsh1/SkillForge/releases';
+---
+
+<section class="relative overflow-hidden border-t border-border py-24">
+  <!-- Gradient background -->
+  <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(134,59,255,0.08),transparent_70%)]"></div>
+
+  <div class="relative z-10 mx-auto flex max-w-2xl flex-col items-center gap-6 px-6 text-center">
+    <h2 class="text-3xl font-bold text-foreground">{t.finalCta.title}</h2>
+    <p class="text-muted-foreground">{t.finalCta.subtitle}</p>
+    <a href={releasesUrl} target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-purple to-brand-cyan px-8 py-3.5 text-sm font-medium text-white transition hover:opacity-90">
+      {t.finalCta.button}
+    </a>
+  </div>
+</section>

@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "features": "功能",
+    "download": "下载",
+    "roadmap": "路线图"
+  },
+  "hero": {
+    "badge": "OpenClaw 生态工具 · V1.1",
+    "title": "告别手写 SKILL.md",
+    "subtitle": "从本地文件到远程服务器，从单个编辑到批量校验——用图形界面完成所有 Skill 配置工作，不再手写一行 YAML。",
+    "cta_download": "免费下载",
+    "cta_github": "查看源码",
+    "metrics": [
+      { "value": "4", "label": "种数据来源" },
+      { "value": "5", "label": "条校验规则" },
+      { "value": "3", "label": "端桌面应用" },
+      { "value": "中英", "label": "双语支持" }
+    ]
+  },
+  "pillars": {
+    "title": "一个工具，三重价值",
+    "items": [
+      {
+        "icon": "edit",
+        "benefit": "每次修改都有信心",
+        "desc": "表单化编辑 + 实时预览 + Diff 对比，配置零出错"
+      },
+      {
+        "icon": "connect",
+        "benefit": "Skill 在哪，你就在哪",
+        "desc": "本地 / ClawHub / GitHub / SSH，四种来源一个入口"
+      },
+      {
+        "icon": "shield",
+        "benefit": "上线前消除隐患",
+        "desc": "跨文件校验 + 编辑拦截 + 批量验证，问题不带到生产"
+      }
+    ]
+  },
+  "pillarDetails": [
+    {
+      "id": "visual-edit",
+      "badge": "可视化编辑",
+      "badgeColor": "blue",
+      "benefit": "每次修改都有信心",
+      "desc": "手写 YAML 一个缩进错误就让整个 Skill 报废。SkillForge 用结构化表单替代手写，每次修改实时生成 SKILL.md，保存前一键查看行级 Diff。",
+      "features": [
+        { "name": "表单化编辑器", "detail": "下拉选择、开关切换、标签输入，告别手写 YAML" },
+        { "name": "实时 Markdown 预览", "detail": "每次修改即时反映到 SKILL.md，所见即所得" },
+        { "name": "行级 Diff 对比", "detail": "保存前一键查看所有变更，逐行高亮新增和删除" },
+        { "name": "区域级修改追踪", "detail": "精确显示哪些区域被修改、修改了几处" }
+      ]
+    },
+    {
+      "id": "connect",
+      "badge": "连接一切",
+      "badgeColor": "purple",
+      "benefit": "Skill 在哪，你就在哪",
+      "desc": "不再来回 SSH + vim + 测试。SkillForge 直连远程服务器编辑 Skill，改完自动回写；ClawHub 和 GitHub 的 Skill 一键导入到本地工作区。",
+      "features": [
+        { "name": "SSH 远程读写", "detail": "直连服务器编辑 Skill，保存自动 SFTP 回写，支持自动重连" },
+        { "name": "ClawHub 搜索导入", "detail": "搜索 ClawHub 社区 Skill，一键下载到本地" },
+        { "name": "GitHub URL 导入", "detail": "粘贴 GitHub 仓库 URL，自动解析目录结构并下载" },
+        { "name": "本地文件系统", "detail": "自动扫描 ~/.openclaw/workspace/skills/ 目录" }
+      ]
+    },
+    {
+      "id": "quality",
+      "badge": "质量守护",
+      "badgeColor": "green",
+      "benefit": "上线前消除隐患",
+      "desc": "改完 sources.json 忘了同步 topics.json，上线才发现引用失效——SkillForge 在编辑时就自动发现这类跨文件问题，批量验证一次检查全部 Skill。",
+      "features": [
+        { "name": "5 条跨文件校验", "detail": "自动检测引用缺失、空路径、未使用变量等问题" },
+        { "name": "编辑实时拦截", "detail": "URL 格式、必填字段实时校验，错误时阻止保存" },
+        { "name": "批量验证", "detail": "一键校验全部 Skill，汇总表格展示 error/warning/info" },
+        { "name": "批量导出", "detail": "全部 Skill 序列化为 JSON manifest 一键下载" }
+      ]
+    }
+  ],
+  "download": {
+    "title": "下载 SkillForge",
+    "subtitle": "Tauri 原生应用，安装包不到 10MB",
+    "platforms": [
+      { "name": "macOS", "format": ".dmg", "icon": "apple" },
+      { "name": "Windows", "format": ".msi", "icon": "windows" },
+      { "name": "Linux", "format": ".AppImage", "icon": "linux" }
+    ],
+    "button": "前往下载",
+    "releases": "所有版本和安装包请访问 GitHub Releases",
+    "version": "V1.1.0"
+  },
+  "roadmap": {
+    "title": "路线图",
+    "versions": [
+      {
+        "version": "V1.0",
+        "status": "done",
+        "statusLabel": "已完成",
+        "features": ["Skill 解析", "可视化编辑", "实时预览", "导出下载", "配置校验", "深色模式"]
+      },
+      {
+        "version": "V1.1",
+        "status": "done",
+        "statusLabel": "已完成",
+        "features": ["Diff 对比", "拖拽排序", "跨文件校验", "SSH 远程", "在线导入", "批量操作"]
+      },
+      {
+        "version": "V1.2",
+        "status": "progress",
+        "statusLabel": "规划中",
+        "features": ["亮色主题", "自动更新", "配色优化", "代码联动增强"]
+      },
+      {
+        "version": "V2.0",
+        "status": "planned",
+        "statusLabel": "远期",
+        "features": ["多 Skill 管理", "账户系统", "新用户引导"]
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "开始使用 SkillForge",
+    "subtitle": "免费、开源、三端可用",
+    "button": "免费下载"
+  },
+  "footer": {
+    "tagline": "OpenClaw Skill 可视化配置工具",
+    "feedback": "反馈",
+    "license": "MIT License"
+  }
+}

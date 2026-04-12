@@ -1,0 +1,58 @@
+---
+import type zh from '../i18n/zh.json';
+
+interface Props {
+  t: typeof zh;
+}
+
+const { t } = Astro.props;
+
+const badgeColors: Record<string, string> = {
+  blue: 'text-accent-blue bg-accent-blue/10 border-accent-blue/30',
+  purple: 'text-accent-purple bg-accent-purple/10 border-accent-purple/30',
+  green: 'text-accent-green bg-accent-green/10 border-accent-green/30',
+};
+
+const dotColors: Record<string, string> = {
+  blue: 'bg-accent-blue',
+  purple: 'bg-accent-purple',
+  green: 'bg-accent-green',
+};
+---
+
+<section id="features" class="mx-auto max-w-6xl px-6 py-24">
+  <div class="flex flex-col gap-28">
+    {t.pillarDetails.map((pillar, i) => (
+      <div id={pillar.id} class={`flex flex-col items-center gap-10 md:flex-row ${i % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+        <!-- Text -->
+        <div class="flex-1 space-y-5">
+          <span class={`inline-block rounded-full border px-3 py-1 text-xs font-medium ${badgeColors[pillar.badgeColor]}`}>
+            {pillar.badge}
+          </span>
+          <h3 class="text-2xl font-bold text-foreground">{pillar.benefit}</h3>
+          <p class="text-sm leading-relaxed text-muted-foreground">{pillar.desc}</p>
+
+          <!-- Feature list -->
+          <ul class="space-y-3 pt-2">
+            {pillar.features.map((f) => (
+              <li class="flex items-start gap-3">
+                <span class={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${dotColors[pillar.badgeColor]}`}></span>
+                <div>
+                  <span class="text-sm font-medium text-foreground">{f.name}</span>
+                  <span class="text-sm text-muted-foreground"> — {f.detail}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <!-- Screenshot placeholder -->
+        <div class="flex-1">
+          <div class="flex aspect-[4/3] items-center justify-center rounded-xl border border-border bg-card text-sm text-muted-foreground">
+            截图占位
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

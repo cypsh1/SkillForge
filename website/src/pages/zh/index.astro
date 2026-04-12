@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Hero from '../../components/Hero.astro';
+import Pillars from '../../components/Pillars.astro';
+import PillarDetail from '../../components/PillarDetail.astro';
+import Download from '../../components/Download.astro';
+import Roadmap from '../../components/Roadmap.astro';
+import FinalCta from '../../components/FinalCta.astro';
+import Footer from '../../components/Footer.astro';
+import { t } from '../../i18n';
+
+const locale = 'zh';
+const i18n = t(locale);
+---
+
+<BaseLayout title="SkillForge — OpenClaw Skill 可视化配置工具" description="SkillForge 是 OpenClaw Skill 可视化配置工具，从本地到远程服务器，用图形界面完成所有 Skill 配置。" lang="zh-CN">
+  <Navbar locale={locale} t={i18n} />
+  <main>
+    <Hero t={i18n} />
+    <Pillars t={i18n} />
+    <PillarDetail t={i18n} />
+    <Download t={i18n} />
+    <Roadmap t={i18n} />
+    <FinalCta t={i18n} />
+  </main>
+  <Footer t={i18n} />
+</BaseLayout>

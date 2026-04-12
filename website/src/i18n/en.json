@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "features": "Features",
+    "download": "Download",
+    "roadmap": "Roadmap"
+  },
+  "hero": {
+    "badge": "OpenClaw Ecosystem · V1.1",
+    "title": "Say Goodbye to Manual SKILL.md",
+    "subtitle": "From local files to remote servers, from single edits to batch validation — configure all your Skills visually, without writing a single line of YAML.",
+    "cta_download": "Free Download",
+    "cta_github": "View Source",
+    "metrics": [
+      { "value": "4", "label": "Data Sources" },
+      { "value": "5", "label": "Validation Rules" },
+      { "value": "3", "label": "Platforms" },
+      { "value": "i18n", "label": "Bilingual" }
+    ]
+  },
+  "pillars": {
+    "title": "One Tool, Three Pillars",
+    "items": [
+      {
+        "icon": "edit",
+        "benefit": "Edit with Confidence",
+        "desc": "Form-based editing + live preview + Diff comparison — zero config errors"
+      },
+      {
+        "icon": "connect",
+        "benefit": "Skills Anywhere, One Tool",
+        "desc": "Local / ClawHub / GitHub / SSH — four sources, one workspace"
+      },
+      {
+        "icon": "shield",
+        "benefit": "Catch Issues Before Production",
+        "desc": "Cross-file validation + edit-time checks + batch verification"
+      }
+    ]
+  },
+  "pillarDetails": [
+    {
+      "id": "visual-edit",
+      "badge": "Visual Editing",
+      "badgeColor": "blue",
+      "benefit": "Edit with Confidence",
+      "desc": "One indentation mistake in handwritten YAML can break an entire Skill. SkillForge replaces manual editing with structured forms, generates SKILL.md in real-time, and lets you review line-level Diff before saving.",
+      "features": [
+        { "name": "Form-Based Editor", "detail": "Dropdowns, toggles, tag inputs — no more handwriting YAML" },
+        { "name": "Live Markdown Preview", "detail": "Every change reflects instantly in SKILL.md, what you see is what you get" },
+        { "name": "Line-Level Diff", "detail": "One click to review all changes before saving, with line-by-line highlighting" },
+        { "name": "Region-Level Tracking", "detail": "See exactly which areas changed and how many modifications were made" }
+      ]
+    },
+    {
+      "id": "connect",
+      "badge": "Connect Everything",
+      "badgeColor": "purple",
+      "benefit": "Skills Anywhere, One Tool",
+      "desc": "No more SSH + vim + test cycles. SkillForge connects directly to remote servers for editing with automatic SFTP write-back. Import Skills from ClawHub and GitHub with one click.",
+      "features": [
+        { "name": "SSH Remote Read/Write", "detail": "Edit Skills on your server directly, auto write-back via SFTP with reconnect" },
+        { "name": "ClawHub Import", "detail": "Search community Skills on ClawHub, download to local workspace in one click" },
+        { "name": "GitHub URL Import", "detail": "Paste a GitHub repo URL, auto-parse directory structure and download" },
+        { "name": "Local File System", "detail": "Auto-scan ~/.openclaw/workspace/skills/ directory" }
+      ]
+    },
+    {
+      "id": "quality",
+      "badge": "Quality Guard",
+      "badgeColor": "green",
+      "benefit": "Catch Issues Before Production",
+      "desc": "Updated sources.json but forgot to sync topics.json? Found out only after deployment? SkillForge catches cross-file issues during editing, and batch validation checks all Skills at once.",
+      "features": [
+        { "name": "5 Cross-File Rules", "detail": "Auto-detect missing references, empty paths, unused variables and more" },
+        { "name": "Edit-Time Validation", "detail": "URL format, required fields checked in real-time, blocks save on error" },
+        { "name": "Batch Validation", "detail": "One-click to validate all Skills, summary table with error/warning/info counts" },
+        { "name": "Batch Export", "detail": "Serialize all Skills to JSON manifest for one-click download" }
+      ]
+    }
+  ],
+  "download": {
+    "title": "Download SkillForge",
+    "subtitle": "Native Tauri app, installer under 10MB",
+    "platforms": [
+      { "name": "macOS", "format": ".dmg", "icon": "apple" },
+      { "name": "Windows", "format": ".msi", "icon": "windows" },
+      { "name": "Linux", "format": ".AppImage", "icon": "linux" }
+    ],
+    "button": "Go to Downloads",
+    "releases": "All versions and installers available on GitHub Releases",
+    "version": "V1.1.0"
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "versions": [
+      {
+        "version": "V1.0",
+        "status": "done",
+        "statusLabel": "Completed",
+        "features": ["Skill Parsing", "Visual Editing", "Live Preview", "Export", "Validation", "Dark Mode"]
+      },
+      {
+        "version": "V1.1",
+        "status": "done",
+        "statusLabel": "Completed",
+        "features": ["Diff View", "Drag & Drop", "Cross-File Validation", "SSH Remote", "Online Import", "Batch Ops"]
+      },
+      {
+        "version": "V1.2",
+        "status": "progress",
+        "statusLabel": "Planned",
+        "features": ["Light Theme", "Auto Update", "Color Scheme", "Code Linking"]
+      },
+      {
+        "version": "V2.0",
+        "status": "planned",
+        "statusLabel": "Future",
+        "features": ["Multi-Skill Management", "Account System", "Onboarding"]
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Start Using SkillForge",
+    "subtitle": "Free, open source, available on 3 platforms",
+    "button": "Free Download"
+  },
+  "footer": {
+    "tagline": "Visual Configuration Tool for OpenClaw Skills",
+    "feedback": "Feedback",
+    "license": "MIT License"
+  }
+}
