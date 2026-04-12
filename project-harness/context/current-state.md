@@ -3,7 +3,7 @@
 ## description: 会话交接页（最近完成、下一步、环境状态）
 
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-13
 
 # 当前状态
 
@@ -15,11 +15,16 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.0 路线图执行完成。V1.1 后续优化进行中。**
+**V1.1 功能开发完成，版本号 1.1.0，代码已推送至 GitHub。**
 
-V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）、V1.1-STYLE-UNIFY（跨文件类型一致性）和 V1.1-TRIGGER-FIX（触发条件虚假默认值修复）已完成。
+V1.1 共完成 15 项任务（在线导入/SSH/Diff/批量操作/修改追踪/拖拽排序/跨文件校验/向导整合/子节点删除/编辑校验等）。4 项推迟到后续版本（配色/主题/自动更新/代码联动）。
 
-**V1.1 端到端验证完成 + SSH 自动重连 + 批量操作已实现。**
+### 本次会话完成（2026-04-13）— V1.1 发布准备
+
+1. **版本号升级**：`package.json` / `tauri.conf.json` / `Cargo.toml` 从 0.1.0 → 1.1.0
+2. **补提交漏掉的文件**：`diff-viewer.tsx` + `skill-differ.ts` + `v1.1-product-tech-spec.md`
+3. **GitHub 导入 Tauri 全流程验证通过**（URL → 预览 → 导入 → 出现在列表中）
+4. **推送至 GitHub**：本地 V1.1 全部 commit 推送到 `cypsh1/SkillForge`
 
 ### 本次会话完成（2026-04-12）— V1.1-SSH自动重连 + V1.1-批量操作
 
