@@ -434,6 +434,21 @@
       "deleted": "Deleted",
       "frontmatter": "Metadata",
       "body": "Body"
+    },
+    "batch": {
+      "button": "Batch",
+      "validate": "Batch Validate",
+      "export": "Batch Export",
+      "validationTitle": "Batch Validation Results",
+      "exportTitle": "Batch Export",
+      "skillName": "Skill Name",
+      "status": "Status",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "summary": "{{total}} skills total, {{errorCount}} with errors, {{warningCount}} with warnings",
+      "allPassed": "All passed",
+      "exportSuccess": "Exported {{count}} skills",
+      "noSkills": "No skills loaded"
     }
   }
 }

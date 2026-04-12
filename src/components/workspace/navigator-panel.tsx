@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
 import {
@@ -17,6 +17,9 @@ import {
   Globe,
   Server,
   Cloud,
+  Layers,
+  ClipboardCheck,
+  Download,
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
@@ -49,7 +52,10 @@ import { SkillWizard } from "@/components/skill-wizard/skill-wizard"
 import { ImportDialog } from "@/components/import-dialog/import-dialog"
 import { SSHConnectDialog } from "@/components/ssh-panel/ssh-connect-dialog"
 import { RemoteSkillList } from "@/components/ssh-panel/remote-skill-list"
-import type { ConnectionInfo } from "@/lib/remote-fs"
+import { BatchValidationDialog, BatchExportDialog } from "@/components/workspace/batch-dialog"
+import { connectSSH, type ConnectionInfo } from "@/lib/remote-fs"
+import { isTauri } from "@/lib/tauri-fs"
+import { loadAppConfig } from "@/lib/app-config"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { parseSkillMd } from "@/lib/skill-parser"
 import { cn } from "@/lib/utils"
@@ -185,7 +191,26 @@ export function NavigatorPanel() {
     type: "config" | "extra"
   } | null>(null)
   const [uploadError, setUploadError] = useState("")
+  const [batchValidateOpen, setBatchValidateOpen] = useState(false)
+  const [batchExportOpen, setBatchExportOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-reconnect SSH on mount if saved config exists
+  useEffect(() => {
+    if (!isTauri()) return
+    let cancelled = false
+    loadAppConfig().then(async (config) => {
+      const saved = config.sshConnections[0]
+      if (!saved || cancelled) return
+      try {
+        const info = await connectSSH(saved)
+        if (!cancelled) setSSHConnection(info)
+      } catch {
+        // Silent fail — user can manually connect later
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const existingIds = useMemo(() => skills.map((s) => s.id), [skills])
 
@@ -294,6 +319,24 @@ export function NavigatorPanel() {
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            aria-label={t("workspace.batch.button")}
+          >
+            <Layers className="size-[18px]" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuItem onClick={() => setBatchValidateOpen(true)}>
+              <ClipboardCheck className="size-3.5" />
+              <span>{t("workspace.batch.validate")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setBatchExportOpen(true)}>
+              <Download className="size-3.5" />
+              <span>{t("workspace.batch.export")}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             aria-label={t("workspace.nav.addSkill")}
           >
             <Plus className="size-[18px]" />
@@ -365,6 +408,17 @@ export function NavigatorPanel() {
           onSkillLoaded={(skill) => addSkill(skill)}
         />
       )}
+
+      <BatchValidationDialog
+        open={batchValidateOpen}
+        onOpenChange={setBatchValidateOpen}
+        skills={skills}
+      />
+      <BatchExportDialog
+        open={batchExportOpen}
+        onOpenChange={setBatchExportOpen}
+        skills={skills}
+      />
 
       <Dialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen}>
         <DialogContent className="max-w-lg">

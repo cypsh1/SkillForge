@@ -434,6 +434,21 @@
       "deleted": "已删除",
       "frontmatter": "元数据",
       "body": "正文"
+    },
+    "batch": {
+      "button": "批量",
+      "validate": "批量验证",
+      "export": "批量导出",
+      "validationTitle": "批量验证结果",
+      "exportTitle": "批量导出",
+      "skillName": "技能名称",
+      "status": "状态",
+      "errors": "错误",
+      "warnings": "警告",
+      "summary": "共 {{total}} 个技能，{{errorCount}} 个有错误，{{warningCount}} 个有警告",
+      "allPassed": "全部通过",
+      "exportSuccess": "已导出 {{count}} 个技能",
+      "noSkills": "当前没有已加载的技能"
     }
   }
 }

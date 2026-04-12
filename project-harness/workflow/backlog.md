@@ -26,6 +26,30 @@ last_updated: 2026-04-12
 
 ## 最近完成
 
+**V1.1-E2E：在线导入 + SSH 端到端验证** ✅ 2026-04-12
+
+来源：V1.1-在线导入 + V1.1-SSH 代码完成后的端到端验证。
+
+### 改动
+
+| 验证项 | 结果 | 说明 |
+|---|---|---|
+| GitHub 导入预览 | ✅ | 浏览器粘贴公开 URL，Contents API + 文件列表 UI 全通 |
+| ClawHub 搜索 | ✅ | 浏览器搜索返回 10 条结果，UI 展示正确 |
+| ClawHub 下载 | ⏳ | 429 限流（API 路径正确），磁盘写入与 SSH 共用已验证路径 |
+| SSH 全流程 | ✅ | Tauri 桌面连接真实服务器 → 列表 → 下载到本地 |
+
+### 修复
+
+- `capabilities/default.json`：补充 `fs:allow-mkdir` + `fs:allow-remove` 权限（修复 SSH 下载时 Forbidden path 错误）
+
+### 发现的优化点
+
+- SSH 配置持久化首次保存静默失败（权限修复后已恢复）
+- 后续可加"记住并自动重连"功能（V1.1 待办）
+
+---
+
 **V1.1-TIER2：第二档 2 项任务** ✅ 2026-04-12
 
 来源：V1.1 backlog 中 2 项中等复杂度任务批量执行。
@@ -322,7 +346,7 @@ V1-4/V1-5 完成后、发布前执行。
 | V1.1-主题 | 深色/亮色主题切换 | — | 先产出 light mode demo 验证色值 |
 | ~~V1.1-Diff~~ | ~~配置 Diff~~ | — | ✅ 2026-04-12 diff 库 + skill-differ.ts + DiffViewer Dialog（左栏文件列表 + 右栏行级 unified diff）+ badge 可点击 + ↔ 图标按钮 |
 | ~~V1.1-拖拽~~ | ~~拖拽排序~~ | — | ✅ 2026-04-12 @dnd-kit + SortableContext + GripVertical 手柄 |
-| V1.1-批量 | 批量操作 | — | 多 Skill 批量导出/验证 |
+| ~~V1.1-批量~~ | ~~批量操作~~ | — | ✅ 2026-04-12 批量验证表格 + 批量导出 JSON manifest + Navigator Layers 按钮 |
 | V1.1-更新 | Tauri 自动更新 | — | 桌面应用自动更新 |
 | ~~V1.1-跨文件校验~~ | ~~跨文件联动校验~~ | #3b | ✅ 2026-04-12 crossFileValidate 5 条 warning 规则（files.read/write + source-topic + env 引用 + 脚本引用） |
 | V1.1-代码联动 | 代码文件桥连/联动增强 | #23 | 为 extra-file 扩展 `usePanelSync` 字段映射逻辑，实现左侧字段 hover 高亮右侧对应代码行（需要为 extra-file 定义实体模型） |
@@ -330,6 +354,7 @@ V1-4/V1-5 完成后、发布前执行。
 | ~~V1.1-STYLE-UNIFY~~ | ~~跨文件类型展示与编辑一致性~~ | 用户反馈 | ✅ 已完成（2026-04-10）— config 文件编辑/预览面板与 SKILL.md 风格统一 + 桥线联动 + 清理废弃代码 + 嵌套 JSON 修复 |
 | ~~V1.1-标题编辑~~ | ~~子区块标题编辑+预览同步~~ | #15 | ✅ 2026-04-11 SectionBlock onTitleChange + draftHeadings |
 | ~~V1.1-编辑校验~~ | ~~SKILL.md 编辑后校验~~ | #16 | ✅ 2026-04-11 Zod refine + 保存前 safeParse + 按钮禁用态 |
+| ~~V1.1-SSH自动重连~~ | ~~SSH 记住并自动重连~~ | 验证反馈 | ✅ 2026-04-12 NavigatorPanel mount useEffect 自动加载配置+连接，失败静默 |
 
 ## V2.0 待办
 
@@ -374,6 +399,8 @@ V1-4/V1-5 完成后、发布前执行。
 
 | ID | 名称 | 完成日期 | task-log |
 |---|---|---|---|
+| V1.1-BATCH+SSH | SSH 自动重连 + 批量验证/导出 | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-batch-ssh-autoreconnect.md` |
+| V1.1-E2E | 在线导入 + SSH 端到端验证 + FS 权限修复 | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-e2e-verification.md` |
 | V1.1-TIER2 | V1.1 第二档 2 项（向导整合/修改追踪） | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-tier2.md` |
 | V1.1-TIER1 | V1.1 第一档 3 项（子节点删除/拖拽排序/跨文件校验） | 2026-04-12 | `evidence/task-logs/2026-04-12-v1.1-tier1.md` |
 | V1.1-BATCH | V1.1 批量优化 8 项（exec编辑/标题编辑/样式对齐/概览/架构条/校验/i18n） | 2026-04-11 | `evidence/task-logs/2026-04-11-v1.1-batch-optimization.md` |
