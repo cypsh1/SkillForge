@@ -1,6 +1,6 @@
 [package]
 name = "skillforge"
-version = "0.1.0"
+version = "1.1.0"
 description = "SkillForge — OpenClaw Skill 可视化配置工具"
 authors = ["Jason"]
 license = "MIT"
