@@ -192,6 +192,30 @@ export async function createLocalSkillBundle(
   return skillPath
 }
 
+export async function importSkillBundle(
+  skillName: string,
+  files: Array<{ relativePath: string; content: string }>,
+): Promise<string> {
+  const fs = await getTauriFsModule()
+  const root = `${await getHomeDir()}/${SKILLS_DIR}`
+  await fs.mkdir(root, { recursive: true })
+  const skillPath = `${root}/${skillName}`
+  await fs.mkdir(skillPath, { recursive: true })
+
+  for (const file of files) {
+    const fullPath = `${skillPath}/${file.relativePath}`
+    // Ensure parent directories exist
+    const lastSlash = fullPath.lastIndexOf("/")
+    if (lastSlash > 0) {
+      const dir = fullPath.slice(0, lastSlash)
+      await fs.mkdir(dir, { recursive: true })
+    }
+    await fs.writeTextFile(fullPath, file.content)
+  }
+
+  return skillPath
+}
+
 async function getHomeDir(): Promise<string> {
   const { homeDir } = await import("@tauri-apps/api/path")
   const home = await homeDir()

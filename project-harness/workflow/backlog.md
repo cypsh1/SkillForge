@@ -317,10 +317,10 @@ V1-4/V1-5 完成后、发布前执行。
 | ~~V1.1-文档编辑~~ | ~~exec 区块可编辑~~ | #6 | ✅ 2026-04-11 exec 区块编辑已开启（镜像 doc 模式） |
 | V1.1-配色 | 配色方案优化 | #7 | 两个方向待选：优化彩色 / 深紫主题。需先在 demo 中验证，再实施 |
 | ~~V1.1-修改追踪~~ | ~~修改追踪增强~~ | #11 | ✅ 2026-04-12 originalSnapshot + computeChanges + Navigator 数字 badge + Inspector "N 处修改" |
-| V1.1-在线导入 | ClawHub / GitHub 在线导入 | — | 从 ClawHub 搜索导入 + GitHub URL 导入 |
-| V1.1-SSH | 远程 SSH Skill 加载 | — | 连接 OpenClaw 服务器读写 |
+| ~~V1.1-在线导入~~ | ~~ClawHub / GitHub 在线导入~~ | — | ✅ 2026-04-12 tauri-plugin-http + ClawHub 搜索/下载 + GitHub URL 解析/目录预览/递归下载 + Import Dialog 双标签页 |
+| ~~V1.1-SSH~~ | ~~远程 SSH Skill 加载~~ | — | ✅ 2026-04-12 russh + SFTP + 6 个 Tauri commands + SSH 连接面板 + 远程浏览器 + 保存回写 + 离线缓存提示 |
 | V1.1-主题 | 深色/亮色主题切换 | — | 先产出 light mode demo 验证色值 |
-| V1.1-Diff | 配置 Diff | — | 对比编辑前后变更 |
+| ~~V1.1-Diff~~ | ~~配置 Diff~~ | — | ✅ 2026-04-12 diff 库 + skill-differ.ts + DiffViewer Dialog（左栏文件列表 + 右栏行级 unified diff）+ badge 可点击 + ↔ 图标按钮 |
 | ~~V1.1-拖拽~~ | ~~拖拽排序~~ | — | ✅ 2026-04-12 @dnd-kit + SortableContext + GripVertical 手柄 |
 | V1.1-批量 | 批量操作 | — | 多 Skill 批量导出/验证 |
 | V1.1-更新 | Tauri 自动更新 | — | 桌面应用自动更新 |

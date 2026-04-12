@@ -376,9 +376,62 @@
       "fileShellScript": "Shell script",
       "fileJsonData": "JSON data",
       "fileMarkdownDoc": "Markdown doc",
-      "fileAttached": "Extra file"
+      "fileAttached": "Extra file",
+      "importOnline": "Import Online"
     },
     "changes": {
+      "frontmatter": "Metadata",
+      "body": "Body"
+    },
+    "import": {
+      "title": "Import Skill Online",
+      "clawhub": "ClawHub",
+      "github": "GitHub",
+      "searchPlaceholder": "Search skill name or description…",
+      "search": "Search",
+      "searching": "Searching…",
+      "noResults": "No matching skills found",
+      "searchHint": "Enter keywords to search ClawHub skill registry",
+      "version": "Version",
+      "author": "Author",
+      "importButton": "Import",
+      "importing": "Importing…",
+      "success": "Imported \"{{name}}\"",
+      "resultCount": "{{count}} results",
+      "conflict": "A local skill with the same name already exists and will be overwritten",
+      "githubUrlPlaceholder": "Paste GitHub URL, e.g. https://github.com/user/repo/tree/main/skills/my-skill",
+      "githubPreview": "Preview",
+      "githubTokenToggle": "GitHub Token (optional, for private repos)",
+      "githubTokenPlaceholder": "ghp_xxxxxxxxxxxx",
+      "githubInvalidUrl": "Invalid GitHub URL",
+      "githubNoSkillMd": "No SKILL.md found"
+    },
+    "ssh": {
+      "connectTitle": "SSH Remote Connection",
+      "host": "Host",
+      "port": "Port",
+      "user": "Username",
+      "keyPath": "Key Path",
+      "remotePath": "Remote Skill Directory",
+      "selectKey": "Select SSH Key",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "disconnect": "Disconnect",
+      "connectedTo": "Connected to {{host}}",
+      "remoteSkills": "Remote Skills",
+      "loadingSkills": "Loading…",
+      "noRemoteSkills": "No skills found in remote directory",
+      "fileCount": "{{count}} files",
+      "noSkillMd": "No SKILL.md",
+      "savedLocal": "Saved to local cache. Will sync to remote when reconnected.",
+      "syncSuccess": "Synced to remote server"
+    },
+    "diff": {
+      "title": "Changes Overview",
+      "viewDiff": "View Changes",
+      "modified": "Modified",
+      "added": "Added",
+      "deleted": "Deleted",
       "frontmatter": "Metadata",
       "body": "Body"
     }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
+import { ArrowLeftRight, ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
 import { highlight } from "sugar-high"
 
 import { ExportButton } from "@/components/config-editor/export-button"
@@ -19,9 +19,12 @@ import { frontmatterSchema } from "@/lib/schemas/frontmatter-schema"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { toast } from "sonner"
 import { isTauri, saveSkillFile, saveSkillConfig, deleteSkillFile } from "@/lib/tauri-fs"
+import { writeRemoteSkill, getConnectionStatus } from "@/lib/remote-fs"
 import { cn } from "@/lib/utils"
 import type { ParsedSkill, SkillFrontmatter } from "@/types/skill"
 import { computeChanges } from "@/types/workspace"
+import { computeSkillDiff } from "@/lib/skill-differ"
+import { DiffViewer } from "@/components/workspace/diff-viewer"
 
 interface PreviewParts {
   basic: string
@@ -834,6 +837,7 @@ export function InspectorPanel() {
   const selection = state.selection
   const selectedEid = api?.selectedEid ?? null
   const relatedEids = api?.relatedEids ?? []
+  const [diffOpen, setDiffOpen] = useState(false)
 
   const handleInspectorClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -919,7 +923,32 @@ export function InspectorPanel() {
         await deleteSkillFile(selectedSkill.path, dp)
       }
       markSaved(selectedSkill.id, skillMdPreview)
-      toast.success(t("workspace.action.saved"))
+
+      // SSH write-back: if skill came from SSH, push changes to remote
+      if (selectedSkill.origin?.type === "ssh") {
+        try {
+          const connStatus = await getConnectionStatus()
+          if (connStatus?.connected) {
+            const remoteFiles: Array<{ path: string; content: string }> = [
+              { path: "SKILL.md", content: skillMdPreview },
+            ]
+            for (const [path, data] of Object.entries(editState.configFiles)) {
+              remoteFiles.push({ path, content: JSON.stringify(data, null, 2) })
+            }
+            for (const [path, content] of Object.entries(editState.extraFiles)) {
+              remoteFiles.push({ path, content })
+            }
+            await writeRemoteSkill(selectedSkill.id, remoteFiles)
+            toast.success(t("workspace.ssh.syncSuccess"))
+          } else {
+            toast.info(t("workspace.ssh.savedLocal"))
+          }
+        } catch {
+          toast.info(t("workspace.ssh.savedLocal"))
+        }
+      } else {
+        toast.success(t("workspace.action.saved"))
+      }
     } catch (err) {
       toast.error(`${t("workspace.action.saveFailed")}: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
@@ -974,13 +1003,14 @@ export function InspectorPanel() {
               : a.split("/").pop() ?? a
             ).join(", ")
             return (
-              <Badge
-                variant="outline"
-                className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                title={tooltip}
-              >
-                {label}
-              </Badge>
+              <button type="button" onClick={() => setDiffOpen(true)} title={tooltip}>
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-amber-500/20 transition-colors"
+                >
+                  {label}
+                </Badge>
+              </button>
             )
           })()}
         </div>
@@ -1012,6 +1042,16 @@ export function InspectorPanel() {
               filename={selection.filePath.split("/").pop() ?? "config.json"}
               data={selectedConfigData}
             />
+          )}
+          {editState?.dirty && (
+            <button
+              type="button"
+              className="shrink-0 p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setDiffOpen(true)}
+              title={t("workspace.diff.viewDiff")}
+            >
+              <ArrowLeftRight className="size-3.5" />
+            </button>
           )}
           {isTauri() && editState?.dirty && (
             <Button
@@ -1103,6 +1143,14 @@ export function InspectorPanel() {
             )}
           </div>
         </>
+      )}
+      {editState?.dirty && (
+        <DiffViewer
+          open={diffOpen}
+          onOpenChange={setDiffOpen}
+          diffs={diffOpen ? computeSkillDiff(editState) : []}
+          skillName={selectedSkill?.frontmatter.name ?? ""}
+        />
       )}
     </div>
   )

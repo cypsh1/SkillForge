@@ -376,9 +376,62 @@
       "fileShellScript": "Shell 脚本",
       "fileJsonData": "JSON 数据",
       "fileMarkdownDoc": "Markdown 文档",
-      "fileAttached": "附属文件"
+      "fileAttached": "附属文件",
+      "importOnline": "在线导入"
     },
     "changes": {
+      "frontmatter": "元数据",
+      "body": "正文"
+    },
+    "import": {
+      "title": "在线导入 Skill",
+      "clawhub": "ClawHub",
+      "github": "GitHub",
+      "searchPlaceholder": "搜索技能名称或描述…",
+      "search": "搜索",
+      "searching": "搜索中…",
+      "noResults": "未找到匹配的技能",
+      "searchHint": "输入关键词搜索 ClawHub 技能库",
+      "version": "版本",
+      "author": "作者",
+      "importButton": "导入",
+      "importing": "导入中…",
+      "success": "已导入「{{name}}」",
+      "resultCount": "共 {{count}} 个结果",
+      "conflict": "本地已存在同名技能，导入后将覆盖",
+      "githubUrlPlaceholder": "粘贴 GitHub URL，如 https://github.com/user/repo/tree/main/skills/my-skill",
+      "githubPreview": "预览",
+      "githubTokenToggle": "GitHub Token（可选，支持私有仓库）",
+      "githubTokenPlaceholder": "ghp_xxxxxxxxxxxx",
+      "githubInvalidUrl": "无效的 GitHub URL",
+      "githubNoSkillMd": "未发现 SKILL.md"
+    },
+    "ssh": {
+      "connectTitle": "SSH 远程连接",
+      "host": "主机",
+      "port": "端口",
+      "user": "用户名",
+      "keyPath": "密钥路径",
+      "remotePath": "远程 Skill 目录",
+      "selectKey": "选择 SSH 密钥",
+      "connect": "连接",
+      "connecting": "连接中…",
+      "disconnect": "断开连接",
+      "connectedTo": "已连接到 {{host}}",
+      "remoteSkills": "远程 Skill 列表",
+      "loadingSkills": "加载中…",
+      "noRemoteSkills": "远程目录中没有 Skill",
+      "fileCount": "{{count}} 个文件",
+      "noSkillMd": "缺少 SKILL.md",
+      "savedLocal": "已保存到本地缓存，重新连接后可同步到远程",
+      "syncSuccess": "已同步到远程服务器"
+    },
+    "diff": {
+      "title": "变更概览",
+      "viewDiff": "查看变更",
+      "modified": "已修改",
+      "added": "新增",
+      "deleted": "已删除",
       "frontmatter": "元数据",
       "body": "正文"
     }

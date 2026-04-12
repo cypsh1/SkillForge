@@ -26,6 +26,16 @@ export interface MarkdownSection {
   content: string
 }
 
+export type SkillOrigin =
+  | { type: "local" }
+  | { type: "clawhub"; slug: string; version: string }
+  | { type: "github"; owner: string; repo: string; path: string; ref: string }
+  | { type: "ssh"; connectionName: string; remotePath: string }
+
+export interface SkillBundle {
+  files: Array<{ path: string; content: string }>
+}
+
 export type ExtraFileType = "json" | "markdown" | "python" | "shell" | "text"
 
 export interface ExtraFile {
@@ -49,4 +59,5 @@ export interface ParsedSkill {
   configFiles: Record<string, unknown>
   hasConfig: boolean
   extraFiles: Record<string, ExtraFile>
+  origin?: SkillOrigin
 }

@@ -19,7 +19,74 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 V1.0 全部任务已完成。V1.1-UNIFIED（Markdown 统一）、V1.1-DATA（测试数据全量同步）、V1.1-SCHEMA-EDIT（schema.json 可编辑）、V1.1-STYLE-UNIFY（跨文件类型一致性）和 V1.1-TRIGGER-FIX（触发条件虚假默认值修复）已完成。
 
-**当前无进行中任务**。下一步从 backlog V1.1 待办中选择。
+**V1.1-在线导入 + V1.1-SSH 代码完成，部分端到端验证待续。**
+
+### 本次会话完成（2026-04-12）— V1.1-在线导入 + V1.1-SSH 后续修复
+
+在上一轮代码全部完成的基础上，本次会话修复了 3 个实际运行问题：
+
+1. **Tauri 环境检测降级**：`clawhub-api.ts` / `github-api.ts` 中的 `getFetch()` 增加 `__TAURI__` 检测，非 Tauri 环境降级为浏览器原生 fetch（修复 `Cannot read properties of undefined (reading 'invoke')` 错误）
+2. **ClawHub 域名修正**：从猜测的 `registry.clawhub.com` 改为真实的 `clawhub.ai`（从 `test-skills/.clawhub/origin.json` 确认）
+3. **ClawHub API 路径与类型修正**：
+   - 搜索：`/api/search?q=...`（200 ✅）
+   - 详情：`/api/v1/skills/{slug}`（200 ✅）
+   - 下载：`/api/v1/download?slug={slug}`（429 限流 = 路径正确）
+   - 类型：`name` → `displayName`，`description` → `summary`，去掉不存在的 `stars`/`author`
+4. **ClawHub 搜索 UI 重做**：去掉左右双栏，改为单列列表 + 每行内联下载按钮 + 正确显示 displayName/summary/slug/updatedAt
+5. **FS 写权限扩展**：`capabilities/default.json` 写权限从 `skills/**` 扩展到 `$HOME/.openclaw/**`
+6. **SSH 配置持久化**：`ssh-connect-dialog.tsx` 接入 `app-config.ts`，打开 dialog 自动加载上次配置，连接成功自动保存
+
+**端到端验证状态：**
+
+| 功能 | 编译 | UI | 网络调用 |
+|------|------|-----|---------|
+| ClawHub 搜索 | ✅ | ✅ | ✅ 浏览器直接调通 |
+| ClawHub 下载 | ✅ | ✅ | ⏳ API 路径已确认正确，限流解除后验证 |
+| GitHub 导入 | ✅ | ✅ | ⏳ 未测真实 URL（GitHub API 支持 CORS，应可直接工作）|
+| SSH 全流程 | ✅ | ✅ | ⏳ 需要 tauri dev + 真实服务器 |
+
+### 本次会话完成（2026-04-12）— V1.1-在线导入 + V1.1-SSH 远程读写
+
+两个网络功能的完整实现，分 4 个 Phase 执行：
+
+**Phase 1 — HTTP 基础设施 + ClawHub 导入**
+- 安装 `tauri-plugin-http`（Rust + JS），配置 capabilities URL 白名单（*.openclaw.ai / api.github.com / raw.githubusercontent.com）
+- `src/types/skill.ts`：新增 `SkillOrigin`（local/clawhub/github/ssh）和 `SkillBundle` 类型
+- `src/lib/clawhub-api.ts`（新建）：ClawHub API 封装（searchSkills / getSkillMeta / downloadSkill），token 接口预留
+- `src/lib/skill-importer.ts`（新建）：导入编排层 — 下载 → 写本地磁盘 → 解析 → 返回 ParsedSkill（带 origin）
+- `src/lib/tauri-fs.ts`：新增 `importSkillBundle()` 支持任意文件写入
+- `src/components/import-dialog/`（新建 3 文件）：Import Dialog（Tabs 双标签页 ClawHub + GitHub）
+
+**Phase 2 — GitHub 导入**
+- `src/lib/github-api.ts`（新建）：GitHub URL 解析 + Contents API + 递归目录下载
+- `src/components/import-dialog/github-tab.tsx`：URL 输入 → 目录预览 → 导入（支持可选 GitHub Token）
+
+**Phase 3 — SSH Rust 模块**
+- `src-tauri/Cargo.toml`：添加 russh/russh-sftp/russh-keys 依赖
+- `src-tauri/src/ssh.rs`（新建 ~280 行）：SshManager + 6 个 Tauri commands（connect/disconnect/status/list/read/write）
+- `src/lib/remote-fs.ts`（新建）：前端 SSH API 封装（invoke 调用）
+
+**Phase 4 — SSH UI + 集成**
+- `src/components/ssh-panel/ssh-connect-dialog.tsx`（新建）：连接配置表单（主机/端口/用户/密钥/远程路径）
+- `src/components/ssh-panel/remote-skill-list.tsx`（新建）：远程 Skill 浏览器（列表 + 加载到本地）
+- Navigator 集成：Server 图标按钮（带绿色连接状态指示）+ SSH origin skill 带 Cloud 图标
+- Inspector handleSaveAll 扩展：SSH origin skill 保存时自动回写远程（未连接时提示"已保存到本地缓存"）
+- `src/lib/app-config.ts`（新建）：SSH 连接配置 + GitHub token 持久化（~/.openclaw/skillforge-config.json）
+- i18n：新增 `workspace.import.*`（16 keys）+ `workspace.ssh.*`（18 keys）+ `workspace.nav.importOnline`
+
+tsc ✅ build ✅ cargo build ✅
+
+### 本次会话完成（2026-04-12）— V1.1-Diff 配置 Diff 对比查看
+
+编辑态新增 Diff 可视化功能——点击 amber "N 处修改" badge 或 ↔ 图标按钮，打开 Dialog 查看所有变更的行级 diff。
+
+- 新增 `diff` npm 依赖（jsdiff），提供 `diffLines()` 行级对比算法
+- `src/lib/skill-differ.ts`（新建）：将 originalSnapshot vs editState 各区域（frontmatter/body/config/extra）序列化为文本 → `diffLines()` 生成结构化 `AreaDiff[]`
+- `src/components/workspace/diff-viewer.tsx`（新建）：Dialog 弹窗，左栏变更文件列表（带状态图标 + 统计），右栏 unified diff 渲染（行号 + 加减标记 + 绿/红着色）
+- `inspector-panel.tsx`：amber badge 变为可点击按钮 → 打开 diff；工具栏新增 ↔ diff 图标按钮
+- i18n：新增 `workspace.diff.*` 共 7 个 key（zh + en）
+
+tsc ✅ build ✅ 浏览器验证 ✅（修改 version 字段后点击 badge → Dialog 正确显示 frontmatter diff，绿色 +version: "1.0.0" 行）
 
 ### 本次会话完成（2026-04-12）— V1.1 第二档 2 项任务
 

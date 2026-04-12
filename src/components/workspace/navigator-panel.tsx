@@ -14,6 +14,9 @@ import {
   Upload,
   ClipboardPaste,
   Trash2,
+  Globe,
+  Server,
+  Cloud,
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
@@ -43,6 +46,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SkillWizard } from "@/components/skill-wizard/skill-wizard"
+import { ImportDialog } from "@/components/import-dialog/import-dialog"
+import { SSHConnectDialog } from "@/components/ssh-panel/ssh-connect-dialog"
+import { RemoteSkillList } from "@/components/ssh-panel/remote-skill-list"
+import type { ConnectionInfo } from "@/lib/remote-fs"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { parseSkillMd } from "@/lib/skill-parser"
 import { cn } from "@/lib/utils"
@@ -164,6 +171,10 @@ export function NavigatorPanel() {
   }
 
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [sshDialogOpen, setSSHDialogOpen] = useState(false)
+  const [sshBrowserOpen, setSSHBrowserOpen] = useState(false)
+  const [sshConnection, setSSHConnection] = useState<ConnectionInfo | null>(null)
   const [pasteDialogOpen, setPasteDialogOpen] = useState(false)
   const [pasteContent, setPasteContent] = useState("")
   const [pasteError, setPasteError] = useState("")
@@ -269,6 +280,17 @@ export function NavigatorPanel() {
             aria-label={t("workspace.nav.searchPlaceholder")}
           />
         </div>
+        <button
+          type="button"
+          className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors relative"
+          aria-label={t("workspace.ssh.connectTitle")}
+          onClick={() => sshConnection?.connected ? setSSHBrowserOpen(true) : setSSHDialogOpen(true)}
+        >
+          <Server className="size-[18px]" />
+          {sshConnection?.connected && (
+            <span className="absolute top-1 right-1 size-2 rounded-full bg-emerald-500" />
+          )}
+        </button>
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -284,6 +306,10 @@ export function NavigatorPanel() {
             <DropdownMenuItem onClick={() => { setPasteError(""); setPasteDialogOpen(true) }}>
               <ClipboardPaste className="size-3.5" />
               <span>{t("workspace.nav.pasteImport")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+              <Globe className="size-3.5" />
+              <span>{t("workspace.nav.importOnline")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setWizardOpen(true)}>
@@ -317,6 +343,28 @@ export function NavigatorPanel() {
           />
         </DialogContent>
       </Dialog>
+
+      <ImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+
+      <SSHConnectDialog
+        open={sshDialogOpen}
+        onOpenChange={setSSHDialogOpen}
+        connection={sshConnection}
+        onConnected={(info) => {
+          setSSHConnection(info)
+          setSSHBrowserOpen(true)
+        }}
+        onDisconnected={() => setSSHConnection(null)}
+      />
+
+      {sshConnection?.connected && (
+        <RemoteSkillList
+          open={sshBrowserOpen}
+          onOpenChange={setSSHBrowserOpen}
+          connection={sshConnection}
+          onSkillLoaded={(skill) => addSkill(skill)}
+        />
+      )}
 
       <Dialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen}>
         <DialogContent className="max-w-lg">
@@ -449,6 +497,9 @@ function SkillTreeBlock({
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 flex-wrap items-center gap-1.5">
               <span className="truncate font-medium">{name}</span>
+              {skill.origin?.type === "ssh" && (
+                <Cloud className="size-3 shrink-0 text-blue-400" />
+              )}
               {version ? (
                 <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px] font-normal">
                   v{version}
