@@ -15,11 +15,28 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.1 发布完成。官网上线，三端构建 CI 就绪。**
+**V1.1 发布完成。SEO + 自动化链路已上线。推广方案已定，待执行。**
 
-V1.1 共完成 15 项功能任务 + 官网 + CI 发布体系。Tag `v1.1.0` 已推送，四平台构建已触发。
+V1.1 共完成 15 项功能任务 + 官网 + CI 发布体系 + SEO 基建 + release-announce 工作流。
 
-**当前无进行中任务**。下一步从 backlog V1.2 待办中选择。
+**当前任务**：Phase 2 升级 + Phase 3 首发执行。方案已存档在 `working-draft.md`，采用 B-Lite 方案（各平台直接 API，不依赖 Postiz），新会话继续推进。
+
+### 本次会话完成（2026-04-13）— SEO 基建 + 推广自动化方案
+
+**Phase 1 SEO 基建（10 项代码 + 4 项 GitHub 设置）全部完成并线上验证通过：**
+- 网站：sitemap / robots.txt / OG 预览图 / canonical + hreflang / OG + Twitter 标签 / JSON-LD / theme-color
+- GitHub：package.json 元数据 / release.yml / README 徽章 / CHANGELOG
+- GitHub 设置：仓库描述 + Homepage + 10 Topics + Social Preview（gh CLI 自动化）
+
+**Phase 2 自动化发布链路（基础版）已部署：**
+- release-announce.yml 创建并验证通过（social-changelog 文案生成）
+- 已知待修：需加 setup-node 指定 Node 22
+
+**推广方案调研完成，结论存档在 `working-draft.md`：**
+- 排雷 6 个工具（social-changelog/Postiz/recast-mcp/Dev.to API/Bluesky Action/Reddit Action）
+- 决定采用 B-Lite 方案（各平台直接 API，$0 成本），暂缓 Postiz（4GB RAM 过重）
+- Phase 3 首发渠道矩阵 + 7 天发布日程已制定
+- launch-playbook 独立仓库架构已设计（支持多产品复用）
 
 ### 本次会话完成（2026-04-13）— 官网开发 + 发布体系
 
