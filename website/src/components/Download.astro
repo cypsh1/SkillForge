@@ -14,24 +14,26 @@ const platforms = [
   {
     ...t.download.platforms[0],
     format: '.dmg',
-    arch: 'Apple Silicon',
     url: `${base}/SkillForge_${v}_aarch64.dmg`,
+    buttonLabel: `${t.download.button} (Apple Silicon)`,
     altUrl: `${base}/SkillForge_${v}_x64.dmg`,
-    altLabel: 'Intel (.dmg)',
+    altLabel: `${t.download.button} (Intel)`,
     os: 'mac',
   },
   {
     ...t.download.platforms[1],
     url: `${base}/SkillForge_${v}_x64-setup.exe`,
+    buttonLabel: `${t.download.button} (.exe)`,
     altUrl: `${base}/SkillForge_${v}_x64_en-US.msi`,
-    altLabel: '.msi',
+    altLabel: `${t.download.button} (.msi)`,
     os: 'win',
   },
   {
     ...t.download.platforms[2],
     url: `${base}/SkillForge_${v}_amd64.deb`,
+    buttonLabel: `${t.download.button} (.deb)`,
     altUrl: `${base}/SkillForge_${v}_amd64.AppImage`,
-    altLabel: '.AppImage',
+    altLabel: `${t.download.button} (.AppImage)`,
     os: 'linux',
   },
 ];
@@ -56,10 +58,10 @@ const platformIcons: Record<string, string> = {
         <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" class="text-muted-foreground" set:html={platformIcons[platform.icon]} />
         <div class="text-center">
           <h3 class="text-lg font-semibold text-foreground">{platform.name}</h3>
-          <span class="text-xs text-muted-foreground">{platform.format}{platform.arch ? ` · ${platform.arch}` : ''}</span>
+          <span class="text-xs text-muted-foreground">{platform.format}</span>
         </div>
         <a href={platform.url} class="w-full rounded-lg bg-gradient-to-r from-brand-purple to-brand-cyan px-6 py-2.5 text-center text-sm font-medium text-white transition hover:opacity-90">
-          {t.download.button}
+          {platform.buttonLabel}
         </a>
         <a href={platform.altUrl} class="text-xs text-muted-foreground underline underline-offset-4 transition hover:text-foreground">
           {platform.altLabel}
