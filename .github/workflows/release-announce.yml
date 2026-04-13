@@ -1,0 +1,37 @@
+name: Release Announcements
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  models: read
+
+jobs:
+  generate-social-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate social post via AI
+        run: |
+          npx @humanwhocodes/social-changelog \
+            --org ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --name "SkillForge"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 后续扩展点：取消注释即可接入通知渠道
+      # - name: Discord notification
+      #   uses: SethCohen/github-releases-to-discord@v1
+      #   with:
+      #     webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      #     color: "2105893"
+      #     username: "SkillForge Release"
+      # - name: Post to X
+      #   uses: captradeoff/x-post-action@v1
+      #   with:
+      #     appKey: ${{ secrets.X_APP_KEY }}
+      #     appSecret: ${{ secrets.X_APP_SECRET }}
+      #     accessToken: ${{ secrets.X_ACCESS_TOKEN }}
+      #     accessSecret: ${{ secrets.X_ACCESS_SECRET }}
