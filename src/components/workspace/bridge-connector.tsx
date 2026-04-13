@@ -10,6 +10,7 @@ import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import {
   BRIDGE_GUTTER_EXTEND,
   BRIDGE_SECTIONS,
+  FALLBACK_SECTION_COLOR,
   SECTION_MAP,
 } from "@/lib/bridge-sections"
 
@@ -83,7 +84,7 @@ export function BridgeConnector() {
       seen.add(id)
       const iEl = inspector.querySelector(`[data-bridge-section="${id}"]`)
       if (!iEl) continue
-      const def = SECTION_MAP[id] ?? { id, name: id, color: "#64748b", layer: "ops" as const }
+      const def = SECTION_MAP[id] ?? { id, name: id, color: FALLBACK_SECTION_COLOR, layer: "ops" as const }
       matched.push({ def, eEl, iEl })
     }
 
@@ -253,7 +254,7 @@ export function BridgeConnector() {
             {popVisible && (
               <div
                 className="absolute left-1/2 top-full z-40 mt-1 w-max -translate-x-1/2 rounded-lg p-3 text-xs shadow-lg"
-                style={{ background: '#1c1c20', border: '1px solid #333', color: 'var(--foreground)' }}
+                style={{ background: 'var(--tooltip-bg)', border: '1px solid var(--tooltip-border)', color: 'var(--foreground)' }}
                 onMouseEnter={() => clearTimeout(popTimerRef.current)}
                 onMouseLeave={hidePop}
               >
@@ -285,8 +286,8 @@ export function BridgeConnector() {
       <div
         className="pointer-events-none fixed z-[300] rounded-[5px] px-2 py-1 text-[10px] text-muted-foreground shadow-md"
         style={{
-          background: '#1c1c20',
-          border: '1px solid #333',
+          background: 'var(--tooltip-bg)',
+          border: '1px solid var(--tooltip-border)',
           left: tooltip.left,
           top: tooltip.top,
           display: tooltip.visible ? "block" : "none",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { ArrowLeftRight, ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
+import { ArrowLeftRight, ChevronDown, ChevronsDownUp, ChevronsUpDown, Download, FileText, Save } from "lucide-react"
 import { highlight } from "sugar-high"
 
 import { ExportButton } from "@/components/config-editor/export-button"
@@ -14,7 +14,7 @@ import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { downloadFile } from "@/lib/download"
 import { getRelationCountSummary } from "@/lib/bridge-relations"
-import { BRIDGE_SECTIONS, SECTION_MAP } from "@/lib/bridge-sections"
+import { BRIDGE_SECTIONS, SECTION_MAP, FALLBACK_SECTION_COLOR, CONFIG_COLOR } from "@/lib/bridge-sections"
 import { frontmatterSchema } from "@/lib/schemas/frontmatter-schema"
 import { serializeSkillMd } from "@/lib/skill-serializer"
 import { toast } from "sonner"
@@ -511,7 +511,7 @@ function PreviewSectionBlock({
         tabIndex={0}
       >
         <span
-          className="bridge-section-caret text-[8px] text-muted-foreground"
+          className="bridge-section-caret text-muted-foreground"
           onClick={(e) => {
             e.stopPropagation()
             setOpen((v) => !v)
@@ -526,7 +526,7 @@ function PreviewSectionBlock({
           role="button"
           tabIndex={0}
         >
-          ▼
+          <ChevronDown className="size-[12px]" />
         </span>
         <span className="bridge-section-dot" style={{ backgroundColor: color }} />
         <span className="text-xs font-semibold">{title}</span>
@@ -580,7 +580,7 @@ function SectionedPreview({
   }, [bodyDocument])
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       {/* Front 6 frontmatter sections — keep existing YAML highlight rendering */}
       {BRIDGE_SECTIONS.filter(def => def.id !== "exec" && def.id !== "doc").map((def) => {
         const key = def.id as keyof PreviewParts
@@ -671,18 +671,18 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
   }, [])
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       {doc.preamble.length > 0 && (
         <div data-bridge-section="__preamble__"
-          style={{ borderLeftColor: "color-mix(in srgb, #64748b 32%, transparent)" }}
+          style={{ borderLeftColor: `color-mix(in srgb, ${FALLBACK_SECTION_COLOR} 32%, transparent)` }}
           className={collapsedSet.has("__preamble__") ? "bridge-section-collapsed" : undefined}>
           <div className="bridge-section-header" onClick={() => api?.scrollBothToSection("__preamble__")}>
             <span
-              className="bridge-section-caret text-[8px] text-muted-foreground"
+              className="bridge-section-caret text-muted-foreground"
               style={{ transform: collapsedSet.has("__preamble__") ? "rotate(-90deg)" : undefined }}
               onClick={(e) => { e.stopPropagation(); toggle("__preamble__") }}
-            >▼</span>
-            <span className="bridge-section-dot" style={{ backgroundColor: "#64748b" }} />
+            ><ChevronDown className="size-[12px]" /></span>
+            <span className="bridge-section-dot" style={{ backgroundColor: FALLBACK_SECTION_COLOR }} />
             <span className="text-xs font-semibold text-muted-foreground">{t("workspace.file.overview")}</span>
           </div>
           <div className="bridge-section-content">
@@ -700,15 +700,15 @@ function ExtraFileSourcePreview({ doc }: { doc: ParsedDocument }) {
         const isCollapsed = collapsedSet.has(sec.id)
         return (
           <div key={sec.id} data-bridge-section={sec.id}
-            style={{ borderLeftColor: "color-mix(in srgb, #64748b 32%, transparent)" }}
+            style={{ borderLeftColor: `color-mix(in srgb, ${FALLBACK_SECTION_COLOR} 32%, transparent)` }}
             className={isCollapsed ? "bridge-section-collapsed" : undefined}>
             <div className="bridge-section-header" onClick={() => api?.scrollBothToSection(sec.id)}>
               <span
-                className="bridge-section-caret text-[8px] text-muted-foreground"
+                className="bridge-section-caret text-muted-foreground"
                 style={{ transform: isCollapsed ? "rotate(-90deg)" : undefined }}
                 onClick={(e) => { e.stopPropagation(); toggle(sec.id) }}
-              >▼</span>
-              <span className="bridge-section-dot" style={{ backgroundColor: "#64748b" }} />
+              ><ChevronDown className="size-[12px]" /></span>
+              <span className="bridge-section-dot" style={{ backgroundColor: FALLBACK_SECTION_COLOR }} />
               <span className="text-xs font-semibold">{sec.heading.text}</span>
               {sec.blocks.length > 0 && (
                 <span className="bridge-badge">{sec.blocks.length}</span>
@@ -748,7 +748,7 @@ function BodyOnlyPreview({
   }, [bodyDocument])
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       <div className="mb-2 px-3 py-2 rounded text-xs"
         style={{ background: "rgba(59,130,246,0.08)", color: "#60a5fa" }}>
         ℹ️ {t("workspace.hint.noFrontmatter")}
@@ -796,7 +796,7 @@ function BrokenFmPreview({
   }, [bodyDocument])
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       <div className="mb-2 px-3 py-2 rounded text-xs"
         style={{ background: "rgba(239,68,68,0.08)", color: "#f87171" }}>
         ⚠️ {t("workspace.hint.brokenFrontmatter")}
@@ -981,7 +981,7 @@ export function InspectorPanel() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l bg-background">
       <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-1.5">
-          <FileText className="size-3.5 shrink-0" aria-hidden />
+          <FileText className="size-[14px] shrink-0" aria-hidden />
           <strong className="text-foreground">{t("workspace.panelTitle.sourcePreview")}</strong>
           {showSkillMdChrome && (
             <span className="text-[10px] truncate" style={{ marginLeft: 'auto' }}>SKILL.md</span>
@@ -1022,7 +1022,7 @@ export function InspectorPanel() {
               onClick={api.toggleAllInspector}
               title={api.inspectorAllExpanded ? t("workspace.action.collapseAll") : t("workspace.action.expandAll")}
             >
-              {api.inspectorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
+              {api.inspectorAllExpanded ? <ChevronsDownUp className="size-[14px]" /> : <ChevronsUpDown className="size-[14px]" />}
             </button>
           )}
           {showSkillMdChrome && (
@@ -1033,7 +1033,7 @@ export function InspectorPanel() {
               className="h-6 gap-1 px-2 text-[11px]"
               onClick={exportSkillMd}
             >
-              <Download className="size-3.5" />
+              <Download className="size-[14px]" />
               {t("workspace.action.export")}
             </Button>
           )}
@@ -1050,7 +1050,7 @@ export function InspectorPanel() {
               onClick={() => setDiffOpen(true)}
               title={t("workspace.diff.viewDiff")}
             >
-              <ArrowLeftRight className="size-3.5" />
+              <ArrowLeftRight className="size-[14px]" />
             </button>
           )}
           {isTauri() && editState?.dirty && (
@@ -1063,7 +1063,7 @@ export function InspectorPanel() {
               onClick={handleSaveAll}
               title={hasValidationErrors ? t("workspace.action.validationFailed") : undefined}
             >
-              <Save className="size-3.5" />
+              <Save className="size-[14px]" />
               {saving ? t("workspace.action.saving") : t("workspace.action.save")}
             </Button>
           )}
@@ -1119,11 +1119,11 @@ export function InspectorPanel() {
               extraDoc ? (
                 <ExtraFileSourcePreview doc={extraDoc} />
               ) : (
-                <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+                <div className="p-2" style={{ paddingBottom: 32 }}>
                   <SectionBlock
                     sectionId={`xf-${selection.filePath?.split("/").pop() ?? "file"}`}
                     title={selection.filePath?.split("/").pop() ?? t("workspace.field.file")}
-                    color="#64748b"
+                    color={FALLBACK_SECTION_COLOR}
                     badge={extraFile?.type}
                   >
                     <div className="pc">
@@ -1158,7 +1158,6 @@ export function InspectorPanel() {
 
 /* ─── Config file structured preview ─── */
 
-const CONFIG_COLOR = "#06b6d4"
 
 function configPreviewKind(filePath: string): "sources" | "topics" | "schema" | null {
   const base = filePath.split("/").pop() ?? filePath
@@ -1192,7 +1191,7 @@ function SourcesPreview({ data }: { data: { sources: SourcePreviewItem[] } }) {
   const enabledCount = sources.filter(s => s.enabled).length
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       <SectionBlock
         sectionId="cfg-sources"
         title={t("workspace.configEditor.sourcesCount", { count: sources.length })}
@@ -1233,7 +1232,7 @@ function TopicsPreview({ data }: { data: { topics: TopicPreviewItem[] } }) {
   const { t } = useTranslation()
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       <SectionBlock
         sectionId="cfg-topics"
         title={t("workspace.configEditor.topicsCount", { count: data.topics.length })}
@@ -1270,7 +1269,7 @@ function SchemaJsonPreview({ data, filePath }: { data: unknown; filePath: string
   }, [data])
 
   return (
-    <div className="p-2 pl-1.5" style={{ paddingBottom: 32 }}>
+    <div className="p-2" style={{ paddingBottom: 32 }}>
       <SectionBlock
         sectionId="cfg-schema"
         title={filePath.split("/").pop() ?? "config"}

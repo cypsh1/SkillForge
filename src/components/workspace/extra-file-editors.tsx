@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { highlight } from "sugar-high"
 import { python } from "sugar-high/presets"
 import { SectionBlock } from "@/components/workspace/section-block"
+import { FALLBACK_SECTION_COLOR } from "@/lib/bridge-sections"
 import { parseDocument, serializeDocument } from "@/lib/markdown-engine"
 import { FragmentBlock } from "@/components/workspace/fragment-renderer"
 import type { ContentBlock, ParsedDocument } from "@/types/content-fragment"
@@ -107,7 +108,7 @@ function JsonFileEditor({ content, onChange, sectionId }: { content: string; onC
 
   if (!parsed) {
     return (
-      <SectionBlock title="JSON" readOnly sectionId={sectionId} color="#64748b">
+      <SectionBlock title="JSON" readOnly sectionId={sectionId} color={FALLBACK_SECTION_COLOR}>
         <div className="ecard">
           <pre className="sh-code text-xs text-destructive">{content}</pre>
         </div>
@@ -120,7 +121,7 @@ function JsonFileEditor({ content, onChange, sectionId }: { content: string; onC
   return (
     <SectionBlock
       sectionId={sectionId}
-      color="#64748b"
+      color={FALLBACK_SECTION_COLOR}
       title={t("workspace.file.data")}
       editable
       editing={editing}
@@ -211,7 +212,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
 
   if (!hasPreamble && !hasSections) {
     return (
-      <SectionBlock title={t("workspace.file.content")} readOnly color="#64748b">
+      <SectionBlock title={t("workspace.file.content")} readOnly color={FALLBACK_SECTION_COLOR}>
         <div className="ecard">
           <pre className="sh-code whitespace-pre-wrap">{content || t("workspace.empty.emptyContent")}</pre>
         </div>
@@ -228,7 +229,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
         <SectionBlock
           title={t("workspace.file.overview")}
           sectionId="__preamble__"
-          color="#64748b"
+          color={FALLBACK_SECTION_COLOR}
           editable
           editing={isPreambleEditing}
           onEdit={() => startEdit("__preamble__", doc.preamble)}
@@ -258,7 +259,7 @@ function MarkdownFileEditor({ content, onChange }: { content: string; onChange: 
             key={sec.id}
             title={sec.heading.text}
             sectionId={sec.id}
-            color="#64748b"
+            color={FALLBACK_SECTION_COLOR}
             badge={badge}
             editable={blockCount > 0}
             editing={isEditing}
@@ -300,7 +301,7 @@ function CodeFileViewer({ code, type, sectionId }: { code: string; type: ExtraFi
   return (
     <SectionBlock
       sectionId={sectionId}
-      color="#64748b"
+      color={FALLBACK_SECTION_COLOR}
       title={t("workspace.file.sourceCode")}
       badge={langLabel}
       readOnly

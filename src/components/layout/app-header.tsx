@@ -14,7 +14,7 @@ export function AppHeader() {
 
   return (
     <header className="flex h-10 shrink-0 items-center gap-2 border-b px-3" style={{ background: 'var(--card)' }}>
-      <Hammer className="h-4 w-4 text-primary" />
+      <Hammer className="size-[16px] text-primary" />
       <span className="text-sm font-semibold tracking-tight">SkillForge</span>
       <Separator orientation="vertical" className="mx-1 h-4" />
       <span className="text-xs text-muted-foreground">{t("header.subtitle")}</span>

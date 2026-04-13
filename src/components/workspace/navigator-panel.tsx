@@ -100,15 +100,15 @@ function sortConfigPaths(paths: string[]): string[] {
 function extraFileIcon(type: ExtraFile["type"]) {
   switch (type) {
     case "json":
-      return <Settings className="size-3.5 shrink-0" />
+      return <Settings className="size-[14px] shrink-0" />
     case "python":
-      return <FileCode className="size-3.5 shrink-0" />
+      return <FileCode className="size-[14px] shrink-0" />
     case "shell":
-      return <Terminal className="size-3.5 shrink-0" />
+      return <Terminal className="size-[14px] shrink-0" />
     case "markdown":
-      return <FileText className="size-3.5 shrink-0" />
+      return <FileText className="size-[14px] shrink-0" />
     default:
-      return <FileText className="size-3.5 shrink-0" />
+      return <FileText className="size-[14px] shrink-0" />
   }
 }
 
@@ -295,7 +295,7 @@ export function NavigatorPanel() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-[18px] -translate-y-1/2" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-[16px] -translate-y-1/2" />
           <Input
             type="search"
             placeholder={t("workspace.nav.searchPlaceholder")}
@@ -311,7 +311,7 @@ export function NavigatorPanel() {
           aria-label={t("workspace.ssh.connectTitle")}
           onClick={() => sshConnection?.connected ? setSSHBrowserOpen(true) : setSSHDialogOpen(true)}
         >
-          <Server className="size-[18px]" />
+          <Server className="size-[16px]" />
           {sshConnection?.connected && (
             <span className="absolute top-1 right-1 size-2 rounded-full bg-emerald-500" />
           )}
@@ -321,15 +321,15 @@ export function NavigatorPanel() {
             className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             aria-label={t("workspace.batch.button")}
           >
-            <Layers className="size-[18px]" />
+            <Layers className="size-[16px]" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={4}>
             <DropdownMenuItem onClick={() => setBatchValidateOpen(true)}>
-              <ClipboardCheck className="size-3.5" />
+              <ClipboardCheck className="size-[14px]" />
               <span>{t("workspace.batch.validate")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setBatchExportOpen(true)}>
-              <Download className="size-3.5" />
+              <Download className="size-[14px]" />
               <span>{t("workspace.batch.export")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -339,24 +339,24 @@ export function NavigatorPanel() {
             className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             aria-label={t("workspace.nav.addSkill")}
           >
-            <Plus className="size-[18px]" />
+            <Plus className="size-[16px]" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={4} className="add-skill-menu">
             <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <Upload className="size-3.5" />
+              <Upload className="size-[14px]" />
               <span>{t("workspace.nav.importLocal")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setPasteError(""); setPasteDialogOpen(true) }}>
-              <ClipboardPaste className="size-3.5" />
+              <ClipboardPaste className="size-[14px]" />
               <span>{t("workspace.nav.pasteImport")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
-              <Globe className="size-3.5" />
+              <Globe className="size-[14px]" />
               <span>{t("workspace.nav.importOnline")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setWizardOpen(true)}>
-              <Plus className="size-3.5" />
+              <Plus className="size-[14px]" />
               <span>{t("workspace.nav.createNew")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -546,13 +546,13 @@ function SkillTreeBlock({
           )}
         >
           <span className="text-muted-foreground mt-0.5 shrink-0">
-            {expanded ? <ChevronDown className="size-[17px]" /> : <ChevronRight className="size-[17px]" />}
+            {expanded ? <ChevronDown className="size-[14px]" /> : <ChevronRight className="size-[14px]" />}
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 flex-wrap items-center gap-1.5">
               <span className="truncate font-medium">{name}</span>
               {skill.origin?.type === "ssh" && (
-                <Cloud className="size-3 shrink-0 text-blue-400" />
+                <Cloud className="size-[12px] shrink-0 text-blue-400" />
               )}
               {version ? (
                 <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px] font-normal">
@@ -583,7 +583,7 @@ function SkillTreeBlock({
           className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/skill:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
           aria-label={t("workspace.nav.removeAria", { name })}
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-[14px]" />
         </button>
       </div>
 
@@ -592,7 +592,7 @@ function SkillTreeBlock({
           <TreeNode
             selected={selectionMatches(selection, skill.id, "skill-md")}
             onClick={() => select({ skillId: skill.id, nodeType: "skill-md" })}
-            icon={<FileText className="size-3.5 shrink-0" />}
+            icon={<FileText className="size-[14px] shrink-0" />}
             label="SKILL.md"
             description={t("workspace.nav.skillIdentity")}
           />
@@ -649,7 +649,7 @@ function TreeNode({ selected, onClick, icon, label, description, onDelete }: Tre
           className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/node:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
           aria-label={`Delete ${label}`}
         >
-          <Trash2 className="size-3" />
+          <Trash2 className="size-[12px]" />
         </button>
       )}
     </div>
@@ -670,7 +670,7 @@ function ConfigSubtree({ skill, selection, select, onDeleteFile }: ConfigSubtree
   return (
     <div className="space-y-0.5">
       <div className="text-muted-foreground flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium">
-        <FolderOpen className="size-3.5 shrink-0" />
+        <FolderOpen className="size-[14px] shrink-0" />
         <span>config/</span>
       </div>
       <div className="border-border ml-1 border-l pl-2">
@@ -686,7 +686,7 @@ function ConfigSubtree({ skill, selection, select, onDeleteFile }: ConfigSubtree
               onClick={() =>
                 select({ skillId: skill.id, nodeType: "config-file", filePath })
               }
-              icon={<Settings className="size-3.5 shrink-0" />}
+              icon={<Settings className="size-[14px] shrink-0" />}
               label={display}
               description={desc}
               onDelete={() => onDeleteFile(skill.id, filePath, "config")}
@@ -747,7 +747,7 @@ function ExtraFilesSubtree({
         return (
           <div key={dir} className="space-y-0.5">
             <div className="text-muted-foreground flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium">
-              <FolderOpen className="size-3.5 shrink-0" />
+              <FolderOpen className="size-[14px] shrink-0" />
               <span>{dir}/</span>
             </div>
             <div className="border-border ml-1 border-l pl-2">

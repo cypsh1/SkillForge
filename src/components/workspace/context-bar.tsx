@@ -1,9 +1,7 @@
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
-import { SECTION_MAP } from "@/lib/bridge-sections"
-
-const FALLBACK = "#64748b"
+import { SECTION_MAP, FALLBACK_SECTION_COLOR } from "@/lib/bridge-sections"
 
 function Kbd({ children }: { children: ReactNode }) {
   return (
@@ -25,7 +23,7 @@ export function ContextBar() {
     currentSection && currentSection.total > 0
       ? `(${currentSection.index + 1}/${currentSection.total})`
       : ""
-  const leftColor = meta?.color ?? FALLBACK
+  const leftColor = meta?.color ?? FALLBACK_SECTION_COLOR
 
   return (
     <div className="flex h-7 shrink-0 items-center gap-0 border-t border-border bg-card px-3 text-[10px] text-muted-foreground">
@@ -38,7 +36,7 @@ export function ContextBar() {
         ·
       </span>
       <div className="flex shrink-0 items-center gap-1 font-mono text-[9px]">
-        <span className="text-[8px]">{t("workspace.contextBar.left")}</span>
+        <span className="text-[9px]">{t("workspace.contextBar.left")}</span>
         <div className="h-[3px] w-10 overflow-hidden rounded-sm bg-border">
           <div
             className="h-full rounded-sm transition-[width] duration-75"
@@ -47,7 +45,7 @@ export function ContextBar() {
         </div>
         <span className="tabular-nums">{editorScrollPct}%</span>
         <span className="mx-0.5 text-muted-foreground/50" aria-hidden>↔</span>
-        <span className="text-[8px]">{t("workspace.contextBar.right")}</span>
+        <span className="text-[9px]">{t("workspace.contextBar.right")}</span>
         <div className="h-[3px] w-10 overflow-hidden rounded-sm bg-border">
           <div
             className="h-full rounded-sm transition-[width] duration-75"

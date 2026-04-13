@@ -112,7 +112,7 @@ export function DiffViewer({ open, onOpenChange, diffs, skillName }: DiffViewerP
         className="sm:max-w-4xl max-h-[80vh] flex flex-col gap-0 p-0"
         showCloseButton
       >
-        <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3 pr-12">
           <div className="flex items-center gap-2">
             <ArrowLeftRight className="size-4 text-muted-foreground" />
             <DialogTitle>{t("workspace.diff.title")}</DialogTitle>
@@ -143,7 +143,7 @@ export function DiffViewer({ open, onOpenChange, diffs, skillName }: DiffViewerP
                   )}
                   onClick={() => setSelectedIdx(i)}
                 >
-                  <Icon className={cn("size-3.5 shrink-0", statusColor[d.status])} />
+                  <Icon className={cn("size-[14px] shrink-0", statusColor[d.status])} />
                   <span className="truncate">{areaLabel(d.area, t)}</span>
                   <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                     {d.stats.added > 0 && <span className="text-emerald-600 dark:text-emerald-400">+{d.stats.added}</span>}

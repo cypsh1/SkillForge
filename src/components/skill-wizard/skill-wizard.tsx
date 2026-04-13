@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import {
+  AlertCircle,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -124,7 +125,12 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
     ],
     [t],
   )
-  const [step, setStep] = useState(0)
+  const [step, _setStep] = useState(0)
+  const [visited, setVisited] = useState<Set<number>>(() => new Set([0]))
+  const goStep = (i: number) => {
+    setVisited((prev) => { const next = new Set(prev); next.add(step); next.add(i); return next })
+    _setStep(i)
+  }
   const [data, setData] = useState<WizardData>({
     template: "blank",
     name: "",
@@ -146,10 +152,17 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
   const dirPreview = useMemo(() => dirPreviewLines(data.name, data.template), [data.name, data.template])
 
   const LAST_STEP = steps.length - 1
-  const canNext =
-    step === 0
-      ? !!(data.name.trim() && data.description.trim())
-      : true
+  const isStep0Valid = !!(data.name.trim() && data.description.trim())
+
+  type StepStatus = "complete" | "current" | "warning" | "idle"
+  const stepStatus = (i: number): StepStatus => {
+    if (i === step) return "current"
+    if (!visited.has(i)) return "idle"
+    if (i === 0 && !isStep0Valid) return "warning"
+    return "complete"
+  }
+
+  const canNext = step === 0 ? isStep0Valid : true
 
   const selectTemplate = (id: WizardTemplate) => {
     const d = applyTemplateDefaults(id)
@@ -211,39 +224,54 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
   )
 
   return (
-    <div className="flex max-h-[min(85vh,720px)] w-full max-w-xl flex-col rounded-xl border bg-card text-sm shadow-lg">
+    <div className="flex max-h-[min(85vh,720px)] w-full max-w-2xl flex-col rounded-xl border bg-card text-sm shadow-lg">
       <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
         <span className="font-medium">{t("workspace.wizard.createNew")}</span>
         <Button
           type="button"
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           className="text-muted-foreground"
           onClick={onClose}
           aria-label={t("workspace.wizard.close")}
         >
-          <X className="size-4" />
+          <X className="size-[16px]" />
         </Button>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-1 gap-y-1 px-2 py-2">
-        {steps.map((label, i) => (
-          <span key={label} className="contents">
-            {i > 0 ? <span className="text-muted-foreground">───</span> : null}
-            <button
-              type="button"
-              className={cn(
-                "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs",
-                i === step && "bg-primary/15 font-medium text-primary",
-                i !== step && "text-muted-foreground",
+      <div className="flex shrink-0 items-center justify-center gap-0 px-4 py-2.5">
+        {steps.map((label, i) => {
+          const status = stepStatus(i)
+          return (
+            <span key={label} className="flex items-center">
+              {i > 0 && (
+                <span className={cn(
+                  "mx-1.5 h-px w-8",
+                  (stepStatus(i - 1) === "complete" || stepStatus(i - 1) === "current") && status !== "idle"
+                    ? "bg-primary/30"
+                    : "bg-border",
+                )} />
               )}
-              onClick={() => i <= step && setStep(i)}
-            >
-              {i < step ? <Check className="size-3.5 text-primary" /> : i === step ? <span className="size-2 rounded-full bg-primary" /> : <span className="size-2 rounded-full border border-muted-foreground/50" />}
-              {label}
-            </button>
-          </span>
-        ))}
+              <button
+                type="button"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
+                  status === "current" && "bg-primary/15 font-medium text-primary",
+                  status === "complete" && "text-primary/80 hover:bg-primary/10",
+                  status === "warning" && "text-amber-500 hover:bg-amber-500/10",
+                  status === "idle" && "text-muted-foreground hover:bg-muted/60",
+                )}
+                onClick={() => goStep(i)}
+              >
+                {status === "complete" && <Check className="size-[14px]" />}
+                {status === "current" && <span className="size-2 rounded-full bg-primary" />}
+                {status === "warning" && <AlertCircle className="size-[14px]" />}
+                {status === "idle" && <span className="size-2 rounded-full border border-muted-foreground/50" />}
+                {label}
+              </button>
+            </span>
+          )
+        })}
       </div>
 
       <Separator />
@@ -320,11 +348,11 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
                     </Badge>
                     <div className="flex gap-1">
                       <Button type="button" variant="outline" size="xs" onClick={addTool}>
-                        <Plus className="size-3" />
+                        <Plus className="size-[12px]" />
                         {t("workspace.wizard.addTool")}
                       </Button>
                       <Button type="button" variant="ghost" size="xs" disabled={data.tools.length <= 1} onClick={() => delTool(i)}>
-                        <X className="size-3" />
+                        <X className="size-[12px]" />
                         {t("workspace.wizard.removeTool")}
                       </Button>
                     </div>
@@ -353,7 +381,7 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
           <div className="space-y-3">
             {data.envVars.length === 0 ? (
               <Button type="button" variant="outline" size="sm" className="w-full" onClick={addEnv}>
-                <Plus className="size-3.5" />
+                <Plus className="size-[14px]" />
                 {t("workspace.wizard.addEnvVar")}
               </Button>
             ) : null}
@@ -366,11 +394,11 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
                     </Badge>
                     <div className="flex gap-1">
                       <Button type="button" variant="outline" size="xs" onClick={addEnv}>
-                        <Plus className="size-3" />
+                        <Plus className="size-[12px]" />
                         {t("workspace.wizard.addTool")}
                       </Button>
                       <Button type="button" variant="ghost" size="xs" onClick={() => delEnv(i)}>
-                        <X className="size-3" />
+                        <X className="size-[12px]" />
                         {t("workspace.wizard.removeTool")}
                       </Button>
                     </div>
@@ -398,6 +426,15 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
 
         {step === 3 && (
           <div className="space-y-3">
+            {!isStep0Valid && (
+              <div className="flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+                <AlertCircle className="size-[14px] shrink-0" />
+                <span>{t("workspace.wizard.basicInfoIncomplete")}</span>
+                <button type="button" className="ml-auto text-amber-400 underline underline-offset-2 hover:text-amber-300" onClick={() => goStep(0)}>
+                  {steps[0]}
+                </button>
+              </div>
+            )}
             <div>
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("workspace.wizard.dirPreview")}</p>
               <pre className="whitespace-pre rounded-md border bg-muted/40 p-2 font-mono text-xs leading-relaxed">{dirPreview}</pre>
@@ -412,12 +449,12 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" variant="outline" size="sm" disabled={!skillMdPreview} onClick={exportSkillMd}>
-                <Download className="size-3.5" />
+                <Download className="size-[14px]" />
                 {t("workspace.wizard.exportSkillMd")}
               </Button>
               {isTauri() && (
                 <Button type="button" size="sm" disabled={!skillMdPreview || creating} onClick={handleCreateLocal}>
-                  <FolderPlus className="size-3.5" />
+                  <FolderPlus className="size-[14px]" />
                   {creating ? t("workspace.wizard.creating") : t("workspace.wizard.createLocal")}
                 </Button>
               )}
@@ -430,14 +467,14 @@ export function SkillWizard({ onClose, onCreated }: SkillWizardProps) {
       <Separator />
 
       <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
-        <Button type="button" variant="outline" size="sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
-          <ChevronLeft className="size-3.5" />
+        <Button type="button" variant="outline" size="sm" disabled={step === 0} onClick={() => goStep(Math.max(0, step - 1))}>
+          <ChevronLeft className="size-[14px]" />
           {t("workspace.wizard.prev")}
         </Button>
         {step < LAST_STEP ? (
-          <Button type="button" size="sm" disabled={!canNext} onClick={() => setStep((s) => Math.min(LAST_STEP, s + 1))}>
+          <Button type="button" size="sm" disabled={!canNext} onClick={() => goStep(Math.min(LAST_STEP, step + 1))}>
             {t("workspace.wizard.next")}
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="size-[14px]" />
           </Button>
         ) : (
           <span className="text-xs text-muted-foreground">{t("workspace.wizard.useButtons")}</span>

@@ -36,7 +36,7 @@ export const BRIDGE_SECTIONS: BridgeSection[] = [
   { id: "tools", name: "工具", color: "#10b981", layer: "caps" },
   { id: "files", name: "文件权限", color: "#8b5cf6", layer: "caps" },
   { id: "exec", name: "脚本管道", color: "#14b8a6", layer: "exec" },
-  { id: "doc", name: "文档结构", color: "#14b8a6", layer: "ops" },
+  { id: "doc", name: "文档结构", color: "#6366f1", layer: "ops" },
 ]
 
 export const SECTION_MAP = Object.fromEntries(
@@ -51,3 +51,6 @@ export const LAYER_SECTION_IDS = Object.fromEntries(
 ) as Record<BridgeLayerId, string[]>
 
 export const BRIDGE_GUTTER_EXTEND = 6
+
+export const FALLBACK_SECTION_COLOR = "#64748b"
+export const CONFIG_COLOR = "#06b6d4"
