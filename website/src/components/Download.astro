@@ -7,6 +7,32 @@ interface Props {
 
 const { t } = Astro.props;
 const releasesUrl = 'https://github.com/cypsh1/SkillForge/releases';
+const v = '1.1.0';
+const base = `https://github.com/cypsh1/SkillForge/releases/download/v${v}`;
+
+const platforms = [
+  {
+    ...t.download.platforms[0],
+    url: `${base}/SkillForge_${v}_aarch64.dmg`,
+    altUrl: `${base}/SkillForge_${v}_x64.dmg`,
+    altLabel: 'Intel',
+    os: 'mac',
+  },
+  {
+    ...t.download.platforms[1],
+    url: `${base}/SkillForge_${v}_x64-setup.exe`,
+    altUrl: `${base}/SkillForge_${v}_x64_en-US.msi`,
+    altLabel: '.msi',
+    os: 'win',
+  },
+  {
+    ...t.download.platforms[2],
+    url: `${base}/SkillForge_${v}_amd64.deb`,
+    altUrl: `${base}/SkillForge_${v}_amd64.AppImage`,
+    altLabel: '.AppImage',
+    os: 'linux',
+  },
+];
 
 const platformIcons: Record<string, string> = {
   apple: '<path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>',
@@ -23,15 +49,18 @@ const platformIcons: Record<string, string> = {
   </div>
 
   <div class="mt-12 grid gap-6 md:grid-cols-3">
-    {t.download.platforms.map((platform) => (
-      <div class="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8">
+    {platforms.map((platform) => (
+      <div class="download-card flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 transition" data-os={platform.os}>
         <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" class="text-muted-foreground" set:html={platformIcons[platform.icon]} />
         <div class="text-center">
           <h3 class="text-lg font-semibold text-foreground">{platform.name}</h3>
           <span class="text-xs text-muted-foreground">{platform.format}</span>
         </div>
-        <a href={releasesUrl} target="_blank" rel="noopener" class="w-full rounded-lg bg-gradient-to-r from-brand-purple to-brand-cyan px-6 py-2.5 text-center text-sm font-medium text-white transition hover:opacity-90">
+        <a href={platform.url} class="w-full rounded-lg bg-gradient-to-r from-brand-purple to-brand-cyan px-6 py-2.5 text-center text-sm font-medium text-white transition hover:opacity-90">
           {t.download.button}
+        </a>
+        <a href={platform.altUrl} class="text-xs text-muted-foreground underline underline-offset-4 transition hover:text-foreground">
+          {platform.altLabel}
         </a>
       </div>
     ))}
@@ -43,3 +72,20 @@ const platformIcons: Record<string, string> = {
     </a>
   </p>
 </section>
+
+<script>
+  // Auto-detect platform and highlight matching card
+  const ua = navigator.userAgent.toLowerCase();
+  let os = '';
+  if (ua.includes('mac')) os = 'mac';
+  else if (ua.includes('win')) os = 'win';
+  else if (ua.includes('linux')) os = 'linux';
+
+  if (os) {
+    document.querySelectorAll('.download-card').forEach(card => {
+      if ((card as HTMLElement).dataset.os === os) {
+        card.classList.add('border-brand-purple/50', 'ring-1', 'ring-brand-purple/30');
+      }
+    });
+  }
+</script>

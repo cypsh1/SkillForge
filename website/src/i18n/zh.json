@@ -86,7 +86,7 @@
       { "name": "Windows", "format": ".msi", "icon": "windows" },
       { "name": "Linux", "format": ".AppImage", "icon": "linux" }
     ],
-    "button": "前往下载",
+    "button": "下载",
     "releases": "所有版本和安装包请访问 GitHub Releases",
     "version": "V1.1.0"
   },

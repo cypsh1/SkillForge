@@ -86,7 +86,7 @@
       { "name": "Windows", "format": ".msi", "icon": "windows" },
       { "name": "Linux", "format": ".AppImage", "icon": "linux" }
     ],
-    "button": "Go to Downloads",
+    "button": "Download",
     "releases": "All versions and installers available on GitHub Releases",
     "version": "V1.1.0"
   },
