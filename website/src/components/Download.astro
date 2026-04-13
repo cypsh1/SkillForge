@@ -13,9 +13,11 @@ const base = `https://github.com/cypsh1/SkillForge/releases/download/v${v}`;
 const platforms = [
   {
     ...t.download.platforms[0],
+    format: '.dmg',
+    arch: 'Apple Silicon',
     url: `${base}/SkillForge_${v}_aarch64.dmg`,
     altUrl: `${base}/SkillForge_${v}_x64.dmg`,
-    altLabel: 'Intel',
+    altLabel: 'Intel (.dmg)',
     os: 'mac',
   },
   {
@@ -54,7 +56,7 @@ const platformIcons: Record<string, string> = {
         <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" class="text-muted-foreground" set:html={platformIcons[platform.icon]} />
         <div class="text-center">
           <h3 class="text-lg font-semibold text-foreground">{platform.name}</h3>
-          <span class="text-xs text-muted-foreground">{platform.format}</span>
+          <span class="text-xs text-muted-foreground">{platform.format}{platform.arch ? ` · ${platform.arch}` : ''}</span>
         </div>
         <a href={platform.url} class="w-full rounded-lg bg-gradient-to-r from-brand-purple to-brand-cyan px-6 py-2.5 text-center text-sm font-medium text-white transition hover:opacity-90">
           {t.download.button}
