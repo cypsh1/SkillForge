@@ -1,7 +1,27 @@
 {
   "name": "skillforge",
+  "description": "Visual configuration tool for OpenClaw AI Agent Skills — forms, validation, SSH, multi-source import",
   "private": true,
   "version": "1.1.0",
+  "keywords": [
+    "openclaw",
+    "ai-agent",
+    "skill-editor",
+    "tauri",
+    "react",
+    "developer-tools",
+    "desktop-app",
+    "visual-editor",
+    "configuration-management",
+    "typescript"
+  ],
+  "homepage": "https://cypsh1.github.io/SkillForge/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cypsh1/SkillForge.git"
+  },
+  "author": "cypsh1",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

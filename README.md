@@ -4,6 +4,9 @@
 
 [![GitHub](https://img.shields.io/github/license/cypsh1/SkillForge)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.1.0-863bff)](https://github.com/cypsh1/SkillForge/releases)
+[![Build](https://github.com/cypsh1/SkillForge/actions/workflows/build-release.yml/badge.svg)](https://github.com/cypsh1/SkillForge/actions/workflows/build-release.yml)
+[![Website](https://img.shields.io/badge/website-live-863bff)](https://cypsh1.github.io/SkillForge/)
+[![Downloads](https://img.shields.io/github/downloads/cypsh1/SkillForge/total)](https://github.com/cypsh1/SkillForge/releases)
 
 > **SkillForge** is a visual configuration tool for [OpenClaw](https://openclaw.ai) Skills. It replaces manual YAML editing with form-based operations, real-time preview, and cross-file validation. [English version below](#english).
 

@@ -3,11 +3,54 @@ interface Props {
   title?: string;
   description?: string;
   lang?: string;
+  locale?: 'zh' | 'en';
 }
 
-const { title = 'SkillForge', description = 'OpenClaw Skill 可视化配置工具', lang = 'zh-CN' } = Astro.props;
+const {
+  title = 'SkillForge',
+  description = 'OpenClaw Skill 可视化配置工具',
+  lang = 'zh-CN',
+  locale = 'zh',
+} = Astro.props;
+
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+
+const siteOrigin = 'https://cypsh1.github.io';
+const canonicalUrl = `${siteOrigin}${base}${locale}/`;
+const ogImageUrl = `${siteOrigin}${base}og-image.png`;
+
+const altLocale = locale === 'zh' ? 'en' : 'zh';
+const altLang = locale === 'zh' ? 'en-US' : 'zh-CN';
+const currentLang = locale === 'zh' ? 'zh-CN' : 'en-US';
+const altUrl = `${siteOrigin}${base}${altLocale}/`;
+const xDefaultUrl = `${siteOrigin}${base}en/`;
+
+const ogLocale = locale === 'zh' ? 'zh_CN' : 'en_US';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'SkillForge',
+  description,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'macOS, Windows, Linux',
+  url: canonicalUrl,
+  image: ogImageUrl,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  softwareVersion: '1.1.0',
+  author: {
+    '@type': 'Organization',
+    name: 'SkillForge',
+    url: `${siteOrigin}${base}`,
+  },
+  license: 'https://opensource.org/licenses/MIT',
+  inLanguage: [currentLang],
+};
 ---
 
 <!doctype html>
@@ -16,8 +59,33 @@ const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#09090b" />
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
     <title>{title}</title>
+
+    <!-- Canonical & hreflang -->
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang={currentLang} href={canonicalUrl} />
+    <link rel="alternate" hreflang={altLang} href={altUrl} />
+    <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:site_name" content="SkillForge" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="min-h-screen antialiased">
     <slot />
