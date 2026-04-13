@@ -26,6 +26,42 @@ last_updated: 2026-04-13
 
 ## 最近完成
 
+**V1.1-UI：UI 全面排查与修复** ✅ 2026-04-13
+
+来源：V1.1 发布后 UI 质量审计。
+
+### 改动
+
+| 项 | 内容 |
+|---|---|
+| 图标统一 | 消除 spacing 覆盖导致的 6px 图标，统一 12/14/16px 三级 |
+| 颜色变量化 | 15+ 处硬编码色值 → CSS 变量 + 共享常量 |
+| 间距优化 | ecard/fr/tc 间距加大，标签宽度 50→70px |
+| 面板对称 | Editor/Inspector padding 统一，底部留白统一 |
+| 图标体系 | 折叠箭头/只读/文件权限全部改为 lucide 图标 |
+| doc 颜色 | 与 exec 区分：靛蓝 #6366f1 vs 青绿 #14b8a6 |
+
+**日志**：`evidence/task-logs/2026-04-13-ui-audit-fix.md`
+
+---
+
+**SEO-INFRA：Phase 1 SEO 基建** ✅ 2026-04-13
+
+网站 + GitHub 仓库 SEO 全面补全（10 项代码改动 + 4 项 GitHub 设置），线上验证全部通过。
+
+### 改动
+
+| 类别 | 内容 |
+|------|------|
+| 网站 SEO | sitemap（i18n hreflang）/ robots.txt / OG 预览图 / canonical + hreflang / OG + Twitter 标签 / JSON-LD / theme-color |
+| GitHub SEO | package.json 元数据 / release.yml / README 徽章 / CHANGELOG |
+| GitHub 设置 | 仓库描述 + Homepage + 10 Topics + Social Preview |
+| 工具脚本 | generate-og-image.mjs / capture-screenshots.mjs |
+
+---
+
+## 最近完成
+
 **V1.1-WEBSITE：官网开发 + 发布体系搭建** ✅ 2026-04-13
 
 来源：V1.1 发布后需要产品官网和 CI 发布流程。

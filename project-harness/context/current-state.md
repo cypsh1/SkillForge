@@ -15,11 +15,50 @@ SkillForge — OpenClaw Skill 可视化配置工具
 
 ## 当前阶段
 
-**V1.1 发布完成。官网上线，三端构建 CI 就绪。**
+**V1.1 发布完成。UI 全面修复已完成。**
 
-V1.1 共完成 15 项功能任务 + 官网 + CI 发布体系。Tag `v1.1.0` 已推送，四平台构建已触发。
+V1.1 共完成 15 项功能任务 + 官网 + CI 发布体系 + SEO 基建 + UI 全面修复。
 
 **当前无进行中任务**。下一步从 backlog V1.2 待办中选择。
+
+### 本次会话完成（2026-04-13）— UI 全面修复
+
+V1.1.0 UI 排查与修复，6 批次，涉及 12 个文件：
+
+1. **CSS 基础**：新增 `--link-color`/`--tooltip-bg`/`--tooltip-border` 变量；doc section 颜色 → 靛蓝 #6366f1；`.fl`/`.ef-lbl` 标签宽度 50→70px；`.ecard`/`.fr`/`.tc` 间距加大；`.fv` 颜色 → 主题变量；`.bub`/`.htip`/`.rel-target` 等硬编码颜色 → CSS 变量；架构条 gap 2→4px
+2. **共享常量**：`bridge-sections.ts` 导出 `FALLBACK_SECTION_COLOR` 和 `CONFIG_COLOR`，消除 15+ 处散落的硬编码色值
+3. **Section Block**：折叠箭头 `▼` → lucide ChevronDown；只读标记 `🔒` → lucide Lock
+4. **Navigator 图标统一**：工具栏 18→16px，展开箭头 17→14px，文件图标 size-3.5→14px，删除按钮 size-3(6px!)→12px，Cloud 6→12px
+5. **Editor/Inspector 对称**：移除 section 描述文字；文件权限 emoji 📖/✏️ → lucide BookOpen/Pencil；padding 对称 p-2；Editor 底部留白 32px；Inspector 内 `▼` → ChevronDown
+6. **剩余文件**：app-header、bridge-connector、extra-file-editors、sources/topics-editor 统一颜色常量和图标尺寸
+
+tsc ✅ build ✅ 浏览器验证 ✅
+
+### 本次会话完成（2026-04-13）— SEO 基建 + 推广方案
+
+Phase 1 SEO 基建全部完成（10 项代码改动 + 4 项 GitHub 设置）：
+
+**网站 SEO：**
+1. @astrojs/sitemap 集成（i18n hreflang 自动生成）
+2. robots.txt（含 Sitemap + Host 指令）
+3. OG 社交预览图 1280x640（sharp 脚本生成）
+4. BaseLayout 补全：canonical / 3 条 hreflang / 7 条 OG / 4 条 Twitter Card / theme-color / JSON-LD SoftwareApplication
+
+**GitHub 仓库 SEO：**
+5. package.json 元数据（description/keywords/homepage/repository/license）
+6. .github/release.yml（Release Notes 自动分类）
+7. README 新增 3 个徽章（Build/Website/Downloads）
+8. CHANGELOG.md（V1.0.0 + V1.1.0）
+
+**GitHub 设置（通过 gh CLI 自动化）：**
+9. 仓库描述 + Homepage + 10 个 Topics
+10. Social Preview 图片
+
+**线上验证全部通过：** robots.txt 200 / sitemap 200 + hreflang / og-image 200 / OG 标签 / JSON-LD
+
+**已制定后续推广路线图：**
+- Phase 2：自动化发布链路（release → social-changelog → n8n/Postiz 自动发帖）
+- Phase 3：首发渠道（Show HN / Reddit / OpenClaw 社区 / Dev.to）
 
 ### 本次会话完成（2026-04-13）— 官网开发 + 发布体系
 
