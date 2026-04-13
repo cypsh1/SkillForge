@@ -9,13 +9,11 @@ import {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  BookOpen,
   ChevronsDownUp,
   ChevronsUpDown,
   ExternalLink,
   FileText,
   Layers,
-  Pencil,
   Settings,
 } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
@@ -245,7 +243,7 @@ function BasicInfoDisplay({ fm }: { fm: SkillFrontmatter }) {
         <div key={r.field} className="fr" data-field={r.field}>
           <span className="fl">{r.label}</span>
           {r.isLink ? (
-            <a href={r.value} target="_blank" rel="noreferrer" className="fv" style={{ color: 'var(--link-color)' }}>
+            <a href={r.value} target="_blank" rel="noreferrer" className="fv" style={{ color: '#3b82f6' }}>
               {r.value}
             </a>
           ) : (
@@ -468,7 +466,7 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
   return (
     <div className="ecard">
       <div className="ef-row" style={{ alignItems: 'flex-start' }}>
-        <span className="ef-lbl" style={{ paddingTop: 5 }}><BookOpen className="size-[12px] inline-block mr-0.5 align-text-bottom" /> {t("workspace.field.read")}</span>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>📖 {t("workspace.field.read")}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           {draft.read.map((p, i) => (
             <div key={i} className="fl-item">
@@ -480,7 +478,7 @@ function FilesEditForm({ draft, onChange }: { draft: FilesDraft; onChange: (d: F
         </div>
       </div>
       <div className="ef-row" style={{ alignItems: 'flex-start' }}>
-        <span className="ef-lbl" style={{ paddingTop: 5 }}><Pencil className="size-[12px] inline-block mr-0.5 align-text-bottom" /> {t("workspace.field.write")}</span>
+        <span className="ef-lbl" style={{ paddingTop: 5 }}>✏️ {t("workspace.field.write")}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           {draft.write.map((p, i) => (
             <div key={i} className="fl-item">
@@ -616,7 +614,7 @@ function SkillMdPanel({
   }, [fm, filesDraft, onChange])
 
   return (
-    <div style={{ paddingBottom: 32 }}>
+    <div>
       {/* ====== basic ====== */}
       <SectionBlock
         sectionId="basic"
@@ -629,6 +627,9 @@ function SkillMdPanel({
         onDone={saveBasic}
         dimmed={api?.isSectionDimmed("basic")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → name, description, version, emoji, author, homepage
+        </p>
         {editingBasic ? (
           <BasicEditForm draft={basicDraft} onChange={setBasicDraft} />
         ) : (
@@ -649,6 +650,9 @@ function SkillMdPanel({
         onDone={saveTrigger}
         dimmed={api?.isSectionDimmed("trigger")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → triggers, read_when, auto_trigger, command-*
+        </p>
         {editingTrigger ? (
           <TriggerEditForm draft={triggerDraft} onChange={setTriggerDraft} />
         ) : (
@@ -668,6 +672,9 @@ function SkillMdPanel({
         onDone={saveMeta}
         dimmed={api?.isSectionDimmed("meta")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → metadata.openclaw
+        </p>
         {editingMeta ? (
           <MetaEditForm draft={metaDraft} onChange={setMetaDraft} />
         ) : (
@@ -688,6 +695,9 @@ function SkillMdPanel({
         onDone={saveEnv}
         dimmed={api?.isSectionDimmed("env")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → env[]
+        </p>
         {editingEnv ? (
           <EnvEditForm draft={envDraft} onChange={setEnvDraft} />
         ) : envRows.length === 0 ? (
@@ -723,6 +733,9 @@ function SkillMdPanel({
         readOnly
         dimmed={api?.isSectionDimmed("tools")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → tools[]
+        </p>
         <ToolsBlock tools={skill.tools} />
       </SectionBlock>
 
@@ -738,12 +751,15 @@ function SkillMdPanel({
         onDone={saveFiles}
         dimmed={api?.isSectionDimmed("files")}
       >
+        <p className="text-[9px] text-dim font-mono pl-3 mb-1.5">
+          frontmatter → files {"{ read[], write[] }"}
+        </p>
         {editingFiles ? (
           <FilesEditForm draft={filesDraft} onChange={setFilesDraft} />
         ) : (
           <div className="ecard">
             <div className="fr" data-field="f-fr" style={{ alignItems: 'flex-start' }}>
-              <span className="fl"><BookOpen className="size-[12px] inline-block mr-0.5 align-text-bottom" /> {t("workspace.field.read")}</span>
+              <span className="fl">📖 {t("workspace.field.read")}</span>
               <span className="fv" style={{ fontSize: 10 }}>
                 {readList.length === 0 ? (
                   <span className="text-muted-foreground">{t("workspace.field.none")}</span>
@@ -764,7 +780,7 @@ function SkillMdPanel({
               </span>
             </div>
             <div className="fr" data-field="f-fw" style={{ alignItems: 'flex-start' }}>
-              <span className="fl"><Pencil className="size-[12px] inline-block mr-0.5 align-text-bottom" /> {t("workspace.field.write")}</span>
+              <span className="fl">✏️ {t("workspace.field.write")}</span>
               <span className="fv" style={{ fontSize: 10 }}>
                 {writeList.length === 0 ? (
                   <span className="text-muted-foreground">{t("workspace.field.none")}</span>
@@ -1119,7 +1135,7 @@ function SkillOverviewPanel({
                 target="_blank"
                 rel="noreferrer"
                 className="fv"
-                style={{ color: 'var(--link-color)' }}
+                style={{ color: "#3b82f6" }}
               >
                 {fm.homepage}
               </a>
@@ -1176,10 +1192,10 @@ function SkillOverviewPanel({
             className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-primary hover:bg-muted/50 transition-colors"
             onClick={() => onSelect({ skillId, nodeType: "skill-md" })}
           >
-            <FileText className="size-[14px] shrink-0" aria-hidden />
+            <FileText className="size-3.5 shrink-0" aria-hidden />
             <span>SKILL.md</span>
             {selection?.nodeType === "skill-md" && selection.skillId === skillId && (
-              <ExternalLink className="ml-auto size-[12px] shrink-0 opacity-70" aria-hidden />
+              <ExternalLink className="ml-auto size-3 shrink-0 opacity-70" aria-hidden />
             )}
           </button>
           {configPaths.map((path) => (
@@ -1189,12 +1205,12 @@ function SkillOverviewPanel({
               className="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-xs text-primary hover:bg-muted/50 transition-colors truncate"
               onClick={() => onSelect({ skillId, nodeType: "config-file", filePath: path })}
             >
-              <FileText className="size-[14px] shrink-0" aria-hidden />
+              <FileText className="size-3.5 shrink-0" aria-hidden />
               <span className="min-w-0 truncate">{path}</span>
               {selection?.nodeType === "config-file" &&
                 selection.skillId === skillId &&
                 selection.filePath === path && (
-                  <ExternalLink className="ml-auto size-[12px] shrink-0 opacity-70" aria-hidden />
+                  <ExternalLink className="ml-auto size-3 shrink-0 opacity-70" aria-hidden />
                 )}
             </button>
           ))}
@@ -1287,7 +1303,7 @@ export function EditorPanel() {
     <div className="h-full flex flex-col min-h-0 min-w-0 overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-1.5 border-b px-3.5 h-[34px] min-h-[34px] text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-1.5">
-          <HeaderIcon className="size-[14px] shrink-0" aria-hidden />
+          <HeaderIcon className="size-3.5 shrink-0" aria-hidden />
           <strong className="text-foreground">
             {selection?.nodeType === "skill-overview"
               ? t("workspace.panelTitle.overview")
@@ -1304,7 +1320,7 @@ export function EditorPanel() {
             onClick={api.toggleAllEditor}
             title={api.editorAllExpanded ? t("workspace.action.collapseAll") : t("workspace.action.expandAll")}
           >
-            {api.editorAllExpanded ? <ChevronsDownUp className="size-[14px]" /> : <ChevronsUpDown className="size-[14px]" />}
+            {api.editorAllExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
           </button>
         )}
       </div>

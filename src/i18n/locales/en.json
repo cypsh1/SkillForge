@@ -337,8 +337,7 @@
       "sampleToolDesc": "Sample tool description, modify as needed.",
       "sampleEnvDesc": "Sample config description",
       "defaultSkillName": "New Skill",
-      "cloneNote": "Clone template: copy files from an existing skill directory and modify as needed.",
-      "basicInfoIncomplete": "Please complete name and description in \"Basic Info\" first"
+      "cloneNote": "Clone template: copy files from an existing skill directory and modify as needed."
     },
     "nav": {
       "searchPlaceholder": "Search Skills…",

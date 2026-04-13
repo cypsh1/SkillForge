@@ -126,9 +126,6 @@
     --sidebar-accent-foreground: #e4e4e7;
     --sidebar-border: #27272a;
     --sidebar-ring: #52525b;
-    --link-color: #3b82f6;
-    --tooltip-bg: #1c1c20;
-    --tooltip-border: #333;
 }
 
 @layer base {
@@ -147,7 +144,7 @@
 .arch-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   padding: 7px 16px;
   background: var(--card);
   border-bottom: 1px solid var(--border);
@@ -209,7 +206,7 @@
 .arch-arrow {
   color: var(--dim);
   font-size: 10px;
-  padding: 0 3px;
+  padding: 0 1px;
 }
 
 /* Bridge section blocks — layout + per-section accent */
@@ -277,10 +274,10 @@
 }
 
 [data-bridge-section="doc"] {
-  border-left-color: rgba(99, 102, 241, 0.32);
+  border-left-color: rgba(20, 184, 166, 0.32);
 }
 [data-bridge-section="doc"].bridge-highlight {
-  background: rgba(99, 102, 241, 0.07);
+  background: rgba(20, 184, 166, 0.07);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
@@ -437,7 +434,7 @@
 .rel-bar {
   border-top: 1px solid var(--border);
   padding: 4px 12px;
-  background: color-mix(in srgb, var(--card) 90%, transparent);
+  background: rgba(24, 24, 27, 0.9);
   max-height: 140px;
   overflow-y: auto;
   flex-shrink: 0;
@@ -483,7 +480,7 @@
   text-align: left;
   font-family: var(--font-mono);
   font-weight: 600;
-  color: var(--link-color);
+  color: #3b82f6;
   min-width: 110px;
   cursor: pointer;
   background: none;
@@ -528,8 +525,8 @@
     opacity 0.12s ease,
     transform 0.12s ease;
   border-radius: 8px;
-  border: 1px solid var(--tooltip-border);
-  background: var(--tooltip-bg);
+  border: 1px solid #333;
+  background: #1c1c20;
   color: var(--foreground);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   padding: 8px 10px;
@@ -576,7 +573,7 @@
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
-  color: var(--link-color);
+  color: #3b82f6;
   cursor: pointer;
 }
 
@@ -588,8 +585,8 @@
   opacity: 0;
   transition: opacity 0.12s ease;
   border-radius: 5px;
-  border: 1px solid var(--tooltip-border);
-  background: var(--tooltip-bg);
+  border: 1px solid #444;
+  background: #1c1c20;
   color: var(--muted-foreground);
   padding: 3px 6px;
   font-size: 9px;
@@ -756,7 +753,7 @@
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: 4px 8px;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -837,14 +834,14 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 6px 8px;
+  padding: 4px 4px;
 }
 
 .fr {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 4px;
+  padding: 2px 2px;
   min-height: 24px;
   font-size: 11px;
   cursor: pointer;
@@ -857,7 +854,7 @@
 }
 
 .fl {
-  width: 70px;
+  width: 50px;
   flex-shrink: 0;
   color: var(--muted-foreground);
   text-align: right;
@@ -868,7 +865,7 @@
 .fv {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--foreground);
+  color: #c4c4c7;
   word-break: break-all;
   flex: 1;
   min-width: 0;
@@ -1030,7 +1027,7 @@
   margin-bottom: 0;
 }
 .ef-lbl {
-  width: 70px;
+  width: 50px;
   flex-shrink: 0;
   font-size: 10px;
   color: var(--dim);

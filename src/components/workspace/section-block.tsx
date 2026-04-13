@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FALLBACK_SECTION_COLOR } from "@/lib/bridge-sections"
 import { usePanelSyncApi } from "@/hooks/use-panel-sync"
 
 export interface SectionBlockProps {
@@ -25,7 +23,7 @@ export interface SectionBlockProps {
 export function SectionBlock({
   sectionId,
   title,
-  color = FALLBACK_SECTION_COLOR,
+  color = "#64748b",
   badge,
   readOnly,
   editable,
@@ -65,14 +63,14 @@ export function SectionBlock({
         onClick={() => sectionId && api?.scrollBothToSection(sectionId)}
       >
         <span
-          className="bridge-section-caret text-muted-foreground transition-transform"
+          className="bridge-section-caret text-[8px] text-muted-foreground transition-transform"
           style={{ transform: collapsed ? "rotate(-90deg)" : undefined }}
           onClick={(e) => {
             e.stopPropagation()
             setCollapsed(!collapsed)
           }}
         >
-          <ChevronDown className="size-[12px]" />
+          ▼
         </span>
         <span className="bridge-section-dot" style={{ backgroundColor: color }} />
         {editing && onTitleChange ? (
@@ -92,7 +90,7 @@ export function SectionBlock({
             className="text-[9px] px-[5px] py-px rounded-lg inline-flex items-center gap-[3px]"
             style={{ background: "rgba(255,255,255,0.06)", color: "var(--muted-foreground)" }}
           >
-            <Lock className="size-[10px]" /> {t("workspace.action.readOnly")}
+            🔒 {t("workspace.action.readOnly")}
           </span>
         )}
         {editable && !editing && (

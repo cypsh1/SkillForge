@@ -18,7 +18,6 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { GripVertical } from "lucide-react"
 import { SectionBlock } from "@/components/workspace/section-block"
-import { CONFIG_COLOR } from "@/lib/bridge-sections"
 
 export interface TopicSearch {
   queries: string[]
@@ -53,6 +52,8 @@ export interface TopicsEditorProps {
   data: TopicsConfig
   onChange: (newData: TopicsConfig) => void
 }
+
+const CONFIG_COLOR = "#06b6d4"
 
 export function TopicsEditor({ data, onChange }: TopicsEditorProps) {
   const { t } = useTranslation()

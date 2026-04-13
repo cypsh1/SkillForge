@@ -18,7 +18,6 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { GripVertical } from "lucide-react"
 import { SectionBlock } from "@/components/workspace/section-block"
-import { CONFIG_COLOR } from "@/lib/bridge-sections"
 
 interface Source {
   id: string
@@ -42,6 +41,8 @@ interface SourcesEditorProps {
   data: SourcesConfig
   onChange: (newData: SourcesConfig) => void
 }
+
+const CONFIG_COLOR = "#06b6d4"
 
 export function SourcesEditor({ data, onChange }: SourcesEditorProps) {
   const { t } = useTranslation()

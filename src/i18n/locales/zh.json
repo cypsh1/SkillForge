@@ -337,8 +337,7 @@
       "sampleToolDesc": "示例工具说明，可按需修改。",
       "sampleEnvDesc": "示例配置项说明",
       "defaultSkillName": "新技能",
-      "cloneNote": "克隆模板：请从已有技能目录复制所需文件并按需修改。",
-      "basicInfoIncomplete": "请先完成「基本信息」中的名称与描述"
+      "cloneNote": "克隆模板：请从已有技能目录复制所需文件并按需修改。"
     },
     "nav": {
       "searchPlaceholder": "搜索 Skill…",
